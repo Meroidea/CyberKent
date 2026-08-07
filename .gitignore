@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Local caches
+.vite/
+.cache/
+
+# Environment and secrets — never commit these.
+.env
+.env.local
+.env.*.local
+
+# Runtime data and uploads
+data/
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

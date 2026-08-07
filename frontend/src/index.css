@@ -1,0 +1,280 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 187 92% 43%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 243 75% 59%;
+    --radius: 0.5rem;
+
+    /* Hover fill for the decorative background grid. */
+    --tile: rgba(99, 102, 241, 0.15);
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 210 40% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 210 40% 98%;
+    --primary: 187 92% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 100% / 0.1;
+    --input: 0 0% 100% / 0.14;
+    --ring: 187 92% 60%;
+
+    --tile: rgba(6, 182, 212, 0.12);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 font-sans text-slate-700 antialiased transition-colors duration-300 dark:bg-[#0A0A0A] dark:text-slate-300;
+  }
+
+  /* Hash links must clear the fixed header. */
+  :target {
+    scroll-margin-top: 8rem;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-50 dark:ring-cyan-400 dark:ring-offset-[#0A0A0A];
+  }
+}
+
+@layer components {
+  /* Shared glass surface: one definition so every panel matches. */
+  .glass-surface {
+    @apply border border-gray-200/80 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-[#111111]/80;
+  }
+
+  .accent-gradient-text {
+    @apply bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-cyan-400;
+    /* The glyphs are transparent, so an inherited text-shadow would render as a
+       blur behind them rather than under them. */
+    text-shadow: none;
+  }
+
+  /**
+   * Optical depth for display headings: a hairline highlight above the glyph
+   * and a wide, very low-opacity drop beneath it. Deliberately below the
+   * threshold of being read as a "drop shadow" — it reads as weight, not effect.
+   */
+  .display-depth {
+    text-shadow:
+      0 1px 0 rgb(255 255 255 / 0.55),
+      0 2px 14px rgb(15 23 42 / 0.07);
+  }
+
+  .dark .display-depth {
+    text-shadow:
+      0 1px 0 rgb(255 255 255 / 0.06),
+      0 4px 24px rgb(0 0 0 / 0.5);
+  }
+
+  /**
+   * Shared press feedback for elements that are not motion components.
+   * Compresses on press and releases with a slight overshoot; the transform
+   * origin stays centred so nothing shifts in layout.
+   */
+  .interactive {
+    @apply transition-[transform,box-shadow,border-color,color,background-color] duration-200 ease-out-back active:scale-[0.97] active:duration-75 active:ease-out;
+  }
+
+  /**
+   * Viewport-height helpers with a `vh` fallback ahead of `svh`.
+   *
+   * `svh` is what keeps the hero composed while iOS Safari's address bar
+   * collapses, but a browser that does not know the unit drops the whole
+   * declaration — which would leave the hero with no height floor and no
+   * reserved zone at all. The `vh` line ahead of it is what those browsers
+   * land on; anything newer overrides it on the next line.
+   */
+  .min-h-viewport {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  .hero-peek-zone {
+    height: 30vh;
+    height: 30svh;
+  }
+
+  .console-pull-up {
+    margin-top: -30vh;
+    margin-top: -30svh;
+  }
+
+  /**
+   * Liquid glass: a lens rather than a tinted panel.
+   *
+   * Three things separate it from `.glass-surface`. The backdrop is saturated
+   * as well as blurred, so colour behind the card bleeds through instead of
+   * going milky. A specular rim is painted with inset shadows — bright along
+   * the top edge, dimmer along the bottom — which is what reads as thickness.
+   * And `::before` lays a diagonal sheen over the top-left, the highlight a
+   * curved surface would catch.
+   *
+   * The blur is held at 16px deliberately: these cards move continuously, and
+   * `backdrop-filter` is recomputed every frame per element.
+   */
+  .liquid-glass {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid rgb(255 255 255 / 0.6);
+    background: linear-gradient(135deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.42));
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      inset 0 -1px 0 rgb(255 255 255 / 0.35),
+      0 8px 28px rgb(15 23 42 / 0.09);
+  }
+
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(140deg, rgb(255 255 255 / 0.55) 0%, transparent 44%);
+  }
+
+  .dark .liquid-glass {
+    border-color: rgb(255 255 255 / 0.12);
+    background: linear-gradient(135deg, rgb(255 255 255 / 0.10), rgb(255 255 255 / 0.03));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      inset 0 -1px 0 rgb(255 255 255 / 0.04),
+      0 10px 34px rgb(0 0 0 / 0.45);
+  }
+
+  .dark .liquid-glass::before {
+    background: linear-gradient(140deg, rgb(255 255 255 / 0.13) 0%, transparent 46%);
+  }
+
+  /**
+   * The two live zones of a decrypting headline.
+   *
+   * The cipher sits back in the accent at low contrast so it reads as substrate
+   * rather than as text competing to be read, and the edge is lit and given a
+   * bloom so the eye follows the front along the line. Inside a gradient-clipped
+   * headline both are painted by the gradient instead, which is why neither sets
+   * a background of its own.
+   */
+  .decrypt-cipher {
+    color: rgb(99 102 241 / 0.45);
+  }
+
+  .dark .decrypt-cipher {
+    color: rgb(34 211 238 / 0.4);
+  }
+
+  .decrypt-edge {
+    color: rgb(79 70 229);
+    text-shadow: 0 0 12px rgb(99 102 241 / 0.55);
+  }
+
+  .dark .decrypt-edge {
+    color: rgb(103 232 249);
+    text-shadow: 0 0 14px rgb(34 211 238 / 0.6);
+  }
+
+  /** Consistent hover elevation for content cards. */
+  .card-lift {
+    @apply transition-[transform,box-shadow,border-color] duration-300 ease-out-expo hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/[0.07] dark:hover:shadow-black/40;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * Boot sequence. Declared outside the Tailwind layers because the HUD composes
+ * a dozen concentric groups, each needing its own duration and direction, which
+ * is a job for two keyframes and inline timings rather than a dozen utilities.
+ */
+@keyframes hud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hud-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes hud-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Sweeps a highlight across a skeleton block. */
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer utilities {
+  .logo-shimmer {
+    background-size: 220% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Ambient loops stop; state changes still resolve, just instantly. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

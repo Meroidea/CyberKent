@@ -1,0 +1,642 @@
+// Hume City Council CyberSafe Services — Online Scam Detection and Reporting System.
+//
+// The schema covers the twelve modules in Requirements.md. It is normalised to
+// third normal form (Rule 5.1): anything with an independent existence — a scam
+// category, a suburb, an indicator — is its own table rather than a repeated
+// string, so a rename happens in one row and statistics can be grouped without
+// string matching.
+//
+// Records that carry audit or evidentiary weight are soft deleted (Rule 5.3).
+// A report withdrawn by its author still has to be explicable later, so
+// `deletedAt` is set and the row stays.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7 moved connection URLs out of the schema and into prisma.config.ts,
+// so the schema no longer carries an `url`. See ../prisma.config.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── enums ─────────────────────────────
+
+/// FR10 — role-based access control.
+enum Role {
+  RESIDENT
+  BUSINESS
+  OFFICER
+  ADMIN
+}
+
+/// FR14 — the channel a scam arrived through.
+enum Channel {
+  SMS
+  EMAIL
+  PHONE
+  WEBSITE
+  SOCIAL
+  POST
+  OTHER
+}
+
+/// FR17 — risk classification produced by analysis.
+enum RiskBand {
+  HIGH
+  MEDIUM
+  LOW
+  UNCLEAR
+}
+
+/// Weight an individual indicator carries.
+enum IndicatorWeight {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// FR19, FR22, FR23 — the kinds of artefact that can be checked and matched.
+enum IndicatorType {
+  URL
+  DOMAIN
+  PHONE
+  EMAIL
+  BANK_ACCOUNT
+}
+
+/// FR25–FR30, FR42 — lifecycle of a scam report.
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  INFORMATION_REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+/// FR40 — how serious a reviewed report turned out to be.
+enum Severity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// FR49–FR54 — lifecycle of a published community alert.
+enum AlertStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+  ARCHIVED
+}
+
+/// FR43, FR48 — why two reports are linked.
+enum RelationKind {
+  DUPLICATE
+  RELATED
+}
+
+/// FR61–FR63 — what a notification is telling the recipient.
+enum NotificationKind {
+  REPORT_SUBMITTED
+  REPORT_STATUS_CHANGED
+  INFORMATION_REQUESTED
+  ALERT_PUBLISHED
+}
+
+/// FR64, FR65 — what a subscription is scoped to.
+enum SubscriptionScope {
+  CATEGORY
+  SUBURB
+  ALL
+}
+
+// ─────────────────────── module 1 & 2: identity ───────────────────────
+
+/// FR1–FR12. Authentication, profile and access control.
+model User {
+  id            String    @id @default(cuid())
+  /// FR3 — duplicate registration is prevented by the database, not only by
+  /// application logic, so a race between two requests cannot create two rows.
+  email         String    @unique
+  /// FR8 (Rule 6.2) — bcrypt digest. The plaintext never reaches this column.
+  passwordHash  String
+  fullName      String
+  organisation  String?
+  phone         String?
+  role          Role      @default(RESIDENT)
+  /// FR2 — set once the emailed link has been followed.
+  emailVerified DateTime?
+  lastLoginAt   DateTime?
+  /// FR12 — soft deletion keeps the audit trail intact after a deletion request.
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  verificationTokens EmailVerificationToken[]
+  passwordResets     PasswordResetToken[]
+  notificationPrefs  NotificationPreference?
+  deletionRequest    AccountDeletionRequest?
+  checks             ScamCheck[]
+  reports            Report[]                 @relation("ReportAuthor")
+  assignedReports    Report[]                 @relation("ReportReviewer")
+  reviews            ReportReview[]
+  infoRequests       InformationRequest[]
+  evidenceAccesses   EvidenceAccessLog[]
+  alertsAuthored     Alert[]                  @relation("AlertAuthor")
+  alertsApproved     Alert[]                  @relation("AlertApprover")
+  notifications      Notification[]
+  subscriptions      Subscription[]
+  recoveryProgress   RecoveryProgress[]
+  auditEntries       AuditLog[]
+
+  @@index([role])
+  @@index([deletedAt])
+}
+
+/// FR2 — single-use email verification token.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  /// Stored hashed: a leaked table must not yield usable links.
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// FR6 — single-use password recovery token.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// FR11 — how the user wants to be contacted.
+model NotificationPreference {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  emailOnStatus  Boolean  @default(true)
+  emailOnAlerts  Boolean  @default(true)
+  emailOnRequest Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// FR12, Compliance 29 — a deletion request is a reviewable record, not an
+/// immediate drop, so the obligation and its discharge are both evidenced.
+model AccountDeletionRequest {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  reason      String?
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────── reference data ───────────────────────
+
+/// FR69 — administrator-managed scam categories.
+model ScamCategory {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  reports Report[]
+  alerts  Alert[]
+  subs    Subscription[]
+}
+
+/// Suburbs of the municipality. FR65 regional subscriptions and the scam map
+/// aggregate to this level and no finer, so a report cannot be traced to a
+/// street or a household.
+model Suburb {
+  id       String @id @default(cuid())
+  name     String @unique
+  postcode String
+
+  reports Report[]
+  alerts  Alert[]
+  subs    Subscription[]
+
+  @@index([postcode])
+}
+
+// ─────────────── module 3 & 4: content and indicator analysis ───────────────
+
+/// FR13–FR18. One submission to the checker and the result it produced.
+///
+/// Retained even when anonymous (`userId` null) because FR70's statistics and
+/// FR24's matching both depend on the corpus. No account is required to check
+/// something, which is a deliberate part of the service design.
+model ScamCheck {
+  id         String   @id @default(cuid())
+  userId     String?
+  channel    Channel
+  /// The submitted content, as supplied.
+  content    String
+  /// FR16 — 0-100.
+  score      Int
+  /// FR17.
+  band       RiskBand
+  /// 0-1. How much signal the submission carried; stored beside the score
+  /// because the two answer different questions.
+  confidence Float
+  createdAt  DateTime @default(now())
+
+  user       User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  indicators ScamCheckIndicator[]
+
+  @@index([userId])
+  @@index([band])
+  @@index([createdAt])
+}
+
+/// FR18 — the reasons behind a score, retained so a result stays explainable
+/// after the fact (Rule 8.3).
+model ScamCheckIndicator {
+  id       String          @id @default(cuid())
+  checkId  String
+  /// Rule identifier, e.g. "urgency" or "url-lookalike".
+  ruleId   String
+  label    String
+  detail   String
+  weight   IndicatorWeight
+  /// The fragment of the submission that triggered the rule.
+  evidence String?
+
+  check ScamCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  @@index([checkId])
+  @@index([ruleId])
+}
+
+/// FR21, FR24, FR45–FR47. The registry of artefacts seen across the service.
+///
+/// Normalised out of Report so the same domain reported fifty times is one row
+/// with a count, which is what makes "has this been reported before?" a lookup
+/// rather than a scan.
+model Indicator {
+  id         String        @id @default(cuid())
+  type       IndicatorType
+  /// Normalised form: lower-cased host, digits-only phone, trimmed address.
+  value      String
+  reportCount Int          @default(0)
+  firstSeenAt DateTime     @default(now())
+  lastSeenAt  DateTime     @default(now())
+
+  reports ReportIndicator[]
+
+  @@unique([type, value])
+  @@index([type])
+}
+
+// ─────────────── module 5 & 6: reports and evidence ───────────────
+
+/// FR25–FR30. A scam reported to Council.
+model Report {
+  id          String       @id @default(cuid())
+  /// FR28 — human-quotable reference, e.g. "HCC-2408-114". Unique so it can be
+  /// used to look a report up on its own.
+  reference   String       @unique
+  authorId    String?
+  categoryId  String?
+  suburbId    String?
+  channel     Channel
+  status      ReportStatus @default(DRAFT)
+  /// FR40 — set by a reviewer, distinct from the automated score.
+  severity    Severity?
+  title       String
+  description String
+  /// Money lost, in whole cents to avoid floating point on currency.
+  amountLostCents Int?
+  occurredAt  DateTime?
+  submittedAt DateTime?
+  /// FR30 — withdrawal is a state, not a deletion.
+  withdrawnAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  /// FR38 — the officer currently responsible.
+  reviewerId String?
+
+  author     User?             @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewer   User?             @relation("ReportReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  category   ScamCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  suburb     Suburb?           @relation(fields: [suburbId], references: [id], onDelete: SetNull)
+  indicators ReportIndicator[]
+  evidence   Evidence[]
+  reviews    ReportReview[]
+  infoRequests InformationRequest[]
+  alerts     Alert[]
+
+  /// FR48 — self-relation, expressed from both ends so either side can be
+  /// queried without a union.
+  relationsFrom ReportRelation[] @relation("RelationSource")
+  relationsTo   ReportRelation[] @relation("RelationTarget")
+
+  @@index([status])
+  @@index([authorId])
+  @@index([reviewerId])
+  @@index([categoryId])
+  @@index([suburbId])
+  @@index([submittedAt])
+}
+
+/// Join between a report and an artefact it names. FR44–FR47 comparisons run
+/// over this table.
+model ReportIndicator {
+  reportId    String
+  indicatorId String
+
+  report    Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  indicator Indicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@id([reportId, indicatorId])
+  @@index([indicatorId])
+}
+
+/// FR43, FR48 — a link between two reports.
+model ReportRelation {
+  id        String       @id @default(cuid())
+  sourceId  String
+  targetId  String
+  kind      RelationKind
+  /// 0-1 where the link was found by similarity rather than asserted.
+  similarity Float?
+  createdAt DateTime     @default(now())
+
+  source Report @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Report @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  /// A pair may only be linked once in a given direction.
+  @@unique([sourceId, targetId])
+  @@index([targetId])
+}
+
+/// FR31–FR36. A file attached to a report.
+///
+/// The binary is not stored here; `storageKey` points at object storage. The
+/// row carries the metadata needed to validate, restrict and audit access.
+model Evidence {
+  id          String    @id @default(cuid())
+  reportId    String
+  /// FR34.
+  description String?
+  originalName String
+  /// FR32 — validated server-side, never trusted from the client.
+  mimeType    String
+  /// FR33 — bytes.
+  sizeBytes   Int
+  /// Checksum, so a stored file can be shown to be the one that was uploaded.
+  sha256      String
+  storageKey  String    @unique
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  report     Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  accessLogs EvidenceAccessLog[]
+
+  @@index([reportId])
+}
+
+/// FR35, FR36 — every read of a piece of evidence is recorded. Append-only:
+/// there is no update or delete path for this table in the application.
+model EvidenceAccessLog {
+  id         String   @id @default(cuid())
+  evidenceId String
+  userId     String?
+  action     String
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([evidenceId])
+  @@index([userId])
+}
+
+// ─────────────── module 7: review and verification ───────────────
+
+/// FR37–FR42. A reviewer's decision on a report, kept as a sequence of records
+/// rather than fields on Report so the history of a decision survives the next
+/// one (Rule 8.4 — administrative action stays reviewable).
+model ReportReview {
+  id         String       @id @default(cuid())
+  reportId   String
+  reviewerId String?
+  /// The status the reviewer moved the report to.
+  decision   ReportStatus
+  severity   Severity?
+  notes      String?
+  createdAt  DateTime     @default(now())
+
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reviewer User?  @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([reportId])
+  @@index([reviewerId])
+}
+
+/// FR41 — a reviewer asking the reporter for more detail.
+model InformationRequest {
+  id          String    @id @default(cuid())
+  reportId    String
+  requestedById String?
+  message     String
+  respondedAt DateTime?
+  response    String?
+  createdAt   DateTime  @default(now())
+
+  report      Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  requestedBy User?  @relation(fields: [requestedById], references: [id], onDelete: SetNull)
+
+  @@index([reportId])
+}
+
+// ─────────────── module 9: community alerts ───────────────
+
+/// FR49–FR54. What the public sees.
+///
+/// `sourceReportId` is nullable and deliberately severable: FR50 requires the
+/// published alert to carry nothing identifying the reporter, so an alert can
+/// outlive the report it came from without dragging that link behind it.
+model Alert {
+  id          String      @id @default(cuid())
+  reference   String      @unique
+  sourceReportId String?
+  categoryId  String?
+  suburbId    String?
+  channel     Channel
+  status      AlertStatus @default(DRAFT)
+  severity    Severity
+  headline    String
+  /// The reported wording, de-identified before it reaches this column.
+  specimen    String?
+  summary     String
+  authorId    String?
+  approvedById String?
+  publishedAt DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  sourceReport Report?       @relation(fields: [sourceReportId], references: [id], onDelete: SetNull)
+  category     ScamCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  suburb       Suburb?       @relation(fields: [suburbId], references: [id], onDelete: SetNull)
+  author       User?         @relation("AlertAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  approvedBy   User?         @relation("AlertApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([publishedAt])
+  @@index([categoryId])
+  @@index([suburbId])
+}
+
+// ─────────────── module 10: awareness and recovery ───────────────
+
+/// FR55–FR57, FR59.
+model AwarenessResource {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  category    String
+  summary     String
+  body        String
+  readingTime String
+  /// FR54-style archiving rather than deletion, so a link that was published
+  /// does not simply 404.
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([category])
+}
+
+/// FR58 — an ordered checklist for someone who has been scammed.
+model RecoveryChecklist {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  situation String
+  createdAt DateTime @default(now())
+
+  steps RecoveryStep[]
+}
+
+model RecoveryStep {
+  id          String @id @default(cuid())
+  checklistId String
+  /// 1-based display order.
+  position    Int
+  title       String
+  detail      String
+
+  checklist RecoveryChecklist  @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  progress  RecoveryProgress[]
+
+  @@unique([checklistId, position])
+  @@index([checklistId])
+}
+
+/// FR60 — which steps a given user has completed.
+model RecoveryProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  stepId      String
+  completedAt DateTime @default(now())
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  step RecoveryStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stepId])
+  @@index([userId])
+}
+
+// ─────────────── module 11: notification and subscription ───────────────
+
+/// FR61–FR63.
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  kind      NotificationKind
+  title     String
+  body      String
+  /// Where the notification points, if anywhere.
+  linkPath  String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+/// FR64–FR66. A subscription is scoped to a category, a suburb, or everything.
+///
+/// `unsubscribeTokenHash` lets FR66 work from an emailed link without a login,
+/// which is what makes unsubscribing genuinely one click.
+model Subscription {
+  id         String            @id @default(cuid())
+  userId     String?
+  /// Held for subscribers who never created an account.
+  email      String
+  scope      SubscriptionScope
+  categoryId String?
+  suburbId   String?
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  unsubscribeTokenHash String @unique
+  createdAt  DateTime          @default(now())
+
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  category ScamCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  suburb   Suburb?       @relation(fields: [suburbId], references: [id], onDelete: Cascade)
+
+  /// One subscription per address per scope target.
+  @@unique([email, scope, categoryId, suburbId])
+  @@index([userId])
+}
+
+// ─────────────── module 12: administration and audit ───────────────
+
+/// FR72, Rule 17 — append-only record of consequential actions.
+///
+/// `userId` is nullable and severs on delete so that erasing an account cannot
+/// erase the evidence that an administrative action took place.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  /// Structured detail. Must never contain credentials or tokens (Rule 6.7).
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en-AU" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
+    <title>CyberKent — Hume City Council CyberSafe Services</title>
+    <meta
+      name="description"
+      content="Check a suspicious message, link, phone number or email, report a scam to Hume City Council, and follow community scam alerts across the municipality."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Applies the stored theme before first paint so the page never flashes
+      // the wrong scheme. Mirrors the logic in src/theme/ThemeProvider.tsx.
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("cyberkent-theme");
+          var system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          var resolved = stored === "light" || stored === "dark" ? stored : system;
+          document.documentElement.classList.toggle("dark", resolved === "dark");
+        } catch (error) {
+          void error; // Storage can be blocked; the dark default in <html> stands.
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
