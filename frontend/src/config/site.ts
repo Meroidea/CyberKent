@@ -29,6 +29,7 @@ export const ROUTES = {
   scamMap: "/map",
   learn: "/learn",
   recover: "/recover",
+  documents: "/documents",
   signIn: "/sign-in",
   register: "/register",
   privacy: "/privacy",
@@ -56,6 +57,11 @@ export interface NavResource extends NavLink {
   icon: "scan" | "flag" | "bell" | "map" | "book";
 }
 
+/**
+ * Top-level navigation links. These are in-page anchors on the landing page;
+ * the `Documents` and `Services` dropdowns are rendered separately by the
+ * header from `components/layout/navMenus`.
+ */
 export const PRIMARY_NAV: NavLink[] = [
   { label: "Detect", href: `#${SECTION_IDS.detect}` },
   { label: "How it works", href: `#${SECTION_IDS.how}` },

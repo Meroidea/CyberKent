@@ -1,0 +1,128 @@
+{
+  "$comment": "The one document register. Read by src/content/documents.ts for the app (page cards and the Documents dropdown) and by scripts/build-documents.mjs for the published reader pages. Held as data rather than in the TypeScript module because the build script runs in plain Node and cannot import TypeScript — and a second copy of version, date and status is exactly the duplication Rule 1.3 rules out. The `build` key is the only build-time concern: `source` names the Markdown in Documents/ to render, `copy` names a file already in its final format.",
+  "documents": [
+    {
+      "id": "project-requirements",
+      "title": "Project Requirements",
+      "icon": "requirements",
+      "navDescription": "The client brief and all 72 functional requirements.",
+      "summary": "What the system must do, as commissioned by Hume City Council: the fourteen system modules, all 72 functional requirements across twelve modules, the non-functional requirements and the ethical requirements.",
+      "contents": [
+        "The client brief and project background",
+        "System modules and functional requirements FR1–FR72",
+        "Non-functional requirements — performance, security, usability, compliance",
+        "Ethical requirements governing how results may be presented"
+      ],
+      "href": "/documents/project-requirements",
+      "format": "Web page",
+      "version": "1.0",
+      "date": "2026-07-16",
+      "status": "Published",
+      "build": {
+        "source": "Requirements.md",
+        "subtitle": "The client brief, module breakdown and requirements baseline"
+      }
+    },
+    {
+      "id": "architecture-and-system-design",
+      "title": "Project Architecture and System Design",
+      "icon": "architecture",
+      "navDescription": "How the system is built, layer by layer.",
+      "summary": "How the system is built: a modular monolith with service-oriented boundaries, the layered security pipeline, the processing pipelines, the AI gateway boundary and a four-phase scalability roadmap — with the technology selection and the UI design system appended in full.",
+      "contents": [
+        "Architectural principles and the high-level design",
+        "Frontend, API, business, database and AI intelligence layers",
+        "Request flow, security architecture and evidence pipeline",
+        "Scalability, reliability and deployment topology",
+        "Appendix — the complete technology stack and its justification",
+        "Appendix — the UI and UX design system"
+      ],
+      "href": "/documents/architecture-and-system-design",
+      "format": "Web page",
+      "reference": "D3",
+      "version": "1.0",
+      "date": "2026-07-12",
+      "status": "Published",
+      "build": {
+        "source": "System-Architecture.md",
+        "subtitle": "Layered architecture, processing pipelines, security design and scalability roadmap",
+        "appendices": [
+          { "source": "TechStack.md", "heading": "Appendix — Technology stack" },
+          { "source": "UI-Design.md", "heading": "Appendix — UI and UX design system" }
+        ]
+      }
+    },
+    {
+      "id": "interim-project-report",
+      "title": "Interim Project Report",
+      "icon": "interim",
+      "navDescription": "Charter, feasibility, risks and the ethics register.",
+      "summary": "The interim submission: project charter, problem statement, stakeholder register, feasibility study, milestone schedule, risk register, communication plan and the database ethics register that governs how personal data is handled.",
+      "contents": [
+        "Project charter, background and problem statement",
+        "Scope, deliverables, milestones and schedule",
+        "Financial analysis and the six-dimension feasibility study",
+        "Risk register and communication management plan",
+        "Ethical risks in database design and their mitigations"
+      ],
+      "href": "/documents/interim-project-report.pdf",
+      "format": "PDF",
+      "reference": "D6",
+      "version": "1.0",
+      "date": "2026-08-01",
+      "status": "Published",
+      "build": {
+        "copy": "CyberKent-Interim-Project-Report.pdf"
+      }
+    },
+    {
+      "id": "final-srs-report",
+      "title": "Final SRS Report",
+      "icon": "srs",
+      "navDescription": "The authoritative requirements specification.",
+      "summary": "The authoritative specification. Every baseline requirement with a testable acceptance criterion, twenty enhanced requirements proposed for approval, a clause-by-clause conformance check against the client brief, the use-case model, the audited ethical position and the honest delivery status.",
+      "contents": [
+        "Conformance check against the client brief, including four specification defects found",
+        "Functional requirements FR1–FR72 with acceptance criteria and build status",
+        "Enhanced requirements FR73–FR92, presented separately for approval",
+        "Use-case model, interfaces and the complete non-functional requirements",
+        "Ethical requirements and the audited database ethics register",
+        "Hardware and software recommendations, verification results and known gaps"
+      ],
+      "href": "/documents/final-srs-report",
+      "format": "Web page",
+      "reference": "D11",
+      "version": "1.0",
+      "date": "2026-08-13",
+      "status": "Published",
+      "build": {
+        "source": "Final-SRS-Report.md",
+        "subtitle": "The authoritative software requirements specification, version 1.0"
+      }
+    },
+    {
+      "id": "project-features-and-deliverables",
+      "title": "Project Features and Deliverables",
+      "icon": "features",
+      "navDescription": "What the service does and what is being delivered.",
+      "summary": "The plain-language summary: what the service does for the community and for Council, the twelve functional modules, the enhanced features proposed, every deliverable and milestone, and where the project has actually got to.",
+      "contents": [
+        "What the service does, and the problem it addresses",
+        "Features for the community — check, report, stay informed, recover",
+        "Features for Council — review, alert, administer, analyse",
+        "The twelve modules and the enhanced features proposed",
+        "Deliverables, delivery schedule and current status",
+        "How the service is held to account, and its accessibility commitments"
+      ],
+      "href": "/documents/project-features-and-deliverables",
+      "format": "Web page",
+      "version": "1.0",
+      "date": "2026-08-13",
+      "status": "Published",
+      "build": {
+        "source": "Project-Features-and-Deliverables.md",
+        "subtitle": "What the service does, what is being delivered, and how far along it is"
+      }
+    }
+  ]
+}

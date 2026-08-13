@@ -4,7 +4,8 @@ import { Menu } from "lucide-react";
 import { PRIMARY_NAV, ROUTES } from "@/config/site";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { MobileMenu } from "@/components/layout/MobileMenu";
-import { ResourcesMenu } from "@/components/layout/ResourcesMenu";
+import { NavDropdown } from "@/components/layout/NavDropdown";
+import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { useScrollThreshold } from "@/hooks/useScrollThreshold";
@@ -60,7 +61,8 @@ export function SiteHeader() {
               </a>
             ))}
 
-            <ResourcesMenu />
+            <NavDropdown label="Documents" items={DOCUMENT_MENU} />
+            <NavDropdown label="Services" items={SERVICE_MENU} />
           </nav>
 
           <div className="flex items-center gap-3">

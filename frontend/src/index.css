@@ -184,6 +184,61 @@
   }
 
   /**
+   * Frosted variant, for panels that sit still.
+   *
+   * `.liquid-glass` holds its blur at 16px because the cards that use it move
+   * continuously and `backdrop-filter` is recomputed every frame per element.
+   * A navigation panel is open, still, and on screen for a second or two, so it
+   * can afford the blur that actually reads as frost — enough that the page
+   * behind resolves to colour and shape rather than to text competing with the
+   * menu for the eye.
+   *
+   * The brightness lift is what separates frosted glass from tinted plastic:
+   * frost scatters light forward, so what is behind it comes back paler as well
+   * as softer. In dark mode it goes the other way, for the same reason.
+   */
+  .liquid-glass-frost {
+    -webkit-backdrop-filter: blur(30px) saturate(190%) brightness(1.1);
+    backdrop-filter: blur(30px) saturate(190%) brightness(1.1);
+    background: linear-gradient(140deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.7));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      inset 0 -1px 0 rgb(255 255 255 / 0.4),
+      0 18px 48px rgb(15 23 42 / 0.16);
+  }
+
+  /*
+   * In dark mode the film is smoked rather than white. A translucent *white*
+   * film over a dark page raises the panel's own background toward the colour
+   * of its text, and a menu whose labels sit on a headline showing through is
+   * a menu that cannot be read — which is the one thing the panel exists to be.
+   */
+  .dark .liquid-glass-frost {
+    -webkit-backdrop-filter: blur(30px) saturate(160%) brightness(0.6);
+    backdrop-filter: blur(30px) saturate(160%) brightness(0.6);
+    border-color: rgb(255 255 255 / 0.14);
+    background: linear-gradient(140deg, rgb(24 24 27 / 0.74), rgb(12 12 14 / 0.62));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      inset 0 -1px 0 rgb(255 255 255 / 0.05),
+      0 20px 52px rgb(0 0 0 / 0.6);
+  }
+
+  /*
+   * A browser without `backdrop-filter` gets no blur, and a 78%-opaque panel
+   * over live text is unreadable. There, the panel goes opaque instead.
+   */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .liquid-glass-frost {
+      background: rgb(255 255 255 / 0.97);
+    }
+
+    .dark .liquid-glass-frost {
+      background: rgb(17 17 17 / 0.97);
+    }
+  }
+
+  /**
    * The two live zones of a decrypting headline.
    *
    * The cipher sits back in the accent at low contrast so it reads as substrate

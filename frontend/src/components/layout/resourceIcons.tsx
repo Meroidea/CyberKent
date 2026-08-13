@@ -1,5 +1,18 @@
-import { Bell, BookOpen, Flag, MapPinned, ScanSearch, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  BookOpen,
+  ClipboardList,
+  FileCheck2,
+  Flag,
+  Layers,
+  ListChecks,
+  MapPinned,
+  ScanSearch,
+  ScrollText,
+  type LucideIcon,
+} from "lucide-react";
 import type { NavResource } from "@/config/site";
+import type { DocumentIcon } from "@/content/documents";
 
 /** Maps the icon keys held in config to concrete components. */
 export const RESOURCE_ICONS: Record<NavResource["icon"], LucideIcon> = {
@@ -8,4 +21,13 @@ export const RESOURCE_ICONS: Record<NavResource["icon"], LucideIcon> = {
   bell: Bell,
   map: MapPinned,
   book: BookOpen,
+};
+
+/** The same arrangement for the published project documents. */
+export const DOCUMENT_ICONS: Record<DocumentIcon, LucideIcon> = {
+  requirements: ClipboardList,
+  architecture: Layers,
+  interim: ScrollText,
+  srs: FileCheck2,
+  features: ListChecks,
 };

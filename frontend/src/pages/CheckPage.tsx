@@ -1,11 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Loader2, ScanSearch, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { analyse } from "@/lib/scam/analyse";
 import type { Analysis, Channel, RiskBand } from "@/lib/scam/types";
 import { ROUTES } from "@/config/site";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Pill } from "@/components/ui/Pill";
+import { ScanOverlay, SCAN_DURATION_MS } from "@/components/check/ScanOverlay";
+import { HAS_WEBGL, ScanGlobe } from "@/components/globe/ScanGlobe";
 import { fadeUp } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 
@@ -108,7 +110,16 @@ export function CheckPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const prefersReducedMotion = useReducedMotion();
   const canSubmit = useMemo(() => text.trim().length > 0, [text]);
+
+  /*
+   * The globe takeover is the wait. Where it cannot run — no WebGL, or a
+   * reader who has asked for less motion — there is nothing to watch, so the
+   * hold collapses back to the original short beat rather than becoming a
+   * blank three seconds.
+   */
+  const takeover = HAS_WEBGL && !prefersReducedMotion;
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -127,10 +138,13 @@ export function CheckPage() {
      * though nothing was examined, and the result is more likely to be trusted
      * than considered.
      */
-    window.setTimeout(() => {
-      setAnalysis(analyse({ text, channel }));
-      setPending(false);
-    }, 450);
+    window.setTimeout(
+      () => {
+        setAnalysis(analyse({ text, channel }));
+        setPending(false);
+      },
+      takeover ? SCAN_DURATION_MS : 450,
+    );
   };
 
   const style = analysis ? BAND_STYLES[analysis.band] : null;
@@ -220,9 +234,44 @@ export function CheckPage() {
           </form>
 
           {/* Results. `aria-live` so a screen reader hears the verdict arrive. */}
-          <div aria-live="polite" className="min-h-[12rem]">
+          <div aria-live="polite" className="min-h-[26rem]">
             <AnimatePresence mode="wait">
-              {analysis && style ? (
+              {!analysis || !style ? (
+                /*
+                 * The column would otherwise sit empty until a first result.
+                 * The globe fills it with the thing the check is actually
+                 * about — traffic arriving here from everywhere — and the same
+                 * component scales up into the takeover on submit, so the two
+                 * states read as one object rather than two animations.
+                 */
+                <motion.div
+                  key="idle"
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.3 } }}
+                  className="flex h-full min-h-[26rem] flex-col items-center justify-center gap-4"
+                >
+                  {/*
+                   * No surface behind it deliberately. A glass panel would put
+                   * the globe inside a window; unframed it sits in the page's
+                   * own space, which is the only way a sphere reads as an
+                   * object rather than an illustration of one.
+                   */}
+                  <ScanGlobe className="h-[22rem] w-full" />
+
+                  <div className="flex max-w-sm flex-col gap-2 px-2 text-center">
+                    <p className="font-mono text-caption uppercase tracking-[0.2em] text-indigo-600 dark:text-cyan-400">
+                      Awaiting a message
+                    </p>
+                    <p className="text-copy text-slate-600 dark:text-slate-400">
+                      Scam traffic reaches Hume from everywhere and through every
+                      channel. Paste what you were sent and the indicators in it
+                      are checked here, on this device.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
                 <motion.div
                   key={`${analysis.score}-${analysis.indicators.length}`}
                   variants={fadeUp}
@@ -304,11 +353,13 @@ export function CheckPage() {
                     Report this to Council
                   </ActionLink>
                 </motion.div>
-              ) : null}
+              )}
             </AnimatePresence>
           </div>
         </div>
       </div>
+
+      <ScanOverlay active={pending && takeover} />
     </section>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { ChevronDown, X } from "lucide-react";
-import { NAV_RESOURCES, PRIMARY_NAV, ROUTES } from "@/config/site";
-import { RESOURCE_ICONS } from "@/components/layout/resourceIcons";
+import { PRIMARY_NAV, ROUTES } from "@/config/site";
+import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
+import type { NavDropdownItem } from "@/components/layout/NavDropdown";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { springSoft } from "@/lib/motion";
@@ -34,9 +35,17 @@ const rowVariants: Variants = {
   exit: { opacity: 0, y: 8 },
 };
 
+/** The collapsible menus, in the order the header shows them. */
+const MENUS: { label: string; items: NavDropdownItem[] }[] = [
+  { label: "Documents", items: DOCUMENT_MENU },
+  { label: "Services", items: SERVICE_MENU },
+];
+
 /** Full-screen navigation for small viewports and for the scrolled state. */
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
-  const [servicesOpen, setServicesOpen] = useState(false);
+  /* Which menu is expanded, by label. One at a time: two open menus on a phone
+     push the calls to action off the bottom of the card. */
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -110,51 +119,53 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                 </motion.a>
               ))}
 
-              <motion.div variants={rowVariants}>
-                <button
-                  type="button"
-                  aria-expanded={servicesOpen}
-                  onClick={() => setServicesOpen((value) => !value)}
-                  className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-base font-medium text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
-                >
-                  Services
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-200 ${servicesOpen ? "rotate-180" : ""}`}
-                    aria-hidden="true"
-                  />
-                </button>
+              {MENUS.map((menu) => {
+                const isOpen = expanded === menu.label;
 
-                <AnimatePresence initial={false}>
-                  {servicesOpen ? (
-                    <motion.ul
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
+                return (
+                  <motion.div key={menu.label} variants={rowVariants}>
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      onClick={() => setExpanded(isOpen ? null : menu.label)}
+                      className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-base font-medium text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
                     >
-                      {NAV_RESOURCES.map((resource) => {
-                        const Icon = RESOURCE_ICONS[resource.icon];
+                      {menu.label}
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
 
-                        return (
-                          <li key={resource.href}>
-                            <a
-                              href={resource.href}
-                              onClick={onClose}
-                              className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-slate-600 transition-colors duration-200 hover:bg-indigo-50 dark:text-slate-300 dark:hover:bg-white/5"
-                            >
-                              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-cyan-500 text-white dark:from-indigo-500 dark:to-cyan-400">
-                                <Icon className="h-4 w-4" aria-hidden="true" />
-                              </span>
-                              {resource.label}
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </motion.ul>
-                  ) : null}
-                </AnimatePresence>
-              </motion.div>
+                    <AnimatePresence initial={false}>
+                      {isOpen ? (
+                        <motion.ul
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          {menu.items.map((item) => (
+                            <li key={item.href}>
+                              <a
+                                href={item.href}
+                                onClick={onClose}
+                                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-slate-600 transition-colors duration-200 hover:bg-indigo-50 dark:text-slate-300 dark:hover:bg-white/5"
+                              >
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-cyan-500 text-white dark:from-indigo-500 dark:to-cyan-400">
+                                  <item.Icon className="h-4 w-4" aria-hidden="true" />
+                                </span>
+                                {item.label}
+                              </a>
+                            </li>
+                          ))}
+                        </motion.ul>
+                      ) : null}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
             </nav>
 
             <motion.div variants={rowVariants} className="mt-6 flex flex-col gap-3">

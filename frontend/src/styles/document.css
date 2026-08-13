@@ -1,0 +1,842 @@
+/**
+ * The published-document reader.
+ *
+ * Everything here styles HTML that React did not write: the document body is
+ * built from Markdown at build time and injected, so it cannot carry utility
+ * classes and has to be reached through element selectors under one scope.
+ * That scope is `.doc-prose`, and nothing in this file applies outside it.
+ *
+ * Colours are declared as local custom properties rather than by repeating
+ * `.dark` on every rule, so a figure and a paragraph re-theme from one place.
+ */
+
+.doc-prose {
+  --doc-heading: #0f172a;
+  --doc-text: #334155;
+  --doc-muted: #64748b;
+  --doc-faint: #94a3b8;
+  --doc-line: rgb(15 23 42 / 0.09);
+  --doc-line-strong: rgb(15 23 42 / 0.16);
+  --doc-surface: rgb(255 255 255 / 0.72);
+  --doc-raised: rgb(255 255 255 / 0.9);
+  --doc-code: rgb(15 23 42 / 0.04);
+  --doc-accent: #4f46e5;
+  --doc-accent-2: #0891b2;
+  --doc-accent-soft: rgb(79 70 229 / 0.07);
+  --doc-shadow: 0 8px 28px rgb(15 23 42 / 0.08);
+
+  /* The status palette. Never the only carrier of meaning — every figure that
+     uses it also prints the status as words (UI-8, WCAG 1.4.1). */
+  --doc-ok: #059669;
+  --doc-warn: #b45309;
+  --doc-idle: #64748b;
+
+  /* Categorical series, for slices and keys. */
+  --tone-0: #4f46e5;
+  --tone-1: #0891b2;
+  --tone-2: #7c3aed;
+  --tone-3: #0d9488;
+  --tone-4: #db2777;
+  --tone-5: #ea580c;
+  --tone-6: #2563eb;
+  --tone-7: #65a30d;
+  --tone-8: #9333ea;
+
+  --doc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color: var(--doc-text);
+}
+
+.dark .doc-prose {
+  --doc-heading: #f8fafc;
+  --doc-text: #cbd5e1;
+  --doc-muted: #94a3b8;
+  --doc-faint: #64748b;
+  --doc-line: rgb(255 255 255 / 0.1);
+  --doc-line-strong: rgb(255 255 255 / 0.2);
+  --doc-surface: rgb(17 17 17 / 0.72);
+  --doc-raised: rgb(24 24 27 / 0.9);
+  --doc-code: rgb(255 255 255 / 0.05);
+  --doc-accent: #22d3ee;
+  --doc-accent-2: #818cf8;
+  --doc-accent-soft: rgb(34 211 238 / 0.1);
+  --doc-shadow: 0 10px 34px rgb(0 0 0 / 0.45);
+
+  --doc-ok: #34d399;
+  --doc-warn: #fbbf24;
+  --doc-idle: #94a3b8;
+
+  --tone-0: #818cf8;
+  --tone-1: #22d3ee;
+  --tone-2: #c084fc;
+  --tone-3: #2dd4bf;
+  --tone-4: #f472b6;
+  --tone-5: #fb923c;
+  --tone-6: #60a5fa;
+  --tone-7: #a3e635;
+  --tone-8: #d8b4fe;
+}
+
+/* ------------------------------------------------------------------ prose */
+
+.doc-prose h1,
+.doc-prose h2,
+.doc-prose h3,
+.doc-prose h4 {
+  font-family: Sora, Inter, ui-sans-serif, sans-serif;
+  color: var(--doc-heading);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  /* Clears the fixed 5rem header plus breathing room. */
+  scroll-margin-top: 7rem;
+  text-align: left;
+}
+
+.doc-prose h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 3.25rem 0 1.1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--doc-line-strong);
+}
+
+.doc-prose h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2.5rem 0 0.85rem;
+}
+
+.doc-prose h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 2rem 0 0.6rem;
+}
+
+.doc-prose h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--doc-muted);
+}
+
+.doc-prose > :first-child {
+  margin-top: 0;
+}
+
+/*
+ * Justified, as specified for these documents.
+ *
+ * `hyphens: auto` is not decoration here: justification without hyphenation
+ * stretches word spacing to open rivers down a 48rem measure, and the browser
+ * needs permission to break a word to avoid it. `inter-word` keeps the stretch
+ * in the spaces rather than between letters.
+ */
+.doc-prose p,
+.doc-prose li {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+.doc-prose p {
+  margin: 0 0 1.15rem;
+  font-size: 1.0125rem;
+  line-height: 1.8;
+}
+
+.doc-prose ul,
+.doc-prose ol {
+  padding-left: 1.35rem;
+  margin: 0 0 1.15rem;
+}
+
+.doc-prose li {
+  margin: 0.3rem 0;
+  line-height: 1.75;
+}
+
+.doc-prose strong {
+  color: var(--doc-heading);
+  font-weight: 600;
+}
+
+.doc-prose a {
+  color: var(--doc-accent);
+  text-underline-offset: 3px;
+}
+
+.doc-prose hr {
+  border: 0;
+  border-top: 1px solid var(--doc-line);
+  margin: 2.75rem 0;
+}
+
+.doc-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.doc-prose blockquote {
+  margin: 1.35rem 0;
+  padding: 0.85rem 1.15rem;
+  border-left: 3px solid var(--doc-accent);
+  background: var(--doc-accent-soft);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--doc-muted);
+}
+
+.doc-prose blockquote p {
+  margin: 0.35rem 0;
+}
+
+.doc-prose code {
+  background: var(--doc-code);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3rem;
+  font-size: 0.875em;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.doc-prose pre {
+  background: var(--doc-code);
+  border: 1px solid var(--doc-line);
+  padding: 1rem 1.15rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.doc-prose pre code {
+  background: none;
+  padding: 0;
+}
+
+/* Wide tables scroll inside their own box so the page never scrolls sideways.
+   The container is focusable so it can also be reached from the keyboard. */
+.doc-prose .table-scroll {
+  overflow-x: auto;
+  margin: 1.35rem 0;
+  border: 1px solid var(--doc-line);
+  border-radius: 0.75rem;
+}
+
+.doc-prose table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 34rem;
+  font-size: 0.875rem;
+}
+
+.doc-prose th,
+.doc-prose td {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--doc-line);
+  vertical-align: top;
+  hyphens: auto;
+}
+
+.doc-prose th {
+  background: var(--doc-accent-soft);
+  color: var(--doc-heading);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doc-prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.doc-prose tbody td:first-child {
+  color: var(--doc-heading);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- figures */
+
+.doc-prose .fig {
+  margin: 2.25rem 0;
+}
+
+.doc-prose .fig-frame {
+  padding: 1.5rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 1rem;
+  background: var(--doc-surface);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--doc-shadow);
+}
+
+.doc-prose .fig-title {
+  margin: 0 0 1.25rem;
+  text-align: left;
+  font-family: Sora, Inter, ui-sans-serif, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--doc-heading);
+}
+
+.doc-prose figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: var(--doc-faint);
+  text-align: left;
+}
+
+.doc-prose .fig-number {
+  color: var(--doc-accent);
+  font-weight: 700;
+  margin-right: 0.4rem;
+}
+
+.doc-prose .fig-unit {
+  margin: 0.85rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--doc-faint);
+  text-align: left;
+}
+
+/*
+ * The reveal contract.
+ *
+ * Every animated part starts in its resting-but-unentered state and moves only
+ * when the reader adds `is-visible`. Written this way round so a figure that
+ * never scrolls into view — or a browser with no observer — still shows the
+ * finished state through the fallback in the reader, rather than an empty
+ * frame that never fills.
+ */
+.doc-prose .fig [style*="--i"] {
+  transition:
+    opacity 0.5s var(--doc-ease),
+    transform 0.5s var(--doc-ease);
+  transition-delay: calc(var(--i) * 60ms);
+}
+
+.doc-prose .fig:not(.is-visible) .stat,
+.doc-prose .fig:not(.is-visible) .layer,
+.doc-prose .fig:not(.is-visible) .grid-card,
+.doc-prose .fig:not(.is-visible) .flow-step,
+.doc-prose .fig:not(.is-visible) .fig-timeline li {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* --- stats */
+
+.doc-prose .fig-stats {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.doc-prose .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 0.75rem;
+  background: var(--doc-raised);
+}
+
+.doc-prose .stat-value {
+  font-family: Sora, Inter, ui-sans-serif, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--doc-accent), var(--doc-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.doc-prose .stat-label {
+  font-size: 0.78125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--doc-heading);
+}
+
+.doc-prose .stat-sub {
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--doc-faint);
+}
+
+/* --- bars */
+
+.doc-prose .fig-bars {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.doc-prose .bar-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 11rem) 1fr 2rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.doc-prose .bar-label {
+  color: var(--doc-muted);
+  line-height: 1.35;
+}
+
+.doc-prose .bar-track {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--doc-code);
+  overflow: hidden;
+}
+
+.doc-prose .bar-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--doc-accent), var(--doc-accent-2));
+  transition: width 0.8s var(--doc-ease);
+  transition-delay: calc(var(--i) * 60ms);
+}
+
+.doc-prose .fig.is-visible .bar-fill {
+  width: var(--value);
+}
+
+.doc-prose .bar-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--doc-heading);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .doc-prose .bar-row {
+    grid-template-columns: 1fr 2rem;
+  }
+
+  .doc-prose .bar-label {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- donut */
+
+.doc-prose .fig-donut {
+  display: grid;
+  gap: 1.25rem;
+  align-items: center;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+}
+
+@media (max-width: 560px) {
+  .doc-prose .fig-donut {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+}
+
+.doc-prose .fig-donut svg {
+  width: 100%;
+  max-width: 11rem;
+}
+
+.doc-prose .donut-track {
+  fill: none;
+  stroke: var(--doc-code);
+  stroke-width: 4.5;
+}
+
+.doc-prose .donut-slice {
+  fill: none;
+  stroke: var(--tone-0);
+  stroke-width: 4.5;
+  stroke-dasharray: 0 100;
+  stroke-dashoffset: var(--offset);
+  transition: stroke-dasharray 0.8s var(--doc-ease);
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+.doc-prose .fig.is-visible .donut-slice {
+  stroke-dasharray: var(--dash) 100;
+}
+
+.doc-prose .donut-total,
+.doc-prose .donut-caption {
+  text-anchor: middle;
+  fill: var(--doc-heading);
+}
+
+.doc-prose .donut-total {
+  font-size: 6px;
+  font-weight: 700;
+}
+
+.doc-prose .donut-caption {
+  font-size: 2.6px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  fill: var(--doc-faint);
+}
+
+.doc-prose .donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.doc-prose .donut-legend li {
+  display: grid;
+  grid-template-columns: 0.6rem 1fr auto;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.doc-prose .donut-legend .key {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 0.2rem;
+  background: var(--tone-0);
+}
+
+.doc-prose .donut-legend .key-label {
+  color: var(--doc-text);
+}
+
+.doc-prose .donut-legend .key-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--doc-faint);
+}
+
+/* --- flow */
+
+.doc-prose .fig-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.doc-prose .flow-step {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 0.65rem;
+  background: var(--doc-raised);
+}
+
+.doc-prose .flow-index {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--doc-accent);
+}
+
+.doc-prose .flow-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--doc-heading);
+}
+
+.doc-prose .flow-note {
+  font-size: 0.6875rem;
+  color: var(--doc-faint);
+}
+
+.doc-prose .flow-arrow {
+  display: flex;
+  justify-content: center;
+  color: var(--doc-accent);
+  opacity: 0.55;
+}
+
+.doc-prose .flow-arrow svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* --- layers */
+
+.doc-prose .fig-layers {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.doc-prose .layer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.85rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--doc-line);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0.55rem;
+  background: linear-gradient(90deg, var(--doc-accent-soft), transparent 65%);
+}
+
+.doc-prose .layer-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--doc-heading);
+  min-width: 9rem;
+}
+
+.doc-prose .layer-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.doc-prose .layer-items span {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 999px;
+  font-size: 0.625rem;
+  color: var(--doc-muted);
+  background: var(--doc-raised);
+}
+
+/* --- grid */
+
+.doc-prose .fig-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+
+.doc-prose .grid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 0.65rem;
+  background: var(--doc-raised);
+}
+
+.doc-prose .grid-index {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--doc-accent);
+}
+
+.doc-prose .grid-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--doc-heading);
+}
+
+.doc-prose .grid-note {
+  font-size: 0.6875rem;
+  color: var(--doc-faint);
+}
+
+/* --- timeline */
+
+.doc-prose .fig-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+}
+
+/* The spine draws itself once the figure is in view. */
+.doc-prose .fig-timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.3rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 1px;
+  background: linear-gradient(180deg, var(--doc-accent), var(--doc-accent-2));
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.9s var(--doc-ease);
+}
+
+.doc-prose .fig.is-visible .fig-timeline::before {
+  transform: scaleY(1);
+}
+
+.doc-prose .fig-timeline li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.75rem;
+  margin: 0;
+  position: relative;
+  text-align: left;
+}
+
+.doc-prose .tl-dot {
+  position: absolute;
+  left: -1.2rem;
+  top: 0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--doc-idle);
+  box-shadow: 0 0 0 3px var(--doc-surface);
+}
+
+.doc-prose .tl-when {
+  grid-column: 1 / -1;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--doc-faint);
+}
+
+.doc-prose .tl-what {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--doc-heading);
+}
+
+.doc-prose .tl-note {
+  grid-column: 1 / -1;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: var(--doc-muted);
+}
+
+.doc-prose .tl-state {
+  align-self: start;
+  white-space: nowrap;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--doc-line-strong);
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--doc-idle);
+}
+
+/* Status colour is applied to the dot and the chip together, and the chip
+   always carries the word as well. */
+.doc-prose .fig-timeline li[data-state*="Complete" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Delivered" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Issued" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Baselined" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Adopted" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Current" i] .tl-dot {
+  background: var(--doc-ok);
+}
+
+.doc-prose .fig-timeline li[data-state*="Complete" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Delivered" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Issued" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Baselined" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Adopted" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Current" i] .tl-state {
+  color: var(--doc-ok);
+  border-color: currentColor;
+}
+
+.doc-prose .fig-timeline li[data-state*="Overdue" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="risk" i] .tl-dot,
+.doc-prose .fig-timeline li[data-state*="Awaiting" i] .tl-dot {
+  background: var(--doc-warn);
+}
+
+.doc-prose .fig-timeline li[data-state*="Overdue" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="risk" i] .tl-state,
+.doc-prose .fig-timeline li[data-state*="Awaiting" i] .tl-state {
+  color: var(--doc-warn);
+  border-color: currentColor;
+}
+
+.doc-prose .fig-timeline li[data-state*="progress" i] .tl-dot {
+  background: var(--doc-accent);
+}
+
+.doc-prose .fig-timeline li[data-state*="progress" i] .tl-state {
+  color: var(--doc-accent);
+  border-color: currentColor;
+}
+
+/* --- the categorical palette, applied by index */
+
+.doc-prose [style*="--tone:0"] .key,
+.doc-prose .donut-slice[style*="--tone:0"] { --tone-current: var(--tone-0); }
+.doc-prose [style*="--tone:1"] .key,
+.doc-prose .donut-slice[style*="--tone:1"] { --tone-current: var(--tone-1); }
+.doc-prose [style*="--tone:2"] .key,
+.doc-prose .donut-slice[style*="--tone:2"] { --tone-current: var(--tone-2); }
+.doc-prose [style*="--tone:3"] .key,
+.doc-prose .donut-slice[style*="--tone:3"] { --tone-current: var(--tone-3); }
+.doc-prose [style*="--tone:4"] .key,
+.doc-prose .donut-slice[style*="--tone:4"] { --tone-current: var(--tone-4); }
+.doc-prose [style*="--tone:5"] .key,
+.doc-prose .donut-slice[style*="--tone:5"] { --tone-current: var(--tone-5); }
+.doc-prose [style*="--tone:6"] .key,
+.doc-prose .donut-slice[style*="--tone:6"] { --tone-current: var(--tone-6); }
+.doc-prose [style*="--tone:7"] .key,
+.doc-prose .donut-slice[style*="--tone:7"] { --tone-current: var(--tone-7); }
+.doc-prose [style*="--tone:8"] .key,
+.doc-prose .donut-slice[style*="--tone:8"] { --tone-current: var(--tone-8); }
+
+.doc-prose .donut-slice { stroke: var(--tone-current, var(--tone-0)); }
+.doc-prose .donut-legend .key { background: var(--tone-current, var(--tone-0)); }
+
+/* ------------------------------------------------------------------ print */
+
+@media print {
+  .doc-prose .fig-frame,
+  .doc-prose .stat,
+  .doc-prose .flow-step,
+  .doc-prose .grid-card {
+    box-shadow: none;
+    background: none;
+  }
+
+  .doc-prose .fig [style*="--i"],
+  .doc-prose .fig .bar-fill,
+  .doc-prose .fig .donut-slice,
+  .doc-prose .fig-timeline::before {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .doc-prose .fig .bar-fill { width: var(--value) !important; }
+  .doc-prose .fig .donut-slice { stroke-dasharray: var(--dash) 100 !important; }
+  .doc-prose .table-scroll { overflow: visible; }
+  .doc-prose table { min-width: 0; }
+  .doc-prose h1,
+  .doc-prose h2 { break-after: avoid; }
+  .doc-prose .fig,
+  .doc-prose pre,
+  .doc-prose blockquote,
+  .doc-prose .table-scroll { break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-prose .fig *,
+  .doc-prose .fig-timeline::before {
+    transition-duration: 0.01ms !important;
+  }
+}

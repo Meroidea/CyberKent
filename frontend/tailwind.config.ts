@@ -25,6 +25,17 @@ const config: Config = {
          */
         short: { raw: "(max-height: 720px)" },
         tall: { raw: "(min-height: 721px)" },
+        /**
+         * The two points at which a document reader gains a rail.
+         *
+         * Named rather than written inline, because they are not general
+         * layout steps: they are the widths at which 14rem, then a further
+         * 17rem, exist *outside* the 48rem measure. The measure never moves,
+         * so the rails cannot be expressed as a fraction of the viewport —
+         * they appear when there is room beside the column, or not at all.
+         */
+        rail: "1180px",
+        rails: "1400px",
       },
       colors: {
         border: "hsl(var(--border))",

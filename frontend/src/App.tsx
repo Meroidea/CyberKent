@@ -7,6 +7,8 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { LandingPage } from "@/pages/LandingPage";
 import { CheckPage } from "@/pages/CheckPage";
+import { DocumentsPage } from "@/pages/DocumentsPage";
+import { DocumentPage } from "@/pages/DocumentPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { ROUTES } from "@/config/site";
@@ -168,6 +170,10 @@ export default function App() {
               <Routes>
                 <Route path={ROUTES.home} element={<LandingPage />} />
                 <Route path={ROUTES.checkMessage} element={<CheckPage />} />
+                <Route path={ROUTES.documents} element={<DocumentsPage />} />
+                {/* Each published document reads inside the site, under the
+                    same header and footer as every other page. */}
+                <Route path={`${ROUTES.documents}/:slug`} element={<DocumentPage />} />
 
                 {PLACEHOLDERS.map((page) => (
                   <Route

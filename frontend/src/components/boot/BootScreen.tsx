@@ -59,7 +59,7 @@ export function BootScreen({ visible }: { visible: boolean }) {
             initial={{ opacity: 0, scale: 0.86 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
-            className="w-[min(78vw,26rem)]"
+            className="w-[min(27.3vw,9.1rem)]"
           >
             <JarvisLoader className="h-auto w-full" />
           </motion.div>
