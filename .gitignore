@@ -15,9 +15,14 @@ build/
 .env.local
 .env.*.local
 
-# Runtime data and uploads
-data/
-uploads/
+# Runtime data and uploads.
+# Anchored, and named per service. Unanchored `data/` also matched
+# `frontend/src/data/`, which is source the globe is built from — it was
+# excluded from the commit and the deploy failed on the missing module.
+/data/
+/uploads/
+backend/data/
+backend/uploads/
 
 # Logs
 *.log
