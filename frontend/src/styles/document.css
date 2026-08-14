@@ -88,7 +88,7 @@
   line-height: 1.25;
   letter-spacing: -0.02em;
   /* Clears the fixed 5rem header plus breathing room. */
-  scroll-margin-top: 7rem;
+  scroll-margin-top: 6rem;
   text-align: left;
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, type LucideIcon } from "lucide-react";
-import { springSoft } from "@/lib/motion";
+import { RollingText } from "@/components/ui/RollingText";
+import { UNDERLINE } from "@/components/layout/navMotion";
+import { springSnappy, springSoft } from "@/lib/motion";
 
 export interface NavDropdownItem {
   label: string;
@@ -61,19 +63,33 @@ export function NavDropdown({ label, items }: NavDropdownProps) {
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button
+      {/* The trigger carries the same treatment as a plain nav link — from the
+          row's point of view it is one, and a menu that animated differently
+          from its neighbours would read as a different kind of control. */}
+      <motion.button
         type="button"
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-300 dark:hover:text-cyan-300"
+        initial="rest"
+        animate={open ? "hover" : "rest"}
+        whileHover="hover"
+        whileFocus="hover"
+        className="relative flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-cyan-300"
       >
-        {label}
+        <RollingText text={label} />
         <ChevronDown
-          className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
-      </button>
+
+        <motion.span
+          aria-hidden="true"
+          variants={UNDERLINE}
+          transition={springSnappy}
+          className="absolute inset-x-3 -bottom-0.5 h-[2px] origin-center rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 dark:from-indigo-400 dark:to-cyan-400"
+        />
+      </motion.button>
 
       <AnimatePresence>
         {open ? (

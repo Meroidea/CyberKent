@@ -66,6 +66,9 @@ export function ContentsRail({ entries, active, percent, onNavigate }: ContentsR
       <div
         ref={scroller}
         className="no-scrollbar relative max-h-[calc(100vh-11rem)] overflow-y-auto"
+        /* A long contents list scrolls itself under the pointer rather than
+           taking the page with it. */
+        data-lenis-prevent
       >
         <span
           aria-hidden="true"

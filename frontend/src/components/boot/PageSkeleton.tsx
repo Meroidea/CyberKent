@@ -47,7 +47,7 @@ export function PageSkeleton() {
   return (
     <div aria-hidden="true" className="min-h-viewport pointer-events-none select-none">
       {/* Masthead */}
-      <div className="flex h-20 items-center justify-between px-6 lg:px-10">
+      <div className="flex h-16 items-center justify-between px-6 lg:px-10">
         <Block className="h-7 w-36" />
         <div className="hidden items-center gap-8 lg:flex">
           {Array.from({ length: 5 }, (_, index) => (

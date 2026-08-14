@@ -7,6 +7,8 @@ import { MobileMenu } from "@/components/layout/MobileMenu";
 import { NavDropdown } from "@/components/layout/NavDropdown";
 import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { RollingText } from "@/components/ui/RollingText";
+import { UNDERLINE } from "@/components/layout/navMotion";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { useScrollThreshold } from "@/hooks/useScrollThreshold";
 import { springSnappy } from "@/lib/motion";
@@ -22,7 +24,6 @@ import { springSnappy } from "@/lib/motion";
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const scrolled = useScrollThreshold(100);
-  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
 
   return (
     <>
@@ -30,35 +31,46 @@ export function SiteHeader() {
         animate={scrolled ? { y: -100, opacity: 0 } : { y: 0, opacity: 1 }}
         transition={{ duration: 0.35, ease: "easeInOut" }}
         aria-hidden={scrolled}
-        className={`fixed inset-x-0 top-0 z-50 border-b border-gray-200/70 bg-white/70 backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-[#0A0A0A]/70 ${
+        /*
+         * A lens, not a panel. The landing page's gradient, its letter-glitch
+         * field and every section that passes underneath stay visible through
+         * the bar — blurred, so they read as depth behind the navigation rather
+         * than as competition with it.
+         */
+        className={`liquid-glass-bar fixed inset-x-0 top-0 z-50 border-b border-white/25 transition-colors duration-300 dark:border-white/10 ${
           scrolled ? "pointer-events-none" : ""
         }`}
       >
-        <div className="container flex h-20 items-center justify-between gap-6">
+        <div className="container flex h-16 items-center justify-between gap-6">
           <Wordmark />
 
           <nav
             aria-label="Primary"
             className="hidden items-center gap-1 lg:flex"
-            onMouseLeave={() => setHoveredHref(null)}
           >
             {PRIMARY_NAV.map((link) => (
-              <a
+              <motion.a
                 key={link.href}
                 href={link.href}
-                onMouseEnter={() => setHoveredHref(link.href)}
-                className="relative rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-300 dark:hover:text-cyan-300"
+                initial="rest"
+                animate="rest"
+                whileHover="hover"
+                whileFocus="hover"
+                className="relative px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-cyan-300"
               >
-                {hoveredHref === link.href ? (
-                  <motion.span
-                    layoutId="navbar-hover"
-                    aria-hidden="true"
-                    className="absolute inset-0 rounded-full bg-indigo-50 dark:bg-white/5"
-                    transition={springSnappy}
-                  />
-                ) : null}
-                <span className="relative">{link.label}</span>
-              </a>
+                <RollingText text={link.label} />
+
+                {/* Sweeps out from the centre under the word it belongs to,
+                    rather than the shared pill that used to slide between
+                    links — the underline commits to one item, which is what a
+                    pointer travelling along a row of them needs it to do. */}
+                <motion.span
+                  aria-hidden="true"
+                  variants={UNDERLINE}
+                  transition={springSnappy}
+                  className="absolute inset-x-3 -bottom-0.5 h-[2px] origin-center rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 dark:from-indigo-400 dark:to-cyan-400"
+                />
+              </motion.a>
             ))}
 
             <NavDropdown label="Documents" items={DOCUMENT_MENU} />
@@ -67,7 +79,10 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle className="hidden sm:flex" />
-            <ActionLink href={ROUTES.reportScam} className="hidden px-5 py-2.5 md:inline-flex">
+            <ActionLink
+              href={ROUTES.reportScam}
+              className="hidden px-5 py-2.5 text-xs font-bold uppercase tracking-[0.14em] md:inline-flex"
+            >
               Report a scam
             </ActionLink>
             <button

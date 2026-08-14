@@ -1,3 +1,5 @@
+@import "lenis/dist/lenis.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,17 +55,30 @@
     @apply border-border;
   }
 
+  /*
+   * Native smooth scrolling is the fallback, not the mechanism.
+   *
+   * It is what carries a hash in the address bar on a cold load, before any
+   * script has run. Once Lenis is smoothing the page it must be off: two
+   * easings driving one scroll position pull against each other, and the result
+   * reads as the stutter smooth scrolling was meant to remove.
+   */
   html {
     scroll-behavior: smooth;
+  }
+
+  html.lenis {
+    scroll-behavior: auto;
   }
 
   body {
     @apply bg-slate-50 font-sans text-slate-700 antialiased transition-colors duration-300 dark:bg-[#0A0A0A] dark:text-slate-300;
   }
 
-  /* Hash links must clear the fixed header. */
+  /* Hash links must clear the fixed header — `HEADER_CLEARANCE` in
+     `config/layout.ts`, as a length the browser's own jump can use. */
   :target {
-    scroll-margin-top: 8rem;
+    scroll-margin-top: 6rem;
   }
 
   :focus-visible {
@@ -122,6 +137,66 @@
   .min-h-viewport {
     min-height: 100vh;
     min-height: 100svh;
+  }
+
+  /**
+   * Liquid glass, shaped for a full-width bar.
+   *
+   * The same lens as `.liquid-glass` with three differences that the masthead
+   * needs and a card does not. The tint is held far lower — a bar spans the
+   * whole page, so what it covers is not a patch of background but the top of
+   * every section that scrolls under it, and the point is that this stays
+   * visible. The gradient runs top-to-bottom rather than diagonally, because a
+   * 5rem strip has no diagonal to speak of. And the specular rim is only along
+   * the top edge, which is the one a bar pinned to the viewport actually has.
+   *
+   * The blur is what keeps the focus on the navigation: the page reads as
+   * present and moving underneath, but out of focus, so the type in front of it
+   * is the only thing at the top of the screen the eye can resolve.
+   */
+  .liquid-glass-bar {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.14));
+    -webkit-backdrop-filter: blur(18px) saturate(185%);
+    backdrop-filter: blur(18px) saturate(185%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.75),
+      0 1px 24px rgb(15 23 42 / 0.05);
+  }
+
+  .dark .liquid-glass-bar {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.025));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      0 1px 24px rgb(0 0 0 / 0.4);
+  }
+
+  /*
+   * Where the backdrop filter is unavailable the bar has to stop relying on it,
+   * or the type sits on raw page content. The fallback is opaque enough to read
+   * against and is the only state in which the background behind is lost.
+   */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .liquid-glass-bar {
+      background: rgb(255 255 255 / 0.9);
+    }
+
+    .dark .liquid-glass-bar {
+      background: rgb(10 10 10 / 0.9);
+    }
+  }
+
+  /**
+   * Centres a column until it stops fitting, then falls back to the start edge.
+   *
+   * Plain `center` overflows *both* ways, so a hero column one line too tall
+   * for its share of the screen escapes upward as well as down — underneath the
+   * fixed masthead, where its top padding cannot protect it. `safe` keeps the
+   * overflow on the bottom edge only. The unqualified line ahead of it is the
+   * fallback for browsers that drop the keyword.
+   */
+  .justify-center-safe {
+    justify-content: center;
+    justify-content: safe center;
   }
 
   .hero-peek-zone {

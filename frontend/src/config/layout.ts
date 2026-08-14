@@ -15,6 +15,17 @@ export const HERO_PEEK_FRACTION = 0.3;
  */
 
 /**
+ * Space a scroll target is left clear of the fixed masthead.
+ *
+ * The bar itself is 4rem; the remaining 2rem is so a heading lands *under* the
+ * header rather than against it. `:target { scroll-margin-top }` in `index.css`
+ * and the heading offset in `styles/document.css` are the same distance
+ * expressed for the browser's own jump, which is what runs on a cold load with
+ * a hash in the address bar — keep the three in step.
+ */
+export const HEADER_CLEARANCE = 96;
+
+/**
  * Viewport height the console's per-tier rest positions were tuned against.
  *
  * The reserved zone scales with the viewport but the device does not, so a

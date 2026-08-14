@@ -6,11 +6,14 @@ import {
   TEXT_RULES,
   URL_SHORTENERS,
 } from "@/lib/scam/patterns";
+import { analyseMedia } from "@/lib/scam/media";
 import type {
   Analysis,
   Channel,
+  ExaminedSource,
   Indicator,
   IndicatorWeight,
+  MediaDescriptor,
   RiskBand,
   Submission,
 } from "@/lib/scam/types";
@@ -213,10 +216,25 @@ function bandFor(score: number): RiskBand {
  * the score is how scam-like this looks, the confidence is how much of a look
  * we got. A three-word message scoring zero is not the same as a long one.
  */
-function confidenceFor(text: string, indicatorCount: number): number {
+function confidenceFor(
+  text: string,
+  indicatorCount: number,
+  examined: ExaminedSource[],
+): number {
   const lengthSignal = Math.min(1, text.trim().length / 180);
   const indicatorSignal = Math.min(1, indicatorCount / 4);
-  return Math.round((0.45 * lengthSignal + 0.55 * indicatorSignal) * 100) / 100;
+  const base = 0.45 * lengthSignal + 0.55 * indicatorSignal;
+
+  /*
+   * Anything submitted but not read is a hole in the evidence, and the number
+   * that says how good a look we got has to shrink for it. Without this a
+   * voice message the service never listened to would raise confidence simply
+   * by being attached.
+   */
+  const unread = examined.filter((source) => source.status === "not-read").length;
+  const penalty = Math.min(0.4, unread * 0.15);
+
+  return Math.round(base * (1 - penalty) * 100) / 100;
 }
 
 /** Strongest first, so the reason that mattered most is read first. */
@@ -229,16 +247,31 @@ const WEIGHT_ORDER: Record<IndicatorWeight, number> = { high: 0, medium: 1, low:
  * which is what makes the rule set testable and what will let the same code run
  * server-side without change.
  */
-export function analyse({ text, channel }: Submission): Analysis {
-  const trimmed = text.trim();
+export function analyse({ text, channel, media = [] }: Submission): Analysis {
+  const typed = text.trim();
+
+  /*
+   * Text recognised inside an upload is treated as part of the message, not as
+   * a separate class of evidence. A scam screenshotted and a scam pasted are
+   * the same scam, and the rules that catch one have to catch the other.
+   */
+  const readFromMedia = media
+    .map((file) => file.extractedText?.trim() ?? "")
+    .filter((value) => value.length > 0);
+
+  const corpus = [typed, ...readFromMedia].filter((value) => value.length > 0).join("\n\n");
 
   const extracted = {
-    urls: extractUrls(trimmed),
-    emails: extractEmails(trimmed),
-    phones: extractPhones(trimmed),
+    urls: extractUrls(corpus),
+    emails: extractEmails(corpus),
+    phones: extractPhones(corpus),
   };
 
-  if (trimmed.length < MINIMUM_USEFUL_LENGTH) {
+  const examined = describeSources(typed, media);
+  /* Envelope rules stand on their own: they need no text to have been read. */
+  const fileIndicators = analyseMedia(media);
+
+  if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0) {
     return {
       score: 0,
       band: "unclear",
@@ -246,10 +279,16 @@ export function analyse({ text, channel }: Submission): Analysis {
       ...BAND_COPY.unclear,
       indicators: [],
       extracted,
+      examined,
     };
   }
 
-  const indicators = [...runTextRules(trimmed, channel), ...runUrlRules(extracted.urls)].sort(
+  const textIndicators =
+    corpus.length >= MINIMUM_USEFUL_LENGTH
+      ? [...runTextRules(corpus, channel), ...runUrlRules(extracted.urls)]
+      : [];
+
+  const indicators = [...textIndicators, ...fileIndicators].sort(
     (a, b) => WEIGHT_ORDER[a.weight] - WEIGHT_ORDER[b.weight],
   );
 
@@ -259,9 +298,46 @@ export function analyse({ text, channel }: Submission): Analysis {
   return {
     score,
     band,
-    confidence: confidenceFor(trimmed, indicators.length),
+    confidence: confidenceFor(corpus, indicators.length, examined),
     ...BAND_COPY[band],
     indicators,
     extracted,
+    examined,
   };
+}
+
+/** One line per source, saying whether it was read and what came of it. */
+function describeSources(typed: string, media: MediaDescriptor[]): ExaminedSource[] {
+  const sources: ExaminedSource[] = [];
+
+  if (typed.length > 0) {
+    sources.push({
+      label: "Pasted message",
+      status: "read",
+      detail: `${typed.length} characters checked against the rule set.`,
+    });
+  }
+
+  for (const file of media) {
+    const read = file.extractedText?.trim() ?? "";
+
+    if (read.length > 0) {
+      sources.push({
+        label: file.name,
+        status: "read",
+        detail: `${read.length} characters of text read from this ${file.kind} and checked.`,
+      });
+      continue;
+    }
+
+    sources.push({
+      label: file.name,
+      status: "not-read",
+      detail:
+        file.unreadable ??
+        `The contents of this ${file.kind} were not examined — only its name and type were.`,
+    });
+  }
+
+  return sources;
 }

@@ -34,8 +34,15 @@ export function Hero() {
          * ~90px past that, which pushed the whole section taller than the
          * viewport and left the console nothing to rise into — the device could
          * only ever show a sliver above the fold without covering this copy.
+         *
+         * Top padding clears the fixed masthead *plus* breathing room: when it
+         * matched the bar exactly the pill sat flush against it on a phone,
+         * which read as an overlap rather than a composition. It is deliberately
+         * not reduced alongside the bar — the column height is what the console
+         * section is pulled up against, so trimming it here would drag the
+         * device up the fold. The bar losing 1rem simply becomes 1rem more air.
          */
-        className="container flex flex-1 flex-col items-center justify-center gap-4 pb-4 pt-20 text-center short:gap-3 short:pt-16 sm:gap-6 sm:pt-28 sm:short:pt-20"
+        className="container flex flex-1 flex-col items-center justify-center-safe gap-3 pb-2 pt-28 text-center short:gap-3 short:pt-24 sm:gap-6 sm:pb-4 sm:pt-28 sm:short:pt-24"
       >
         <motion.div variants={fadeUp}>
           <Pill withDot>
@@ -46,7 +53,7 @@ export function Hero() {
 
         <motion.h1
           variants={fadeUp}
-          className="flex max-w-4xl flex-col items-center gap-4 font-display font-bold text-slate-900 sm:gap-5 dark:text-white"
+          className="flex max-w-4xl flex-col items-center gap-3 font-display font-bold text-slate-900 sm:gap-5 dark:text-white"
         >
           {/*
            * The eyebrow is set at a fixed caption size rather than scaling with
@@ -88,7 +95,7 @@ export function Hero() {
 
         <motion.div
           variants={fadeUp}
-          className="flex w-full flex-col items-center gap-4 short:hidden"
+          className="flex w-full flex-col items-center gap-3 short:hidden sm:gap-4"
         >
           <HeroDivider />
           <RotatingLine />

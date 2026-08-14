@@ -29,3 +29,26 @@ console.log(`\n${pass}/${cases.length} band classifications correct`);
 const t = analyse({ text: cases[0]!.text, channel: "sms" });
 console.log("Extraction:", JSON.stringify(t.extracted));
 console.log("Indicators:", t.indicators.map((i) => `${i.id}(${i.weight})`).join(" · "));
+
+/* --- Media envelope rules (no file contents, name and type only) --- */
+const mediaCases: { name: string; media: Parameters<typeof analyse>[0]["media"]; expect: string }[] = [
+  { name: "invoice that is really a program", expect: "high",
+    media: [{ name: "Invoice_4821.pdf.exe", size: 91000, type: "application/octet-stream", kind: "document" }] },
+  { name: "macro-enabled doc", expect: "medium",
+    media: [{ name: "remittance.docm", size: 44000, type: "application/vnd.ms-word.document.macroEnabled.12", kind: "document" }] },
+  { name: "ordinary screenshot, no text read", expect: "unclear",
+    media: [{ name: "photo.png", size: 220000, type: "image/png", kind: "image", unreadable: "No readable text was found in this image." }] },
+  { name: "screenshot with a scam read out of it", expect: "high",
+    media: [{ name: "sms.png", size: 220000, type: "image/png", kind: "image",
+      extractedText: "LINKT: unpaid toll of $4.20, late fees apply within 24 hours. Settle now: linkt-au.pay-toll.online" }] },
+];
+
+console.log("");
+for (const c of mediaCases) {
+  const r = analyse({ text: "", channel: "email", media: c.media });
+  const ok = r.band === c.expect;
+  if (ok) pass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(34)} band=${r.band.padEnd(9)} score=${String(r.score).padStart(3)} conf=${r.confidence.toFixed(2)} ind=${r.indicators.length}`);
+  if (!ok) console.log(`      expected ${c.expect}; got: ${r.indicators.map((i) => i.id).join(", ")}`);
+  console.log(`      examined: ${r.examined.map((e) => `${e.label} [${e.status}]`).join(" | ")}`);
+}

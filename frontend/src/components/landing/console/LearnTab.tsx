@@ -49,6 +49,7 @@ export function LearnTab({ animated }: { animated: boolean }) {
         <div
           ref={scrollRef}
           className="no-scrollbar h-[9.5rem] overflow-y-auto rounded-lg bg-slate-950/90 p-2.5 font-mono text-[10px] leading-relaxed text-emerald-300"
+          data-lenis-prevent
         >
           {CHECKLIST_LINES.slice(0, visibleLines).map((line) => (
             <motion.p

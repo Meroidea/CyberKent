@@ -39,9 +39,19 @@ const CHAR_WIDTH = 12;
 const CHAR_HEIGHT = 22;
 const FONT_SIZE = 14;
 
-/** Colour ramp per theme, kept in the brand's indigo/cyan range. */
+/**
+ * Colour ramp per theme, kept in the brand's indigo/cyan range.
+ *
+ * The light ramp is two steps deeper than the dark one rather than the same
+ * hues reused. Against a near-white ground a mid-tone glyph has very little
+ * contrast to spend, and the layer opacity above spends most of it — the
+ * 400-weight slate this used to carry blended to within a few points of the
+ * page and read as nothing at any opacity worth using. Going darker is what
+ * makes the field visible in light mode; raising the opacity alone only made
+ * the indigo and cyan glow.
+ */
 const PALETTES: Record<"light" | "dark", string[]> = {
-  light: ["#6366f1", "#06b6d4", "#94a3b8"],
+  light: ["#4338ca", "#0e7490", "#475569"],
   dark: ["#818cf8", "#22d3ee", "#334155"],
 };
 

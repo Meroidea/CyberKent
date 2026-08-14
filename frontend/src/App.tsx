@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { PageBackground } from "@/components/background/PageBackground";
 import { BootScreen } from "@/components/boot/BootScreen";
 import { PageSkeleton } from "@/components/boot/PageSkeleton";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { CheckModalProvider } from "@/components/check/CheckModalProvider";
+import { useCheckModal } from "@/components/check/useCheckModal";
 import { LandingPage } from "@/pages/LandingPage";
-import { CheckPage } from "@/pages/CheckPage";
 import { DocumentsPage } from "@/pages/DocumentsPage";
 import { DocumentPage } from "@/pages/DocumentPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { ROUTES } from "@/config/site";
+import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
 /**
  * How long the boot sequence holds before handing over.
@@ -32,14 +40,35 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    jumpToTop();
   }, [pathname]);
 
   return null;
 }
 
+/**
+ * `/check` is not a page — it is the dialog, opened.
+ *
+ * The address is kept because it is what every call to action on the site
+ * points at, and because bookmarks and shared links to it already exist. Anyone
+ * arriving at it is put back on the landing page with the checker already open,
+ * which is the same place the in-page listener would have left them.
+ */
+function CheckRedirect() {
+  const { open } = useCheckModal();
+
+  useEffect(open, [open]);
+
+  return <Navigate to={ROUTES.home} replace />;
+}
+
 /** Modules that are specified and have tables, but no screens yet. */
-const PLACEHOLDERS: { path: string; title: string; summary: string; requirements: string }[] = [
+const PLACEHOLDERS: {
+  path: string;
+  title: string;
+  summary: string;
+  requirements: string;
+}[] = [
   {
     path: ROUTES.reportScam,
     title: "Report a scam to Council",
@@ -121,6 +150,13 @@ export default function App() {
   }, []);
 
   /*
+   * Smoothing is installed once, for the life of the app, above the router —
+   * it is a property of the window rather than of any page, and tearing it down
+   * per route would drop the inertia mid-gesture on every navigation.
+   */
+  useEffect(startSmoothScroll, []);
+
+  /*
    * The page cannot be scrolled while it is still assembling — there is nothing
    * under the fold yet but placeholders, and letting the wheel move them means
    * the real content arrives somewhere the reader did not leave it.
@@ -130,76 +166,79 @@ export default function App() {
       return;
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previous;
-    };
+    return holdScroll();
   }, [booting]);
 
   return (
     <BrowserRouter>
-      <ScrollToTop />
+      <CheckModalProvider>
+        <ScrollToTop />
 
-      <div className="relative min-h-screen">
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-indigo-600 focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-white"
-        >
-          Skip to main content
-        </a>
+        <div className="relative min-h-screen">
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-indigo-600 focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-white"
+          >
+            Skip to main content
+          </a>
 
-        <PageBackground />
+          <PageBackground />
 
-        <BootScreen visible={booting} />
+          <BootScreen visible={booting} />
 
-        {/*
-         * The real page is not mounted until the sequence ends. Every section
-         * below reveals itself on scroll or on entering view, and mounting them
-         * behind a curtain would spend those entrances where nobody can see
-         * them — the page would arrive already finished.
-         */}
-        {booting ? (
-          <PageSkeleton />
-        ) : (
-          <>
-            <SiteHeader />
+          {/*
+           * The real page is not mounted until the sequence ends. Every section
+           * below reveals itself on scroll or on entering view, and mounting them
+           * behind a curtain would spend those entrances where nobody can see
+           * them — the page would arrive already finished.
+           */}
+          {booting ? (
+            <PageSkeleton />
+          ) : (
+            <>
+              <SiteHeader />
 
-            <main id="main" className="relative z-10">
-              <Routes>
-                <Route path={ROUTES.home} element={<LandingPage />} />
-                <Route path={ROUTES.checkMessage} element={<CheckPage />} />
-                <Route path={ROUTES.documents} element={<DocumentsPage />} />
-                {/* Each published document reads inside the site, under the
-                    same header and footer as every other page. */}
-                <Route path={`${ROUTES.documents}/:slug`} element={<DocumentPage />} />
-
-                {PLACEHOLDERS.map((page) => (
+              <main id="main" className="relative z-10">
+                <Routes>
+                  <Route path={ROUTES.home} element={<LandingPage />} />
                   <Route
-                    key={page.path}
-                    path={page.path}
-                    element={
-                      <PlaceholderPage
-                        title={page.title}
-                        summary={page.summary}
-                        requirements={page.requirements}
-                      />
-                    }
+                    path={ROUTES.checkMessage}
+                    element={<CheckRedirect />}
                   />
-                ))}
+                  <Route path={ROUTES.documents} element={<DocumentsPage />} />
+                  {/* Each published document reads inside the site, under the
+                    same header and footer as every other page. */}
+                  <Route
+                    path={`${ROUTES.documents}/:slug`}
+                    element={<DocumentPage />}
+                  />
 
-                {/* Anything unmatched. The host rewrites every path to
+                  {PLACEHOLDERS.map((page) => (
+                    <Route
+                      key={page.path}
+                      path={page.path}
+                      element={
+                        <PlaceholderPage
+                          title={page.title}
+                          summary={page.summary}
+                          requirements={page.requirements}
+                        />
+                      }
+                    />
+                  ))}
+
+                  {/* Anything unmatched. The host rewrites every path to
                     index.html, so this is what stops an unknown address being
                     answered with the landing page. */}
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </main>
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </main>
 
-            <SiteFooter />
-          </>
-        )}
-      </div>
+              <SiteFooter />
+            </>
+          )}
+        </div>
+      </CheckModalProvider>
     </BrowserRouter>
   );
 }

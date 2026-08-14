@@ -11,6 +11,7 @@ import { ActionLink } from "@/components/ui/ActionLink";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
+import { refreshSmoothScroll, smoothScrollTo } from "@/lib/smoothScroll";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import "@/styles/document.css";
 
@@ -25,9 +26,6 @@ interface DocumentContent {
   entries: OutlineEntry[];
   html: string;
 }
-
-/** Clears the fixed header when a contents entry is followed. */
-const HEADER_CLEARANCE = 112;
 
 /** The register is keyed by href; the route carries only the final segment. */
 function findDocument(slug: string | undefined) {
@@ -92,11 +90,18 @@ export function DocumentPage() {
 
   /* A hash in the address bar is followed once the body it points into exists. */
   useEffect(() => {
-    if (!content || !window.location.hash) {
+    if (!content) {
       return;
     }
 
-    scrollToHeading(window.location.hash.slice(1));
+    /* The body is fetched, so the page has just grown from a shell to its full
+       height. The smoothing has to be told, or it holds the reader at the
+       bottom the shell had. */
+    refreshSmoothScroll();
+
+    if (window.location.hash) {
+      scrollToHeading(window.location.hash.slice(1));
+    }
   }, [content]);
 
   if (!document) {
@@ -115,7 +120,7 @@ export function DocumentPage() {
 
   return (
     /* Top padding is set rather than inherited from `py-section`: this page
-       opens with front matter rather than a hero, and the fixed 5rem header
+       opens with front matter rather than a hero, and the fixed 4rem header
        would otherwise cover the status pill on a small screen. */
     <section className="relative z-10 pb-section pt-28 sm:pt-32">
       {/*
@@ -126,7 +131,7 @@ export function DocumentPage() {
        */}
       <div className="mx-auto grid max-w-[100rem] gap-x-8 px-4 sm:px-6 lg:px-8 rail:grid-cols-[14rem_minmax(0,48rem)] rail:justify-center rails:grid-cols-[14rem_minmax(0,48rem)_17rem]">
         <aside className="hidden rail:block">
-          <div className="sticky top-28">
+          <div className="sticky top-24">
             <ContentsRail entries={entries} active={active} percent={percent} onNavigate={navigate} />
           </div>
         </aside>
@@ -229,7 +234,7 @@ export function DocumentPage() {
         </div>
 
         <aside className="hidden rails:block">
-          <div className="sticky top-28">
+          <div className="sticky top-24">
             <ShareRail document={document} others={others} />
           </div>
         </aside>
@@ -246,10 +251,7 @@ function scrollToHeading(id: string) {
     return;
   }
 
-  window.scrollTo({
-    top: target.getBoundingClientRect().top + window.scrollY - HEADER_CLEARANCE,
-    behavior: "smooth",
-  });
+  smoothScrollTo(target);
 }
 
 /**

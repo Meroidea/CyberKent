@@ -6,7 +6,8 @@ import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import type { NavDropdownItem } from "@/components/layout/NavDropdown";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Wordmark } from "@/components/layout/Wordmark";
-import { springSoft } from "@/lib/motion";
+import { springSnappy, springSoft } from "@/lib/motion";
+import { holdScroll } from "@/lib/smoothScroll";
 
 interface MobileMenuProps {
   open: boolean;
@@ -58,12 +59,11 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       }
     };
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const release = holdScroll();
     document.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      release();
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open, onClose]);
@@ -83,6 +83,10 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
              animated card's own transform, so a translate-based centre would
              be overwritten mid-animation. */
           className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-md sm:p-6"
+          /* The page beneath is held still while this is open; the wheel has to
+             reach this panel instead, or a tall menu on a short screen has no
+             way to reveal its foot. */
+          data-lenis-prevent
           onClick={onClose}
         >
           <motion.div
@@ -113,7 +117,10 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   variants={rowVariants}
                   href={link.href}
                   onClick={onClose}
-                  className="rounded-xl px-4 py-3 text-base font-medium text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
+                  whileHover={{ x: 6 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={springSnappy}
+                  className="rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
                 >
                   {link.label}
                 </motion.a>
@@ -128,7 +135,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                       type="button"
                       aria-expanded={isOpen}
                       onClick={() => setExpanded(isOpen ? null : menu.label)}
-                      className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-base font-medium text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
+                      className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
                     >
                       {menu.label}
                       <ChevronDown

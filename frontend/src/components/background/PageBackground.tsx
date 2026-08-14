@@ -22,13 +22,19 @@ export function PageBackground() {
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.10] via-transparent to-cyan-400/[0.12]" />
 
       {/*
-       * The glitch field is held to a low opacity and masked hollow through the
-       * middle of the screen, which is the column every page actually sets its
-       * content in. It therefore reads at the margins and fades to nothing
-       * behind body copy — the effect is present without ever being something
-       * text has to compete with.
+       * The glitch field is masked hollow through the middle of the screen,
+       * which is the column every page actually sets its content in. It
+       * therefore reads at the margins and fades to nothing behind body copy —
+       * the effect is present without ever being something text has to compete
+       * with.
+       *
+       * The hollow is opened wider on a phone. The cells are a fixed 12×22px,
+       * so on a 375px screen they are nearly twice the share of the width they
+       * take on a laptop, while the text column has gone the other way and runs
+       * almost edge to edge. The same mask that clears the copy on a desktop
+       * leaves characters sitting under the ends of every line there.
        */}
-      <div className="absolute inset-0 opacity-[0.09] [mask-image:radial-gradient(ellipse_68%_58%_at_50%_45%,transparent_0%,transparent_42%,black_100%)] dark:opacity-[0.16]">
+      <div className="absolute inset-0 opacity-[0.28] [mask-image:radial-gradient(ellipse_86%_52%_at_50%_44%,transparent_0%,transparent_56%,black_100%)] dark:opacity-[0.30] sm:[mask-image:radial-gradient(ellipse_68%_58%_at_50%_45%,transparent_0%,transparent_42%,black_100%)]">
         <LetterGlitch />
       </div>
 
