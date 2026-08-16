@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 760" width="880" height="760" role="img" aria-label="">
+  <defs>
+    <linearGradient id="pr-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1030"/>
+      <stop offset="0.5" stop-color="#161046"/>
+      <stop offset="1" stop-color="#07070f"/>
+    </linearGradient>
+    <radialGradient id="pr-indigo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6366f1" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pr-violet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a855f7" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pr-paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f4a" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#0b0c22" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="pr-band" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <pattern id="pr-grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <filter id="pr-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <radialGradient id="pr-vignette" cx="0.45" cy="0.42" r="0.8">
+      <stop offset="0.45" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.66"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="880" height="760" fill="url(#pr-base)"/>
+  <rect width="880" height="760" fill="url(#pr-grid)"/>
+  <ellipse cx="300" cy="250" rx="420" ry="360" fill="url(#pr-indigo)"/>
+  <ellipse cx="720" cy="560" rx="360" ry="330" fill="url(#pr-violet)"/>
+
+  <!-- The invoice -->
+  <g transform="rotate(-4 300 350)">
+    <rect x="118" y="126" width="330" height="440" rx="20" fill="#000000" fill-opacity="0.35"/>
+    <rect x="110" y="118" width="330" height="440" rx="20" fill="url(#pr-paper)"
+          stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+    <rect x="110" y="118" width="330" height="12" rx="6" fill="url(#pr-band)"/>
+
+    <text x="146" y="188" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="19"
+          font-weight="700" letter-spacing="4" fill="#ffffff" fill-opacity="0.72">INVOICE</text>
+    <text x="146" y="214" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14"
+          letter-spacing="2" fill="#a5b4fc" fill-opacity="0.8">#4471 · DUE TODAY</text>
+
+    <g fill="#ffffff">
+      <rect x="146" y="244" width="240" height="9" rx="4.5" fill-opacity="0.22"/>
+      <rect x="146" y="266" width="196" height="9" rx="4.5" fill-opacity="0.16"/>
+      <rect x="146" y="288" width="222" height="9" rx="4.5" fill-opacity="0.13"/>
+    </g>
+
+    <!-- The changed line -->
+    <rect x="132" y="318" width="286" height="86" rx="12" fill="#f43f5e" fill-opacity="0.12"
+          stroke="#fb7185" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="8 6"/>
+    <text x="150" y="348" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="13"
+          letter-spacing="2" fill="#fda4af" fill-opacity="0.95">BSB / ACCOUNT</text>
+    <g fill="#ffffff">
+      <rect x="150" y="362" width="150" height="11" rx="5.5" fill-opacity="0.55"/>
+      <rect x="150" y="382" width="200" height="11" rx="5.5" fill-opacity="0.3"/>
+    </g>
+
+    <g fill="#ffffff">
+      <rect x="146" y="426" width="210" height="9" rx="4.5" fill-opacity="0.14"/>
+      <rect x="146" y="448" width="168" height="9" rx="4.5" fill-opacity="0.11"/>
+    </g>
+
+    <rect x="146" y="486" width="130" height="38" rx="19" fill="#6366f1" fill-opacity="0.28"
+          stroke="#818cf8" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="211" y="511" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, monospace"
+          font-size="14" letter-spacing="2" fill="#c7d2fe">PAY NOW</text>
+  </g>
+
+  <!-- Where the money is meant to go, and where it is being sent -->
+  <path d="M470 352 H566" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+  <path d="M566 352 C 626 352 626 246 686 246" fill="none" stroke="#34d399" stroke-opacity="0.75"
+        stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M566 352 C 626 352 626 470 686 470" fill="none" stroke="#fb7185"
+        stroke-width="4" stroke-linecap="round" stroke-dasharray="12 9"/>
+  <circle cx="566" cy="352" r="9" fill="#0b0c22" stroke="#ffffff" stroke-opacity="0.6" stroke-width="3"/>
+
+  <!-- Legitimate supplier -->
+  <g transform="translate(686 246)">
+    <circle r="44" fill="#052e22" fill-opacity="0.85" stroke="#34d399" stroke-opacity="0.7" stroke-width="2.5"/>
+    <path d="M-17 2 L-5 15 L18 -12" fill="none" stroke="#6ee7b7" stroke-width="7"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- The account that is not theirs -->
+  <g transform="translate(686 470)">
+    <circle r="44" fill="#2b0713" fill-opacity="0.85" stroke="#fb7185" stroke-opacity="0.85" stroke-width="2.5"/>
+    <path d="M-15 -15 L15 15 M15 -15 L-15 15" fill="none" stroke="#fda4af" stroke-width="7" stroke-linecap="round"/>
+    <circle r="62" fill="none" stroke="#fb7185" stroke-opacity="0.28" stroke-width="1.5"/>
+    <circle r="82" fill="none" stroke="#fb7185" stroke-opacity="0.14" stroke-width="1.5"/>
+  </g>
+
+  <rect width="880" height="760" filter="url(#pr-grain)" opacity="0.11" style="mix-blend-mode:overlay"/>
+  <rect width="880" height="760" fill="url(#pr-vignette)"/>
+</svg>

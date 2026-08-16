@@ -257,48 +257,8 @@ export const COMMUNITY_ALERTS: CommunityAlert[] = [
   },
 ];
 
-export interface AwarenessResource {
-  id: string;
-  category: string;
-  title: string;
-  readingTime: string;
-  summary: string;
-}
-
-export const AWARENESS_RESOURCES: AwarenessResource[] = [
-  {
-    id: "first-hour",
-    category: "Recovery",
-    title: "The first hour after you have been scammed",
-    readingTime: "4 min",
-    summary:
-      "Who to call first, what to freeze, and what evidence to keep before anything is deleted from your phone.",
-  },
-  {
-    id: "small-business",
-    category: "Small business",
-    title: "Payment redirection: a checklist for small teams",
-    readingTime: "6 min",
-    summary:
-      "How invoice fraud reaches a business inbox, and the two verification habits that stop almost all of it.",
-  },
-  {
-    id: "older-residents",
-    category: "Community",
-    title: "Talking to family about phone scams",
-    readingTime: "5 min",
-    summary:
-      "A conversation guide for supporting older relatives without taking away their independence or confidence.",
-  },
-  {
-    id: "not-for-profit",
-    category: "Organisations",
-    title: "Protecting a volunteer-run organisation",
-    readingTime: "7 min",
-    summary:
-      "Practical account, donation and record-keeping controls that work when nobody on the committee is technical.",
-  },
-];
+/* The awareness guides previewed by the `Learn` section live in
+   `content/learn`, where the card summary and the page body are one record. */
 
 export const TRUST_POINTS: { title: string; body: string }[] = [
   {

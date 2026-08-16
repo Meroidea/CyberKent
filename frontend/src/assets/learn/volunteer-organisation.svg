@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 760" width="880" height="760" role="img" aria-label="">
+  <defs>
+    <linearGradient id="vo-base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#052018"/>
+      <stop offset="0.5" stop-color="#062c26"/>
+      <stop offset="1" stop-color="#06090c"/>
+    </linearGradient>
+    <radialGradient id="vo-emerald" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#10b981" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vo-indigo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6366f1" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vo-shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b3f33" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#04120f" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="vo-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ee7b7"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <pattern id="vo-grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <filter id="vo-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <radialGradient id="vo-vignette" cx="0.5" cy="0.4" r="0.8">
+      <stop offset="0.45" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.66"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="880" height="760" fill="url(#vo-base)"/>
+  <rect width="880" height="760" fill="url(#vo-grid)"/>
+  <ellipse cx="440" cy="290" rx="420" ry="360" fill="url(#vo-emerald)"/>
+  <ellipse cx="130" cy="640" rx="330" ry="300" fill="url(#vo-indigo)"/>
+
+  <!-- The committee: eight people around one set of controls -->
+  <circle cx="440" cy="322" r="256" fill="none" stroke="#6ee7b7" stroke-opacity="0.16"
+          stroke-width="2" stroke-dasharray="10 12"/>
+  <g fill="#062c26" stroke="#6ee7b7" stroke-opacity="0.55" stroke-width="2.5">
+    <circle cx="440" cy="66" r="26"/>
+    <circle cx="621" cy="141" r="26"/>
+    <circle cx="696" cy="322" r="26"/>
+    <circle cx="621" cy="503" r="26"/>
+    <circle cx="440" cy="578" r="26"/>
+    <circle cx="259" cy="503" r="26"/>
+    <circle cx="184" cy="322" r="26"/>
+    <circle cx="259" cy="141" r="26"/>
+  </g>
+  <g fill="#a7f3d0" fill-opacity="0.75">
+    <circle cx="440" cy="60" r="8"/><circle cx="621" cy="135" r="8"/>
+    <circle cx="696" cy="316" r="8"/><circle cx="621" cy="497" r="8"/>
+    <circle cx="440" cy="572" r="8"/><circle cx="259" cy="497" r="8"/>
+    <circle cx="184" cy="316" r="8"/><circle cx="259" cy="135" r="8"/>
+  </g>
+  <g fill="#a7f3d0" fill-opacity="0.55">
+    <path d="M440 74 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M621 149 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M696 330 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M621 511 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M440 586 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M259 511 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M184 330 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+    <path d="M259 149 a13 13 0 0 1 13 13 h-26 a13 13 0 0 1 13 -13z"/>
+  </g>
+
+  <!-- Shield -->
+  <g transform="translate(440 322)">
+    <path d="M0 -178 L138 -122 V22 C138 108 74 158 0 182 C-74 158 -138 108 -138 22 V-122 Z"
+          fill="#000000" fill-opacity="0.35" transform="translate(8 10)"/>
+    <path d="M0 -178 L138 -122 V22 C138 108 74 158 0 182 C-74 158 -138 108 -138 22 V-122 Z"
+          fill="url(#vo-shield)" stroke="url(#vo-rim)" stroke-opacity="0.75" stroke-width="3.5"/>
+    <path d="M0 -150 L112 -105 V18 C112 90 58 133 0 154 C-58 133 -112 90 -112 18 V-105 Z"
+          fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+
+    <!-- Two people must approve: a padlock over a shared ledger -->
+    <rect x="-64" y="-32" width="128" height="92" rx="16" fill="#04120f" fill-opacity="0.85"
+          stroke="#6ee7b7" stroke-opacity="0.5" stroke-width="2.5"/>
+    <path d="M-30 -32 v-26 a30 30 0 0 1 60 0 v26" fill="none" stroke="#6ee7b7"
+          stroke-opacity="0.8" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="0" cy="8" r="11" fill="#a7f3d0"/>
+    <rect x="-5" y="8" width="10" height="26" rx="5" fill="#a7f3d0"/>
+
+    <text x="0" y="-98" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, monospace"
+          font-size="15" letter-spacing="4" fill="#6ee7b7" fill-opacity="0.85">TWO TO APPROVE</text>
+  </g>
+
+  <rect width="880" height="760" filter="url(#vo-grain)" opacity="0.11" style="mix-blend-mode:overlay"/>
+  <rect width="880" height="760" fill="url(#vo-vignette)"/>
+</svg>

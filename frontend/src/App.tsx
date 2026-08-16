@@ -16,6 +16,8 @@ import { useCheckModal } from "@/components/check/useCheckModal";
 import { LandingPage } from "@/pages/LandingPage";
 import { DocumentsPage } from "@/pages/DocumentsPage";
 import { DocumentPage } from "@/pages/DocumentPage";
+import { LearnPage } from "@/pages/LearnPage";
+import { LearnArticlePage } from "@/pages/LearnArticlePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { ROUTES } from "@/config/site";
@@ -89,13 +91,6 @@ const PLACEHOLDERS: {
     summary:
       "Where reports are clustering across the municipality, aggregated to suburb level so patterns show but people do not.",
     requirements: "Module 12 · FR70",
-  },
-  {
-    path: ROUTES.learn,
-    title: "Awareness library",
-    summary:
-      "Short, practical guides for residents, small businesses and volunteer-run organisations — searchable and grouped by situation.",
-    requirements: "Module 10 · FR55–FR57",
   },
   {
     path: ROUTES.recover,
@@ -211,6 +206,14 @@ export default function App() {
                   <Route
                     path={`${ROUTES.documents}/:slug`}
                     element={<DocumentPage />}
+                  />
+
+                  {/* The awareness library, and each guide in it. The landing
+                    page's Learn section is a preview of this list. */}
+                  <Route path={ROUTES.learn} element={<LearnPage />} />
+                  <Route
+                    path={`${ROUTES.learn}/:slug`}
+                    element={<LearnArticlePage />}
                   />
 
                   {PLACEHOLDERS.map((page) => (

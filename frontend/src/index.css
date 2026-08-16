@@ -92,6 +92,23 @@
     @apply border border-gray-200/80 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-[#111111]/80;
   }
 
+  /**
+   * The frosted shelf that carries a card's title over its cover art.
+   *
+   * Distinct from `.glass-surface`, which sits on the page background and only
+   * has to look like glass. This one sits on artwork whose tone the card cannot
+   * know in advance, and it is what makes the title legible — so it is opaque
+   * enough to be a surface rather than a tint, and each theme paints its own
+   * page-coloured wash so the text colour never has to change with the image.
+   *
+   * Saturation is lifted as well as the blur: colour from the artwork bleeds
+   * up through the shelf instead of going milky, which is what separates frost
+   * from a flat scrim.
+   */
+  .frost-shelf {
+    @apply border-t border-white/50 bg-white/[0.78] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/[0.14] dark:bg-black/60;
+  }
+
   .accent-gradient-text {
     @apply bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-cyan-400;
     /* The glyphs are transparent, so an inherited text-shadow would render as a
