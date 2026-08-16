@@ -52,3 +52,60 @@ for (const c of mediaCases) {
   if (!ok) console.log(`      expected ${c.expect}; got: ${r.indicators.map((i) => i.id).join(", ")}`);
   console.log(`      examined: ${r.examined.map((e) => `${e.label} [${e.status}]`).join(" | ")}`);
 }
+
+/* --- Image origin: C2PA provenance and the on-device classifier ---
+   Asserted on the indicator raised rather than on the band. A generated image
+   is not by itself a scam, so these deliberately do not move the score far —
+   what matters is that the right finding is raised, and that silence and a
+   missing model both stay silent. */
+const base = { name: "shot.jpg", size: 180000, type: "image/jpeg", kind: "image" as const };
+
+const originCases: { name: string; media: Parameters<typeof analyse>[0]["media"]; expectId: string | null }[] = [
+  { name: "signed manifest says AI", expectId: "image-declared-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "declared-ai", generator: "Firefly", detail: "signed: generated" } }] },
+  { name: "signed manifest says camera", expectId: null,
+    media: [{ ...base, provenance: { status: "declared-capture", detail: "signed: captured" } }] },
+  { name: "unsigned EXIF names a generator", expectId: "image-hinted-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "hinted-ai", generator: "midjourney", detail: "exif hint" } }] },
+  { name: "manifest present but invalid", expectId: "image-untrusted-manifest-shot.jpg",
+    media: [{ ...base, provenance: { status: "untrusted", detail: "does not validate" } }] },
+  { name: "no metadata at all", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing to read" } }] },
+  { name: "classifier confident", expectId: "image-synthetic-shot.jpg",
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.93, model: "m" } }] },
+  { name: "classifier weak — stays silent", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.41, model: "m" } }] },
+  { name: "classifier unavailable — stays silent", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0, model: "m", unavailable: "did not run" } }] },
+  { name: "signed AI + confident model counted once", expectId: "image-declared-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "declared-ai", generator: "Firefly", detail: "signed" }, synthetic: { probability: 0.99, model: "m" } }] },
+];
+
+console.log("");
+let originPass = 0;
+for (const c of originCases) {
+  const r = analyse({ text: "", channel: "email", media: c.media });
+  const ids = r.indicators.map((i) => i.id);
+  const origin = ids.filter((id) => id.startsWith("image-"));
+  const ok = c.expectId === null ? origin.length === 0 : origin.length === 1 && origin[0] === c.expectId;
+  if (ok) originPass += 1;
+  console.log(
+    `${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(40)} raised=[${origin.join(", ")}] band=${r.band}`,
+  );
+  if (!ok) console.log(`      expected ${c.expectId ?? "nothing"}`);
+}
+console.log(`\n${originPass}/${originCases.length} image-origin cases correct`);
+
+/* A missing model must lower confidence, not pass the image off as cleared.
+   Probed with a real message attached: the confidence penalty is multiplicative,
+   so on a submission with no text and no indicators the base is zero and no
+   penalty of any size could be observed. */
+const withText = "Your parcel could not be delivered. Confirm your address to reschedule the delivery today.";
+const cleared = analyse({ text: withText, channel: "sms",
+  media: [{ ...base, provenance: { status: "absent", detail: "n" }, synthetic: { probability: 0.1, model: "m" } }] });
+const gapped = analyse({ text: withText, channel: "sms",
+  media: [{ ...base, provenance: { status: "absent", detail: "n" }, synthetic: { probability: 0, model: "m", unavailable: "did not run" } }] });
+console.log(
+  `${gapped.confidence < cleared.confidence ? "PASS" : "FAIL"}  unavailable model costs confidence` +
+    `        ran=${cleared.confidence.toFixed(2)} vs missing=${gapped.confidence.toFixed(2)}`,
+);

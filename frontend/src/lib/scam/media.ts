@@ -1,4 +1,5 @@
 import type { Indicator, MediaDescriptor, MediaKind } from "@/lib/scam/types";
+import { SYNTHETIC_ABOVE } from "@/lib/scam/synthetic";
 
 /**
  * Rules that read a file's envelope rather than its contents.
@@ -166,6 +167,89 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
         evidence: file.name,
       });
     }
+
+    indicators.push(...imageOriginIndicators(file));
+  }
+
+  return indicators;
+}
+
+/**
+ * Indicators drawn from how an image says — or appears — to have been made.
+ *
+ * Two things this function does not do, both on purpose.
+ *
+ * It never scores an absence. An image with no Content Credentials is the
+ * overwhelmingly normal case, because every mainstream platform strips metadata
+ * on upload; treating that as suspicion would raise a flag on nearly every
+ * genuine screenshot the service is sent.
+ *
+ * And it never lets the classifier alone reach the top weight. A signed
+ * declaration is close to proof and is weighted as such; a statistical read of
+ * the pixels is a guess from a model that was trained before whichever
+ * generator made this image existed. Telling a resident their photograph is
+ * fake on that basis is a harm the service has no business risking, so the
+ * strongest thing the model can do by itself is ask for a second opinion.
+ */
+function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
+  if (file.kind !== "image") {
+    return [];
+  }
+
+  const indicators: Indicator[] = [];
+  const { provenance, synthetic } = file;
+
+  if (provenance?.status === "declared-ai") {
+    indicators.push({
+      id: `image-declared-ai-${file.name}`,
+      label: "Image declares itself AI-generated",
+      detail: provenance.detail,
+      weight: "high",
+      evidence: provenance.generator ?? file.name,
+    });
+  }
+
+  if (provenance?.status === "hinted-ai") {
+    indicators.push({
+      id: `image-hinted-ai-${file.name}`,
+      label: "Metadata names an image generator",
+      detail: provenance.detail,
+      weight: "low",
+      evidence: provenance.generator ?? file.name,
+    });
+  }
+
+  if (provenance?.status === "untrusted") {
+    indicators.push({
+      id: `image-untrusted-manifest-${file.name}`,
+      label: "Content Credentials do not validate",
+      detail: provenance.detail,
+      weight: "medium",
+      evidence: file.name,
+    });
+  }
+
+  /*
+   * The classifier is only raised where it is confident and where the signed
+   * evidence has not already settled the question — repeating "this is AI" as
+   * a second indicator would double-count one finding and push the score into
+   * a band on the strength of a single fact.
+   */
+  const alreadyDeclared = provenance?.status === "declared-ai";
+
+  if (
+    !alreadyDeclared &&
+    synthetic &&
+    !synthetic.unavailable &&
+    synthetic.probability >= SYNTHETIC_ABOVE
+  ) {
+    indicators.push({
+      id: `image-synthetic-${file.name}`,
+      label: "Image looks generated rather than photographed",
+      detail: `An on-device model put this at ${Math.round(synthetic.probability * 100)}% likely to be AI-generated. Detectors are trained on the generators that existed when they were built and are regularly wrong about newer ones, so treat this as a reason to check rather than as a finding.`,
+      weight: "medium",
+      evidence: file.name,
+    });
   }
 
   return indicators;

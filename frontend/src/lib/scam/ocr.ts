@@ -1,5 +1,7 @@
 import type { MediaDescriptor } from "@/lib/scam/types";
 import { kindOf } from "@/lib/scam/media";
+import { readProvenance } from "@/lib/scam/provenance";
+import { readSynthetic } from "@/lib/scam/synthetic";
 
 /**
  * Reading the text out of an uploaded image, in the browser.
@@ -101,8 +103,17 @@ export async function describeFiles(
     const base = { name: file.name, size: file.size, type: file.type, kind };
 
     if (kind === "image") {
+      /*
+       * Three passes over the same image, cheapest and most certain first.
+       * Provenance is metadata and costs nothing; the classifier is a model and
+       * costs a download; OCR is the one that feeds the existing rule set.
+       * None of them can fail the others — each returns its own gap.
+       */
+      const provenance = await readProvenance(file);
+      const synthetic = await readSynthetic(file);
       const { text, unreadable } = await readImage(file);
-      described.push({ ...base, extractedText: text, unreadable });
+
+      described.push({ ...base, extractedText: text, unreadable, provenance, synthetic });
       continue;
     }
 
