@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ListTree } from "lucide-react";
 import { DOCUMENTS } from "@/content/documents";
 import { ROUTES } from "@/config/site";
-import { ContentsRail, type OutlineEntry } from "@/components/documents/ContentsRail";
+import { ContentsRail, OutlineLabel, type OutlineEntry } from "@/components/documents/ContentsRail";
 import { DocumentFrontMatter } from "@/components/documents/DocumentFrontMatter";
 import { ShareRail } from "@/components/documents/ShareRail";
 import { ActionLink } from "@/components/ui/ActionLink";
@@ -163,7 +163,7 @@ export function DocumentPage() {
                         entry.level > 1 ? "pl-4" : ""
                       }`}
                     >
-                      {entry.text}
+                      <OutlineLabel entry={entry} />
                     </a>
                   </li>
                 ))}

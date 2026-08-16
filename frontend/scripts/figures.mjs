@@ -201,6 +201,79 @@ export function gridFigure({ title, caption, items }, number) {
   return frame({ title, caption, number, body: `<div class="fig-grid">${cards}</div>` });
 }
 
+const CHEVRON = `<svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+
+/**
+ * A register of requirements, drawn as a table that opens.
+ *
+ * Seventy-two requirements printed as twelve bulleted lists run to several
+ * screens, and a reader looking for one of them scrolls past the other
+ * sixty-six to reach it. Collapsed, the same content is twelve rows: the whole
+ * register is visible at once — how many modules there are, which requirements
+ * each one owns, how the work is distributed — and any single module opens in
+ * place without losing that view.
+ *
+ * Built on `<details>` rather than on a script. Disclosure is a behaviour the
+ * browser already has, with the keyboard support, the focus handling and the
+ * screen-reader semantics already correct; and the document reader injects this
+ * markup as HTML, where a script of ours would not run at all. Find-in-page
+ * still reaches a closed row in current browsers, and print opens every row.
+ */
+export function modulesFigure({ title, caption, summary, groups }, number) {
+  const header = `<div class="modules-row modules-head" aria-hidden="true">
+      <span></span>
+      <span>Module</span>
+      <span>Requirements</span>
+      <span>No.</span>
+      <span></span>
+    </div>`;
+
+  const rows = groups
+    .map((group, index) => {
+      const range =
+        group.items.length > 1
+          ? `${group.items[0].id}–${group.items[group.items.length - 1].id}`
+          : (group.items[0]?.id ?? "—");
+
+      /*
+       * Named on the row rather than assembled from it: read out as content, a
+       * summary of five loose spans announces as "01 User Registration and
+       * Authentication FR1 FR6 6", which is a string of tokens rather than a
+       * sentence. The row still shows every one of those values.
+       */
+      const label = `Module ${group.index ?? index + 1}, ${group.name}. ${group.items.length} requirements, ${range.replace("–", " to ")}.`;
+
+      const items = group.items
+        .map(
+          (item) => `<li class="module-req">
+            <span class="req-id">${escapeHtml(item.id)}</span>
+            <span class="req-label">${escapeHtml(item.label)}</span>
+          </li>`,
+        )
+        .join("");
+
+      return `<details class="module" style="--i:${index}">
+        <summary class="modules-row module-summary" aria-label="${escapeHtml(label)}">
+          <span class="module-index" aria-hidden="true">${String(group.index ?? index + 1).padStart(2, "0")}</span>
+          <span class="module-name">${escapeHtml(group.name)}</span>
+          <span class="module-range">${escapeHtml(range)}</span>
+          <span class="module-count">${group.items.length}</span>
+          ${CHEVRON}
+        </summary>
+        <ul class="module-reqs">${items}</ul>
+      </details>`;
+    })
+    .join("");
+
+  const total = groups.reduce((sum, group) => sum + group.items.length, 0);
+  const note = summary ?? `${groups.length} modules · ${total} functional requirements`;
+
+  const body = `<div class="fig-modules">${header}${rows}</div>
+    <p class="fig-unit">${escapeHtml(note)} — select a row to open it.</p>`;
+
+  return frame({ title, caption, number, body });
+}
+
 /** Dispatch by `kind`, so the figure register stays plain data. */
 const BUILDERS = {
   flow: flowFigure,
@@ -210,6 +283,7 @@ const BUILDERS = {
   layers: layerFigure,
   timeline: timelineFigure,
   grid: gridFigure,
+  modules: modulesFigure,
 };
 
 export function buildFigure(spec, number) {

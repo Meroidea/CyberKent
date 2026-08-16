@@ -117,6 +117,77 @@
   }
 
   /**
+   * Stroke to fill: a headline drawn as an outline, then inked in.
+   *
+   * Two custom properties carry the whole effect, and both are inherited, which
+   * is what lets one animation paint a line that is not one colour: the plain
+   * words take `--sf-fill` as their own alpha, and the gradient-clipped words
+   * take it into the gradient that paints them. Registering the properties is
+   * what makes them interpolate at all — an unregistered custom property is a
+   * string to the animation engine, and a string can only flip at the midpoint.
+   * The registered initial values are the *finished* state, so a browser that
+   * ignores `@property` shows a filled headline rather than an empty one.
+   *
+   * Set on the element that holds the whole line rather than on each word: the
+   * outline has to arrive and leave as one, or the headline reads as two
+   * headlines that happen to be adjacent.
+   */
+  .stroke-fill {
+    /* The stroke is the accent, not the ink: an outline in the text colour
+       reads as a rendering fault, an outline in the accent reads as drawing. */
+    --sf-stroke: 79 70 229;
+    --sf-ink: 15 23 42;
+
+    /* The held state, until the component says the words are final. The
+       animation that follows overrides both, as animations outrank the
+       declarations they animate. */
+    --sf-fill: 0;
+    --sf-edge: 1;
+
+    color: rgb(var(--sf-ink) / var(--sf-fill));
+    -webkit-text-stroke: 1px rgb(var(--sf-stroke) / var(--sf-edge));
+  }
+
+  /*
+   * Eased evenly rather than with the site's out-expo, which is a curve for
+   * things that arrive: it puts nine tenths of the fill in the first third of
+   * the duration, and an outline that vanishes in 300ms is not one anybody
+   * sees. Here the point is the passage between the two states.
+   */
+  .stroke-fill.is-inking {
+    animation: stroke-fill 1.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .dark .stroke-fill {
+    --sf-stroke: 34 211 238;
+    --sf-ink: 255 255 255;
+  }
+
+  /*
+   * The gradient-clipped part of the line, restated so its fill can carry the
+   * same alpha. `.accent-gradient-text` paints through `background-clip: text`,
+   * so its colour is in a gradient rather than in `color`, and an animation on
+   * `color` cannot reach it. The stops are the same two brand colours that
+   * class applies; they are named here because a gradient cannot be given an
+   * alpha from outside itself.
+   */
+  .stroke-fill .accent-gradient-text {
+    background-image: linear-gradient(
+      to right,
+      rgb(79 70 229 / var(--sf-fill)),
+      rgb(6 182 212 / var(--sf-fill))
+    );
+  }
+
+  .dark .stroke-fill .accent-gradient-text {
+    background-image: linear-gradient(
+      to right,
+      rgb(129 140 248 / var(--sf-fill)),
+      rgb(34 211 238 / var(--sf-fill))
+    );
+  }
+
+  /**
    * Shared press feedback for elements that are not motion components.
    * Compresses on press and releases with a slight overshoot; the transform
    * origin stays centred so nothing shifts in layout.
@@ -388,6 +459,44 @@
   }
 }
 
+/*
+ * The two properties `.stroke-fill` animates. Declared here, outside the
+ * Tailwind layers, alongside the keyframes that drive them — and registered so
+ * the browser interpolates them as numbers instead of swapping two strings at
+ * the midpoint. `initial-value` is the finished headline, which is what a
+ * browser that does not implement `@property` will show.
+ */
+@property --sf-fill {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --sf-edge {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/*
+ * The outline holds while the ink arrives, then goes: fading both at once
+ * would read as a cross-fade between two headlines rather than as one being
+ * filled in.
+ */
+@keyframes stroke-fill {
+  0% {
+    --sf-fill: 0;
+    --sf-edge: 1;
+  }
+  45% {
+    --sf-edge: 0.85;
+  }
+  100% {
+    --sf-fill: 1;
+    --sf-edge: 0;
+  }
+}
+
 @layer utilities {
   .logo-shimmer {
     background-size: 220% 100%;
@@ -406,5 +515,19 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+   * Removed rather than shortened, and in its held state as well as its
+   * animated one: an outlined headline is not a headline anyone asked to read,
+   * and collapsing only the duration would still leave it drawn as one until
+   * its cue arrived.
+   */
+  .stroke-fill,
+  .stroke-fill.is-inking {
+    --sf-fill: 1;
+    --sf-edge: 0;
+
+    animation: none;
   }
 }

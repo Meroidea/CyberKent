@@ -14,6 +14,13 @@ interface DecryptedTextProps {
   encryptedClassName?: string;
   /** Class for the bright characters at the decryption front. */
   edgeClassName?: string;
+  /**
+   * Called once, when the last character has resolved. For an effect that has
+   * to follow this one: the reveal is interval-driven, so how long it takes is
+   * a property of the device rather than of the text, and nothing downstream
+   * can be scheduled against a fixed duration.
+   */
+  onSettle?: () => void;
 }
 
 /** Characters at the decryption front, rendered lit rather than as cipher. */
@@ -75,6 +82,7 @@ export function DecryptedText({
   className,
   encryptedClassName,
   edgeClassName,
+  onSettle,
 }: DecryptedTextProps) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -148,6 +156,15 @@ export function DecryptedText({
   }, [delay, prefersReducedMotion, speed, text]);
 
   const settled = revealed >= text.length && tail === "";
+
+  /* Announced from an effect rather than from the interval, so it is one
+     statement about the rendered state — including the reduced-motion case,
+     where the headline is settled before the interval has ever run. */
+  useEffect(() => {
+    if (settled) {
+      onSettle?.();
+    }
+  }, [settled, onSettle]);
 
   /*
    * Once settled the headline is just its own text — no hidden twin, no

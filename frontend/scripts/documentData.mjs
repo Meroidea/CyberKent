@@ -126,18 +126,12 @@ export function requirementIds(markdown) {
  * groups by quality attribute and numbers continuously across the groups.
  */
 export function bulletsBySubheading(markdown, sectionHeading) {
-  const start = markdown.search(new RegExp(`^#{2,4}\\s+${sectionHeading}\\s*$`, "m"));
+  const section = sectionUnder(markdown, sectionHeading);
 
-  if (start === -1) {
+  if (!section) {
     return null;
   }
 
-  /* From the end of the heading's own line: slicing one character in leaves
-     the rest of that heading at the start of the string, where `^` in a
-     multiline search matches it and closes the section before it opens. */
-  const rest = markdown.slice(markdown.indexOf("\n", start) + 1);
-  const end = rest.search(/^#{1,3}\s+/m);
-  const section = end === -1 ? rest : rest.slice(0, end);
   const groups = [];
 
   for (const block of section.split(/^####\s+/m).slice(1)) {
@@ -152,17 +146,72 @@ export function bulletsBySubheading(markdown, sectionHeading) {
   return groups.length > 0 ? groups : null;
 }
 
-/** The count of `##` sub-headings under a named section. */
-export function subheadings(markdown, sectionHeading) {
-  const start = markdown.search(new RegExp(`^#\\s+${sectionHeading}\\s*$`, "m"));
+/**
+ * The section of a document that sits under a named heading.
+ *
+ * Ends at the next heading of the same level or shallower, so a section keeps
+ * its own sub-headings and stops at its sibling. Shared by every extractor that
+ * reads part of a document rather than all of it.
+ */
+function sectionUnder(markdown, heading) {
+  const opening = new RegExp(`^(#{1,6})\\s+${heading}\\s*$`, "m");
+  const match = opening.exec(markdown);
 
-  if (start === -1) {
+  if (!match) {
     return null;
   }
 
-  const rest = markdown.slice(markdown.indexOf("\n", start) + 1);
-  const end = rest.search(/^#\s+/m);
-  const section = end === -1 ? rest : rest.slice(0, end);
+  /* From the end of the heading's own line: slicing one character in leaves
+     the rest of that heading at the start of the string, where `^` in a
+     multiline search matches it and closes the section before it opens. */
+  const rest = markdown.slice(markdown.indexOf("\n", match.index) + 1);
+  const end = rest.search(new RegExp(`^#{1,${match[1].length}}\\s+`, "m"));
+
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+/**
+ * The functional requirements of a document, grouped by the module owning them.
+ *
+ * The requirements are authored as a bold module line followed by its bullets,
+ * which is the structure this reads back — module number, module name, and each
+ * requirement's identifier separated from its wording. Returns `null` if that
+ * shape is not found, so a restructured document falls back to its own list
+ * rather than being drawn as an empty table.
+ */
+export function requirementModules(markdown, heading = "Functional Requirements") {
+  const section = sectionUnder(markdown, heading);
+
+  if (!section) {
+    return null;
+  }
+
+  const heads = [...section.matchAll(/^\*\*\s*Module\s+(\d+)\s*[:.–—-]\s*(.+?)\s*\*\*\s*$/gm)];
+  const groups = [];
+
+  for (const [position, head] of heads.entries()) {
+    const from = head.index + head[0].length;
+    const to = position + 1 < heads.length ? heads[position + 1].index : section.length;
+
+    const items = [...section.slice(from, to).matchAll(/^\s*[*-]\s+(FR\d+)\s*[:.–—-]\s*(.+?)\s*$/gm)].map(
+      (item) => ({ id: item[1], label: cell(item[2]) }),
+    );
+
+    if (items.length > 0) {
+      groups.push({ index: Number(head[1]), name: cell(head[2]), items });
+    }
+  }
+
+  return groups.length > 0 ? groups : null;
+}
+
+/** The count of `##` sub-headings under a named section. */
+export function subheadings(markdown, sectionHeading) {
+  const section = sectionUnder(markdown, sectionHeading);
+
+  if (!section) {
+    return null;
+  }
 
   return [...section.matchAll(/^##\s+(.+)$/gm)].map((match) => cell(match[1]));
 }

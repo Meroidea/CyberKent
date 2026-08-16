@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { ROUTES, SITE } from "@/config/site";
@@ -5,6 +6,7 @@ import { ActionLink } from "@/components/ui/ActionLink";
 import { GradientText } from "@/components/ui/GradientText";
 import { DecryptedText } from "@/components/ui/DecryptedText";
 import { Pill } from "@/components/ui/Pill";
+import { StrokeFillText } from "@/components/ui/StrokeFillText";
 import { HeroDivider } from "@/components/landing/HeroDivider";
 import { RotatingLine } from "@/components/landing/RotatingLine";
 import { fadeUp, staggerParent } from "@/lib/motion";
@@ -17,10 +19,19 @@ import { fadeUp, staggerParent } from "@/lib/motion";
  * `svh` rather than `vh` keeps the composition intact while iOS Safari's
  * address bar collapses.
  */
+/** Decrypting clauses in the headline. The fill waits for all of them. */
+const HEADLINE_CLAUSES = 2;
+
 export function Hero() {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 600], [0, 150]);
   const opacity = useTransform(scrollY, [0, 500], [1, 0]);
+
+  /* Counted rather than flagged: the clauses are separate reveals of unequal
+     length, and the shorter one settling first is not the headline settling.
+     `useCallback` keeps the identity stable, so each clause reports once. */
+  const [settled, setSettled] = useState(0);
+  const noteSettled = useCallback(() => setSettled((count) => count + 1), []);
 
   return (
     <section className="min-h-viewport relative flex flex-col">
@@ -67,13 +78,19 @@ export function Hero() {
            * Deliberately not balanced. The line wants to break between the two
            * clauses, and balancing optimises for even line lengths instead —
            * which strands "real?" at the head of the second line.
+           *
+           * Two effects, in order: the line resolves out of its cipher as an
+           * outline, and is inked in once both clauses have stopped changing.
            */}
-          <span className="display-depth text-display-1">
-            <DecryptedText text="Not sure if it’s real?" />{" "}
+          <StrokeFillText
+            start={settled >= HEADLINE_CLAUSES}
+            className="display-depth text-display-1"
+          >
+            <DecryptedText text="Not sure if it’s real?" onSettle={noteSettled} />{" "}
             <GradientText className="animate-gradient-drift bg-[length:200%_100%]">
-              <DecryptedText text="Check it first." delay={260} />
+              <DecryptedText text="Check it first." delay={260} onSettle={noteSettled} />
             </GradientText>
-          </span>
+          </StrokeFillText>
         </motion.h1>
 
         <motion.p

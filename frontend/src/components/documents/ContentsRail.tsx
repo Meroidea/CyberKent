@@ -6,6 +6,30 @@ export interface OutlineEntry {
   id: string;
   text: string;
   level: number;
+  /** Section number, assigned at build time. Absent on unnumbered headings. */
+  number?: string;
+}
+
+/**
+ * One entry as it appears in a contents list: the section number, then the
+ * title.
+ *
+ * Shared by the rail and by the contents panel a phone gets instead of it, so
+ * the two cannot drift — they are the same list, drawn at two widths. The
+ * number is set apart in the mono face and never carries the entry's active
+ * colour: it locates the section, and the title is what is being read.
+ */
+export function OutlineLabel({ entry }: { entry: OutlineEntry }) {
+  return (
+    <>
+      {entry.number ? (
+        <span className="mr-1.5 font-mono text-[0.6875rem] font-semibold tabular-nums text-slate-400 dark:text-slate-500">
+          {entry.number}
+        </span>
+      ) : null}
+      {entry.text}
+    </>
+  );
 }
 
 interface ContentsRailProps {
@@ -102,7 +126,7 @@ export function ContentsRail({ entries, active, percent, onNavigate }: ContentsR
                       : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
                   )}
                 >
-                  {entry.text}
+                  <OutlineLabel entry={entry} />
                 </a>
               </li>
             );

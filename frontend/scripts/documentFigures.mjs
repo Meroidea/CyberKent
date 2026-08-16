@@ -4,6 +4,7 @@ import {
   findTable,
   leadingNumber,
   requirementIds,
+  requirementModules,
   subheadings,
   tables,
   tally,
@@ -73,6 +74,30 @@ function requirementsFigures(markdown) {
         caption:
           "Every module the client brief divides the system into. Each one owns its own data and its own rules; a module never reaches into another module's tables.",
         items: modules.map((label) => ({ label })),
+      },
+    });
+  }
+
+  const groups = requirementModules(markdown);
+
+  if (groups) {
+    figures.push({
+      anchor: "Functional Requirements",
+      /*
+       * Replaces the twelve lists it is built from, rather than being added
+       * beneath them. Printed in full they run to several screens, and a second
+       * copy of all seventy-two requirements immediately below the first would
+       * make the section longer, not shorter — the problem the table exists to
+       * solve. The wording is unchanged; only its arrangement is.
+       */
+      place: "replace",
+      spec: {
+        kind: "modules",
+        title: "Functional requirements by module",
+        caption:
+          "The complete functional baseline, one row per module. Every requirement is here in the wording the client brief gives it; open a row to read the six it carries.",
+        summary: `${groups.length} modules · ${groups.reduce((sum, group) => sum + group.items.length, 0)} functional requirements · FR${ids[0] ?? 1}–FR${ids[ids.length - 1] ?? 0}`,
+        groups,
       },
     });
   }
@@ -378,6 +403,6 @@ export function figuresFor(id, markdown) {
 }
 
 function hasData(spec) {
-  const rows = spec.items ?? spec.slices ?? spec.layers ?? spec.steps ?? spec.series ?? [];
+  const rows = spec.items ?? spec.slices ?? spec.layers ?? spec.steps ?? spec.series ?? spec.groups ?? [];
   return rows.length > 0;
 }

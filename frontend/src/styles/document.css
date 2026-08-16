@@ -45,6 +45,32 @@
   --doc-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color: var(--doc-text);
+
+  /*
+   * The column may never be wider than the space it was given.
+   *
+   * A document is generated HTML: it carries tables, long identifiers and file
+   * paths that no author sized for a 320px screen. Without this, one such word
+   * widens the article, the article widens the grid column, and the whole page
+   * scrolls sideways — a phone reader then drags every paragraph back into view
+   * line by line. The rule is set here, once, at the root of the scope.
+   */
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/*
+ * The same guarantee, one level down.
+ *
+ * `min-width: 0` is what actually lets a grid or flex child shrink: the default
+ * `auto` floor is the child's own min-content width, so a long word inside a
+ * figure card pushes the card, then the track, then the page. Declared for
+ * every descendant rather than for the handful of figures that have the problem
+ * today, because the next figure would have it too.
+ */
+.doc-prose * {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .dark .doc-prose {
@@ -95,28 +121,50 @@
 .doc-prose h1 {
   font-size: 1.6rem;
   font-weight: 700;
-  margin: 3.25rem 0 1.1rem;
-  padding-bottom: 0.55rem;
+  margin: 2.4rem 0 0.85rem;
+  padding-bottom: 0.45rem;
   border-bottom: 1px solid var(--doc-line-strong);
 }
 
 .doc-prose h2 {
   font-size: 1.3rem;
   font-weight: 700;
-  margin: 2.5rem 0 0.85rem;
+  margin: 1.85rem 0 0.6rem;
 }
 
 .doc-prose h3 {
   font-size: 1.0625rem;
   font-weight: 600;
-  margin: 2rem 0 0.6rem;
+  margin: 1.5rem 0 0.45rem;
 }
 
 .doc-prose h4 {
   font-size: 0.9375rem;
   font-weight: 600;
-  margin: 1.5rem 0 0.5rem;
+  margin: 1.15rem 0 0.35rem;
   color: var(--doc-muted);
+}
+
+/*
+ * The section number, set apart from the title it numbers.
+ *
+ * Numbering is applied at build time — see `numberHeadings` in
+ * `scripts/build-documents.mjs` — and carried in its own span so it can be set
+ * in the accent and in tabular figures without the title inheriting either. A
+ * number is a locator, not part of the heading's sentence, and it reads as one
+ * only if it looks like one.
+ */
+.doc-prose .heading-number {
+  display: inline-block;
+  margin-right: 0.5em;
+  color: var(--doc-accent);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  /* Held just under the title's own size at every level, so a long number
+     never competes with the words beside it. */
+  font-size: 0.85em;
+  letter-spacing: 0;
 }
 
 .doc-prose > :first-child {
@@ -138,21 +186,57 @@
   hyphens: auto;
 }
 
+/*
+ * Leading and paragraph spacing are set together, because they are one
+ * decision: the gap between paragraphs only reads as a gap if it is clearly
+ * larger than the gap between lines. At 1.8 the leading was wide enough that a
+ * paragraph broke up into separate lines and the space beneath it stopped
+ * separating anything. 1.6 is still comfortable for justified text at this
+ * measure, and the 0.85rem beneath is what now marks the paragraph break.
+ */
 .doc-prose p {
-  margin: 0 0 1.15rem;
-  font-size: 1.0125rem;
-  line-height: 1.8;
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
+/*
+ * Markers restored.
+ *
+ * Tailwind's reset strips list styling from every `ul` and `ol` on the site,
+ * which is right for a navigation menu and wrong for a document: these lists
+ * are numbered clauses and enumerated requirements, and a numbered list that
+ * prints without its numbers cannot be referred to. The figures that are built
+ * on lists turn them off again for themselves.
+ */
 .doc-prose ul,
 .doc-prose ol {
   padding-left: 1.35rem;
-  margin: 0 0 1.15rem;
+  margin: 0 0 0.85rem;
+  list-style: disc;
+}
+
+.doc-prose ol {
+  list-style: decimal;
+}
+
+.doc-prose ul ul {
+  list-style: circle;
+}
+
+.doc-prose li::marker {
+  color: var(--doc-faint);
 }
 
 .doc-prose li {
-  margin: 0.3rem 0;
-  line-height: 1.75;
+  margin: 0.15rem 0;
+  line-height: 1.55;
+}
+
+/* A nested list belongs to the item above it, so it is not separated from it. */
+.doc-prose li > ul,
+.doc-prose li > ol {
+  margin: 0.15rem 0 0.35rem;
 }
 
 .doc-prose strong {
@@ -168,7 +252,7 @@
 .doc-prose hr {
   border: 0;
   border-top: 1px solid var(--doc-line);
-  margin: 2.75rem 0;
+  margin: 2rem 0;
 }
 
 .doc-prose img {
@@ -178,8 +262,8 @@
 }
 
 .doc-prose blockquote {
-  margin: 1.35rem 0;
-  padding: 0.85rem 1.15rem;
+  margin: 1.1rem 0;
+  padding: 0.75rem 1.05rem;
   border-left: 3px solid var(--doc-accent);
   background: var(--doc-accent-soft);
   border-radius: 0 0.5rem 0.5rem 0;
@@ -217,7 +301,11 @@
    The container is focusable so it can also be reached from the keyboard. */
 .doc-prose .table-scroll {
   overflow-x: auto;
-  margin: 1.35rem 0;
+  /* The sideways scroll stops at the table rather than being handed to the
+     page behind it once the last column is reached. */
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+  margin: 1.1rem 0;
   border: 1px solid var(--doc-line);
   border-radius: 0.75rem;
 }
@@ -257,10 +345,37 @@
   font-weight: 600;
 }
 
+/*
+ * On a phone the floor comes off.
+ *
+ * 34rem is the width below which a wide table stops being readable and starts
+ * being a puzzle — but it applies that judgement to every table, so a
+ * two-column one is given a sideways scroll it never needed. Below 560px the
+ * floor is dropped and the header cells are allowed to wrap: a narrow table
+ * then fits the screen exactly, and only a genuinely wide one still scrolls
+ * inside its own box.
+ */
+@media (max-width: 560px) {
+  .doc-prose table {
+    min-width: 0;
+    font-size: 0.8125rem;
+  }
+
+  .doc-prose th {
+    white-space: normal;
+  }
+
+  .doc-prose th,
+  .doc-prose td {
+    padding: 0.5rem 0.6rem;
+  }
+}
+
 /* ---------------------------------------------------------------- figures */
 
 .doc-prose .fig {
-  margin: 2.25rem 0;
+  margin: 1.75rem 0;
+  max-width: 100%;
 }
 
 .doc-prose .fig-frame {
@@ -324,6 +439,7 @@
 .doc-prose .fig:not(.is-visible) .layer,
 .doc-prose .fig:not(.is-visible) .grid-card,
 .doc-prose .fig:not(.is-visible) .flow-step,
+.doc-prose .fig:not(.is-visible) .module,
 .doc-prose .fig:not(.is-visible) .fig-timeline li {
   opacity: 0;
   transform: translateY(14px);
@@ -652,6 +768,200 @@
   color: var(--doc-faint);
 }
 
+/* --- modules: a register that opens
+ *
+ * One grid template drives the header and every row, so the columns line up
+ * down the table and there is one place to change them. Below 560px the range
+ * and the count drop to a second line under the module name — at that width
+ * four columns leave the name about eleven characters, which is not a name.
+ */
+
+.doc-prose .fig-modules {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.doc-prose .modules-row {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr) auto 1.6rem 0.9rem;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.doc-prose .modules-head {
+  padding: 0 0.85rem 0.15rem;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--doc-faint);
+}
+
+.doc-prose .module {
+  border: 1px solid var(--doc-line);
+  border-radius: 0.65rem;
+  background: var(--doc-raised);
+  overflow: hidden;
+}
+
+.doc-prose .module-summary {
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  /* The disclosure state is carried by the chevron, which is placed in the
+     grid; the default marker would sit outside it and break the columns. */
+  list-style: none;
+  transition: background-color 0.2s var(--doc-ease);
+}
+
+.doc-prose .module-summary::-webkit-details-marker {
+  display: none;
+}
+
+.doc-prose .module-summary:hover {
+  background: var(--doc-accent-soft);
+}
+
+.doc-prose .module[open] {
+  border-color: var(--doc-line-strong);
+}
+
+.doc-prose .module[open] .module-summary {
+  border-bottom: 1px solid var(--doc-line);
+}
+
+.doc-prose .module-index {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--doc-accent);
+}
+
+.doc-prose .module-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--doc-heading);
+}
+
+.doc-prose .module-range {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  color: var(--doc-muted);
+  white-space: nowrap;
+}
+
+.doc-prose .module-count {
+  justify-self: end;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--doc-line);
+  border-radius: 999px;
+  background: var(--doc-accent-soft);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--doc-accent);
+}
+
+.doc-prose .module-chevron {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--doc-faint);
+  transition: transform 0.25s var(--doc-ease);
+}
+
+.doc-prose .module[open] .module-chevron {
+  transform: rotate(180deg);
+}
+
+.doc-prose .module-reqs {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.85rem 0.7rem 2.75rem;
+  display: grid;
+  gap: 0.3rem 1rem;
+  /* Six short requirements sit two or three abreast on a wide column and one
+     abreast on a phone, which is what keeps an opened row from becoming the
+     list this table replaced. */
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  animation: doc-module-open 0.28s var(--doc-ease) both;
+}
+
+.doc-prose .module-req {
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: baseline;
+  margin: 0;
+  text-align: left;
+  hyphens: none;
+}
+
+.doc-prose .req-id {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--doc-accent);
+}
+
+.doc-prose .req-label {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--doc-text);
+}
+
+@keyframes doc-module-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 560px) {
+  /* Three columns and two rows: the name keeps the width it needs, and the
+     range and the count move under it rather than competing with it. */
+  .doc-prose .modules-row {
+    grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+    row-gap: 0.15rem;
+    align-items: start;
+  }
+
+  /* The column labels describe columns that no longer exist at this width. */
+  .doc-prose .modules-head {
+    display: none;
+  }
+
+  .doc-prose .module-index,
+  .doc-prose .module-chevron {
+    /* Optically aligned with the first line of the name beside them. */
+    margin-top: 0.15rem;
+  }
+
+  .doc-prose .module-range {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .doc-prose .module-count {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .doc-prose .module-chevron {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .doc-prose .module-reqs {
+    padding-left: 1rem;
+  }
+}
+
 /* --- timeline */
 
 .doc-prose .fig-timeline {
@@ -826,6 +1136,18 @@
   .doc-prose .fig .donut-slice { stroke-dasharray: var(--dash) 100 !important; }
   .doc-prose .table-scroll { overflow: visible; }
   .doc-prose table { min-width: 0; }
+
+  /*
+   * Paper cannot be clicked, so every row is printed open. The two
+   * declarations are the same instruction to two generations of browser: the
+   * older one hides a closed row's content by not laying it out, the newer one
+   * by skipping its contents.
+   */
+  .doc-prose .module > *:not(summary) { display: block !important; }
+  .doc-prose .module::details-content { content-visibility: visible; }
+  .doc-prose .module-reqs { animation: none !important; }
+  .doc-prose .module-chevron { display: none; }
+  .doc-prose .module { break-inside: avoid; }
   .doc-prose h1,
   .doc-prose h2 { break-after: avoid; }
   .doc-prose .fig,

@@ -162,6 +162,172 @@ function outline(html) {
   return { html: rewritten, entries };
 }
 
+/**
+ * Pushes an appended document one level down the outline.
+ *
+ * An appendix is added under a heading of its own, and the file it is built
+ * from opens at the top level too — so without this the appendix's first
+ * section is a *sibling* of the appendix rather than part of it. The outline
+ * then reads as though the document simply carried on, and any numbering
+ * derived from it says the same thing.
+ *
+ * Fence-aware: a `#` opening a line inside a code block is a comment or a
+ * colour, not a heading, and gaining a level would change what it says.
+ */
+function demoteHeadings(markdown) {
+  let fenced = false;
+
+  return markdown
+    .split("\n")
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fenced = !fenced;
+        return line;
+      }
+
+      return fenced ? line : line.replace(/^(#{1,5})(\s+\S)/, "$1#$2");
+    })
+    .join("\n");
+}
+
+/* ------------------------------------------------------------- numbering -- */
+
+/** A number a document already gives a heading — the "5.1" in "5.1 Module 1". */
+const AUTHORED_NUMBER = /^\s*(\d+(?:\.\d+)*)\.?\s+/;
+
+/** The word an appendix heading opens with, which its label then replaces. */
+const APPENDIX_PREFIX = /^\s*appendix\s*[:—–-]*\s*/i;
+
+/** Appendix letters: 1 → A. Past Z the series continues as a number. */
+function appendixLetter(position) {
+  return position <= 26 ? String.fromCharCode(64 + position) : String(position);
+}
+
+/** "1" prints as "1.", "1.2" prints as itself — a top-level number needs the
+    stop to read as a section number rather than as a stray digit. */
+function printed(path) {
+  return path.includes(".") ? path : `${path}.`;
+}
+
+/**
+ * The numbers a document already carries, kept exactly as authored.
+ *
+ * A specification that numbers its own sections also refers to them in its
+ * prose — "Section 4 is the conformance check", "see 5.3" — and a table of
+ * contents inside the document lists them. Renumbering it would make every one
+ * of those references wrong, so a document that numbers itself is left to.
+ */
+function authoredNumbers(headings) {
+  const numbers = new Map();
+
+  for (const heading of headings) {
+    const match = AUTHORED_NUMBER.exec(heading.text);
+
+    if (match) {
+      numbers.set(heading.id, { label: printed(match[1]), strip: AUTHORED_NUMBER });
+    }
+  }
+
+  return numbers;
+}
+
+/**
+ * Hierarchical numbers for a document that has none.
+ *
+ * Assigned from the heading levels the document actually uses rather than from
+ * the tag names: these files do not agree on where their outline starts — one
+ * opens at `#`, another at `###` — and a heading is a subsection because it
+ * sits under another heading, not because it is an `h3`. A run of headings with
+ * nothing above them therefore numbers 1, 2, 3 whatever level it is set at,
+ * which is also what keeps a document whose first sections are set deeper than
+ * its later ones from numbering them 0.0.1.
+ *
+ * Appendices are lettered, as they are in every specification the project
+ * hands over: the appendix itself is "Appendix A" and its sections are A.1,
+ * A.2 — so a reader can tell a cross-reference to an appendix from one to a
+ * numbered section without following it.
+ */
+function assignedNumbers(headings) {
+  const numbers = new Map();
+  const open = [];
+  let sections = 0;
+  let appendices = 0;
+
+  for (const heading of headings) {
+    while (open.length > 0 && open[open.length - 1].level >= heading.level) {
+      open.pop();
+    }
+
+    if (open.length === 0) {
+      /* Once the appendices have begun, everything after them is one: a
+         numbered section cannot follow Appendix A and still be section 8. */
+      if (appendices > 0 || APPENDIX_PREFIX.test(heading.text)) {
+        appendices += 1;
+        const letter = appendixLetter(appendices);
+        open.push({ level: heading.level, children: 0, path: letter, label: `Appendix ${letter}` });
+        numbers.set(heading.id, { label: `Appendix ${letter}`, strip: APPENDIX_PREFIX });
+        continue;
+      }
+
+      sections += 1;
+      open.push({ level: heading.level, children: 0, path: String(sections), label: printed(String(sections)) });
+    } else {
+      const parent = open[open.length - 1];
+      parent.children += 1;
+      const path = `${parent.path}.${parent.children}`;
+      open.push({ level: heading.level, children: 0, path, label: path });
+    }
+
+    numbers.set(heading.id, { label: open[open.length - 1].label });
+  }
+
+  return numbers;
+}
+
+/**
+ * Numbers every heading, and tells the contents outline what each one is.
+ *
+ * Run after the figures are placed, because a figure is anchored by the text of
+ * the heading it belongs under and this rewrites that text.
+ *
+ * The number is emitted in its own span rather than as part of the heading, so
+ * it can be set in the accent and in tabular figures without the title
+ * inheriting either, and so the outline can print it as a locator beside the
+ * title rather than as the first word of it.
+ */
+function numberHeadings(html, entries) {
+  const pattern = /<h([1-4]) id="([^"]*)">([\s\S]*?)<\/h\1>/g;
+  const headings = [...html.matchAll(pattern)].map((match) => ({
+    level: Number(match[1]),
+    id: match[2],
+    text: stripTags(match[3]),
+  }));
+
+  const carried = headings.filter((heading) => AUTHORED_NUMBER.test(heading.text)).length;
+  const selfNumbered = headings.length > 0 && carried / headings.length >= 0.5;
+  const numbers = selfNumbered ? authoredNumbers(headings) : assignedNumbers(headings);
+
+  const rewritten = html.replace(pattern, (_match, level, id, inner) => {
+    const number = numbers.get(id);
+    const title = number?.strip ? inner.replace(number.strip, "") : inner;
+    const label = number ? `<span class="heading-number">${number.label}</span>` : "";
+
+    return `<h${level} id="${id}">${label}${title}</h${level}>`;
+  });
+
+  const updated = entries.map((entry) => {
+    const number = numbers.get(entry.id);
+
+    return {
+      ...entry,
+      ...(number ? { number: number.label } : {}),
+      text: number?.strip ? entry.text.replace(number.strip, "") : entry.text,
+    };
+  });
+
+  return { html: rewritten, entries: updated };
+}
+
 /** Wraps every table so a wide one scrolls itself rather than the page. */
 function wrapTables(html) {
   return html.replace(
@@ -210,15 +376,21 @@ function pipelineFigures(html) {
 }
 
 /**
- * Where an authored figure lands.
+ * Where an authored figure lands, as a range in the document.
  *
  * By default: after the first paragraph under its heading, so the section
  * introduces itself in words before it is drawn. With `place: "end"`: at the
  * close of the section, which is where a figure belongs when it summarises
  * something the section spends its length setting out — put at the top, it
- * would answer a question the reader has not been asked yet.
+ * would answer a question the reader has not been asked yet. With
+ * `place: "replace"`: the same span, taken over rather than added to, for a
+ * figure that *is* the section's content in another arrangement.
+ *
+ * The section ends at the next heading, or at the rule that closes it where
+ * there is one — so a figure placed at the end of a section stays inside it
+ * rather than landing under the divider that separates it from the next.
  */
-function anchorPosition(html, anchor, place = "prose") {
+function anchorRange(html, anchor, place = "prose") {
   const pattern = new RegExp(`<h[1-4] id="[^"]*">\\s*${escapeRegExp(anchor)}`, "i");
   const heading = pattern.exec(html);
 
@@ -228,15 +400,18 @@ function anchorPosition(html, anchor, place = "prose") {
 
   const after = heading.index + heading[0].length;
   const nextHeading = html.slice(after).search(/<h[1-4] id=/);
-  const limit = nextHeading === -1 ? html.length : after + nextHeading;
+  const sectionEnd = nextHeading === -1 ? html.length : after + nextHeading;
+  const closingRule = /<hr\s*\/?>\s*$/.exec(html.slice(after, sectionEnd));
+  const limit = closingRule ? after + closingRule.index : sectionEnd;
 
   if (place === "end") {
-    return limit;
+    return { start: limit, end: limit };
   }
 
   const paragraph = html.indexOf("</p>", after);
+  const afterIntro = paragraph !== -1 && paragraph < limit ? paragraph + 4 : limit;
 
-  return paragraph !== -1 && paragraph < limit ? paragraph + 4 : limit;
+  return place === "replace" ? { start: afterIntro, end: limit } : { start: afterIntro, end: afterIntro };
 }
 
 function escapeRegExp(value) {
@@ -256,14 +431,14 @@ function placeFigures(html, authored) {
   const edits = [...pipelineFigures(html)];
 
   for (const entry of authored) {
-    const position = anchorPosition(html, entry.anchor, entry.place);
+    const range = anchorRange(html, entry.anchor, entry.place);
 
-    if (position === null) {
+    if (range === null) {
       console.warn(`    ! no anchor for figure "${entry.anchor}" — figure dropped`);
       continue;
     }
 
-    edits.push({ start: position, end: position, spec: entry.spec });
+    edits.push({ ...range, spec: entry.spec });
   }
 
   edits.sort((first, second) => first.start - second.start);
@@ -287,13 +462,14 @@ async function render(document) {
 
   for (const appendix of document.build.appendices ?? []) {
     const extra = await readFile(join(SOURCE, appendix.source), "utf8");
-    markdown += `\n\n---\n\n# ${appendix.heading}\n\n${stripTitleBlock(extra)}`;
+    markdown += `\n\n---\n\n# ${appendix.heading}\n\n${demoteHeadings(stripTitleBlock(extra))}`;
   }
 
   const parsed = await marked.parse(markdown, { gfm: true, breaks: false });
   const withIds = outline(parsed);
   const placed = placeFigures(withIds.html, figuresFor(document.id, markdown));
-  const html = wrapTables(placed.html);
+  const numbered = numberHeadings(placed.html, withIds.entries);
+  const html = wrapTables(numbered.html);
 
   const target = join(DATA, `${document.id}.json`);
 
@@ -306,7 +482,7 @@ async function render(document) {
       minutes: readingTime(html),
       /* The abstract heads the contents for the same reason it heads the page:
          it is the first thing to read, so it is the first thing to return to. */
-      entries: [{ id: "abstract", text: "Abstract", level: 1 }, ...withIds.entries],
+      entries: [{ id: "abstract", text: "Abstract", level: 1 }, ...numbered.entries],
       html,
     }),
     "utf8",
@@ -316,7 +492,7 @@ async function render(document) {
   return {
     slug: document.id,
     bytes: size,
-    note: `${withIds.entries.length} in contents · ${placed.count} figures`,
+    note: `${numbered.entries.length} in contents · ${placed.count} figures`,
   };
 }
 

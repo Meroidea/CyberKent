@@ -128,7 +128,16 @@ export function HowItWorks() {
           </h2>
         </header>
 
-        <div className="relative mt-section-gap">
+        {/*
+         * Clipped sideways, because the steps enter from 40px along the rail
+         * and the container has 24px of gutter to give them: until this section
+         * is scrolled to, the last step sits 16px outside the viewport and the
+         * whole page can be dragged sideways by that much. `clip` rather than
+         * `hidden` — hidden on one axis forces the other to scroll, which would
+         * turn a decorative rail into a scroll container and cut the ring drawn
+         * around each node.
+         */}
+        <div className="relative mt-section-gap overflow-x-clip">
           {/* Unlit rail, then the lit one drawn over it by scroll progress. */}
           <span
             aria-hidden="true"
