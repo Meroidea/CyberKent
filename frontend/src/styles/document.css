@@ -297,77 +297,175 @@
   padding: 0;
 }
 
-/* Wide tables scroll inside their own box so the page never scrolls sideways.
-   The container is focusable so it can also be reached from the keyboard. */
+/*
+ * These documents are mostly registers — requirements, risks, traceability — so
+ * a table is the primary reading surface here rather than an occasional aside,
+ * and it is styled as one.
+ *
+ * Wide tables scroll inside their own box so the page never scrolls sideways.
+ * The container is focusable so the scroll can also be driven from the keyboard.
+ */
 .doc-prose .table-scroll {
   overflow-x: auto;
   /* The sideways scroll stops at the table rather than being handed to the
      page behind it once the last column is reached. */
   overscroll-behavior-x: contain;
   max-width: 100%;
-  margin: 1.1rem 0;
-  border: 1px solid var(--doc-line);
-  border-radius: 0.75rem;
+  margin: 1.1rem 0 1.35rem;
+  border: 1px solid var(--doc-line-strong);
+  border-radius: 0.65rem;
+  /* The corners have to clip the header's fill, or the tint squares off the top
+     two corners of the box it sits inside. */
+  overflow-y: hidden;
+  background: var(--doc-surface);
 }
 
 .doc-prose table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 34rem;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/*
+ * The width a table needs, by the shape it is.
+ *
+ * One floor for every table applies a six-column judgement to a two-column
+ * glossary: it either scrolls the glossary for no reason, or is set low enough
+ * that the six-column register squeezes into columns four words wide and stops
+ * reading as rows at all. Each floor below is roughly the width at which that
+ * many columns stop being trackable across one record; under it the container
+ * scrolls, which costs a gesture and keeps the table legible.
+ *
+ * Two and three columns have no floor: they fit the measure. `data-columns` is
+ * written by `scripts/build-documents.mjs`, which can count what CSS cannot.
+ */
+.doc-prose .table-scroll[data-columns="4"] table {
+  min-width: 40rem;
+}
+
+.doc-prose .table-scroll[data-columns="5"] table {
+  min-width: 52rem;
+}
+
+.doc-prose .table-scroll[data-columns="6"] table {
+  min-width: 62rem;
+}
+
+/* Seven and up — the traceability and RACI matrices. */
+.doc-prose .table-scroll[data-columns="7"] table,
+.doc-prose .table-scroll[data-columns="8"] table,
+.doc-prose .table-scroll[data-columns="9"] table {
+  min-width: 72rem;
 }
 
 .doc-prose th,
 .doc-prose td {
   text-align: left;
-  padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid var(--doc-line);
+  padding: 0.5rem 0.7rem;
   vertical-align: top;
   hyphens: auto;
+  overflow-wrap: break-word;
 }
 
-.doc-prose th {
+.doc-prose thead th {
   background: var(--doc-accent-soft);
   color: var(--doc-heading);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+  border-bottom: 1px solid var(--doc-line-strong);
 }
 
-.doc-prose tbody tr:last-child td {
-  border-bottom: 0;
+/* Ruled on rows only. The vertical lines a register does not need are the ones
+   that make it look like a spreadsheet. */
+.doc-prose tbody tr {
+  border-top: 1px solid var(--doc-line);
 }
 
-.doc-prose tbody td:first-child {
-  color: var(--doc-heading);
-  font-weight: 600;
+.doc-prose tbody tr:first-child {
+  border-top: 0;
+}
+
+/* Banding, held very low: enough to follow one row across six columns, not
+   enough to read as a second colour in the page. */
+.doc-prose tbody tr:nth-child(even) {
+  background: var(--doc-code);
+}
+
+.doc-prose tbody tr:hover {
+  background: var(--doc-accent-soft);
 }
 
 /*
- * On a phone the floor comes off.
+ * The first column of a register is its key — FR1, ER-2, M8, a term. Set as a
+ * label, and held on one line so the identifier cannot break across two.
+ */
+.doc-prose tbody td:first-child {
+  color: var(--doc-heading);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/*
+ * Except where that cell is a sentence rather than a key.
  *
- * 34rem is the width below which a wide table stops being readable and starts
- * being a puzzle — but it applies that judgement to every table, so a
- * two-column one is given a sideways scroll it never needed. Below 560px the
- * floor is dropped and the header cells are allowed to wrap: a narrow table
- * then fits the screen exactly, and only a genuinely wide one still scrolls
- * inside its own box.
+ * In these documents a key is always marked up — `**FR1**`, `` `AuditLog` `` —
+ * and a prose first cell is not, so emphasis is what separates the two. Holding
+ * a sentence on one line would push every table into a scroll it does not need.
+ * Where `:has()` is unsupported the cell keeps the nowrap above and the table
+ * scrolls instead: nothing is lost either way.
+ */
+.doc-prose tbody td:first-child:not(:has(strong)):not(:has(code)) {
+  white-space: normal;
+  font-weight: 500;
+}
+
+/* A status symbol or short code reads as one token, never split. */
+.doc-prose td code,
+.doc-prose th code {
+  white-space: nowrap;
+  font-size: 0.8em;
+}
+
+/* Markdown puts no `p` inside a cell, but a figure built on a table can. */
+.doc-prose table p {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+/*
+ * On a phone every floor comes off.
+ *
+ * The floors above are a judgement about legibility on a screen wide enough to
+ * honour them; on a 375px screen no table can be shown at 52rem without a scroll
+ * that never ends, and wrapped cells in a table that fits the width are the
+ * better reading of the same rows. Written against `.table-scroll table` so it
+ * outranks the attribute-qualified floors — a bare element selector would lose
+ * to them and leave a phone scrolling every register.
  */
 @media (max-width: 560px) {
-  .doc-prose table {
+  .doc-prose .table-scroll table {
     min-width: 0;
-    font-size: 0.8125rem;
   }
 
-  .doc-prose th {
+  .doc-prose thead th {
     white-space: normal;
   }
 
   .doc-prose th,
   .doc-prose td {
-    padding: 0.5rem 0.6rem;
+    padding: 0.45rem 0.55rem;
+  }
+
+  /* An identifier can share a line with the row it names when there is no room
+     to hold it on its own. */
+  .doc-prose tbody td:first-child {
+    white-space: normal;
   }
 }
 

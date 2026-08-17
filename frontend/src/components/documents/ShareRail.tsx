@@ -82,7 +82,7 @@ export function ShareRail({ document: doc, others }: ShareRailProps) {
           </button>
 
           <a
-            href={`mailto:?subject=${encodeURIComponent(`${doc.title} — CyberNova project documentation`)}`}
+            href={`mailto:?subject=${encodeURIComponent(`${doc.title} — CyberKent project documentation`)}`}
             className={ACTION}
           >
             <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />

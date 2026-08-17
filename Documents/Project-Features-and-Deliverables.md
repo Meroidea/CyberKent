@@ -1,6 +1,6 @@
 # Project Features and Deliverables
 
-## CyberNova — Online Scam Detection and Reporting System
+## CyberKent — Online Scam Detection and Reporting System
 
 ### Prepared for Hume City Council CyberSafe Services
 
@@ -8,7 +8,7 @@
 
 | Field | Detail |
 |---|---|
-| **Project name** | CyberNova |
+| **Project name** | CyberKent |
 | **System name** | Online Scam Detection and Reporting System |
 | **Group name** | CyberKent |
 | **Client** | Hume City Council, Victoria, Australia |
@@ -23,7 +23,7 @@
 
 ## 1. Purpose of this document
 
-This document is the plain-language summary of **what CyberNova does, what is being delivered, and how far along it is**. It is written for readers who need the shape of the project without the full requirements specification: Council stakeholders, community representatives, the project supervisor, and anyone visiting the service who wants to know what it is.
+This document is the plain-language summary of **what CyberKent does, what is being delivered, and how far along it is**. It is written for readers who need the shape of the project without the full requirements specification: Council stakeholders, community representatives, the project supervisor, and anyone visiting the service who wants to know what it is.
 
 Every feature listed here traces to numbered requirements in the Final SRS Report, and every deliverable traces to a milestone in the project plan. Where something is not yet built, this document says so.
 
@@ -31,7 +31,7 @@ Every feature listed here traces to numbered requirements in the Final SRS Repor
 
 ## 2. What the service does
 
-CyberNova gives the Hume community a single trusted municipal portal that answers **"is this a scam?"** in seconds with a transparent, explained risk score; accepts a structured scam report with evidence and tells the reporter what happens next; lets trained Council staff verify reports and publish anonymised community alerts quickly; shows regional scam activity; provides awareness material and step-by-step recovery checklists; and produces the de-identified statistics Council needs to target its work and evidence its advocacy.
+CyberKent gives the Hume community a single trusted municipal portal that answers **"is this a scam?"** in seconds with a transparent, explained risk score; accepts a structured scam report with evidence and tells the reporter what happens next; lets trained Council staff verify reports and publish anonymised community alerts quickly; shows regional scam activity; provides awareness material and step-by-step recovery checklists; and produces the de-identified statistics Council needs to target its work and evidence its advocacy.
 
 It does all of this while collecting the minimum personal data necessary, explaining every automated judgement it makes, and never presenting itself as professional cybersecurity certification.
 
@@ -41,14 +41,14 @@ Residents, small businesses, community organisations and not-for-profits in the 
 
 ### 2.2 Why a local service, when national ones exist
 
-| Existing channel | Gap CyberNova fills |
+| Existing channel | Gap CyberKent fills |
 |---|---|
 | Scamwatch / National Anti-Scam Centre | No municipal-level visibility; no local alerting; no feedback loop to Council |
 | Bank and telecommunications warnings | Reach only their own customers; nothing for community organisations |
 | ACSC / cyber.gov.au guidance | Generic advice; no "is *this* message a scam?" capability |
 | Council newsletters and social media | Ad hoc, not evidence-driven, no reporting path, no analytics |
 
-CyberNova is **complementary, not competing**. It does not replace Scamwatch, IDCARE, the police or a bank's fraud line — it routes people to them at the right moment.
+CyberKent is **complementary, not competing**. It does not replace Scamwatch, IDCARE, the police or a bank's fraud line — it routes people to them at the right moment.
 
 ---
 
@@ -237,4 +237,4 @@ Project duration: **30 June 2026 – 27 November 2026 (22 weeks)**.
 
 *Prepared by Group CyberKent for Hume City Council CyberSafe Services — 13 August 2026.*
 
-*CyberNova is an advisory service. It does not constitute professional cybersecurity certification, does not guarantee protection from cyberattacks, and is not a substitute for qualified professional assistance or the relevant authorities.*
+*CyberKent is an advisory service. It does not constitute professional cybersecurity certification, does not guarantee protection from cyberattacks, and is not a substitute for qualified professional assistance or the relevant authorities.*

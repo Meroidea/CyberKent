@@ -34,3 +34,30 @@ export const HEADER_CLEARANCE = 96;
  * reference; see `ConsoleShowcase`.
  */
 export const REFERENCE_VIEWPORT_HEIGHT = 880;
+
+/**
+ * The width at which a document reader gains its contents rail.
+ *
+ * Named here because two places need it and only one of them is CSS: Tailwind's
+ * `rail` screen is built from this value, and `DocumentPage` reads the same
+ * number to decide whether the contents belong in a rail beside the measure or
+ * in a drawer over it. Written twice, the two would disagree eventually — and
+ * the failure would be silent: a width with the rail hidden and the drawer
+ * disabled, so the contents are simply unreachable.
+ */
+export const RAIL_BREAKPOINT = 1180;
+
+/** The width at which a second rail fits on the other side of the measure. */
+export const RAILS_BREAKPOINT = 1400;
+
+/**
+ * Narrowest viewport the presentation deck is offered on.
+ *
+ * A slide is a fixed 1280×720 composition scaled whole to the screen, which is
+ * what keeps a rehearsed layout identical on a projector. The same property is
+ * why it cannot be offered on a phone: scaled into 375px the stage runs at 0.29,
+ * and type set at 10px inside it lands under 3px. There is no reflow to fall back
+ * on by design, so below this width the deck is not offered at all rather than
+ * offered unreadable — the document itself is the mobile reading surface.
+ */
+export const DECK_MIN_WIDTH = 1024;

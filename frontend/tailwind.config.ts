@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { RAIL_BREAKPOINT, RAILS_BREAKPOINT } from "./src/config/layout";
 
 /**
  * Design tokens are declared as HSL channels in `src/index.css` (`:root` / `.dark`)
@@ -34,8 +35,8 @@ const config: Config = {
          * so the rails cannot be expressed as a fraction of the viewport —
          * they appear when there is room beside the column, or not at all.
          */
-        rail: "1180px",
-        rails: "1400px",
+        rail: `${RAIL_BREAKPOINT}px`,
+        rails: `${RAILS_BREAKPOINT}px`,
       },
       colors: {
         border: "hsl(var(--border))",

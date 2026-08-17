@@ -1,6 +1,6 @@
 # Final Software Requirements Specification
 
-## CyberNova — Online Scam Detection and Reporting System
+## CyberKent — Online Scam Detection and Reporting System
 
 ### Prepared for Hume City Council CyberSafe Services
 
@@ -8,7 +8,7 @@
 
 | Field | Detail |
 |---|---|
-| **Project name** | CyberNova |
+| **Project name** | CyberKent |
 | **System name** | Online Scam Detection and Reporting System |
 | **Group name** | CyberKent |
 | **Client** | Hume City Council, Victoria, Australia |
@@ -90,7 +90,7 @@ Project supervisor · Unit coordinator · CyberSafe Services manager · Hume Cit
 
 ## 1.1 Purpose
 
-This document is the **Final Software Requirements Specification** for CyberNova, the Online Scam Detection and Reporting System commissioned by Hume City Council for its CyberSafe Services program. It supersedes the Interim SRS Report v1.0 and is the authoritative statement of what the system must do, how well it must do it, and the ethical limits within which it must operate.
+This document is the **Final Software Requirements Specification** for CyberKent, the Online Scam Detection and Reporting System commissioned by Hume City Council for its CyberSafe Services program. It supersedes the Interim SRS Report v1.0 and is the authoritative statement of what the system must do, how well it must do it, and the ethical limits within which it must operate.
 
 It is written for five audiences:
 
@@ -104,7 +104,7 @@ It is written for five audiences:
 
 ## 1.2 Scope of the product
 
-CyberNova is a cloud-hosted, responsive web application providing a **municipal** layer of scam protection that no existing service provides. Residents, small businesses, community organisations and not-for-profits in the City of Hume use it to:
+CyberKent is a cloud-hosted, responsive web application providing a **municipal** layer of scam protection that no existing service provides. Residents, small businesses, community organisations and not-for-profits in the City of Hume use it to:
 
 1. **Check** a suspicious message, link, phone number or email address and receive a transparent, explained risk assessment — with no account and no cost;
 2. **Report** a scam to Council with evidence attached, receive a reference number, and track the report through officer review;
@@ -230,15 +230,15 @@ Council's service portfolio gives this project its context: community services s
 
 ## 2.3 Positioning — what already exists
 
-CyberNova is deliberately **complementary, not competing**. It does not replace Scamwatch, IDCARE, the police or a bank's fraud line; it routes people to them at the right moment and gives Council the local evidence base it currently lacks.
+CyberKent is deliberately **complementary, not competing**. It does not replace Scamwatch, IDCARE, the police or a bank's fraud line; it routes people to them at the right moment and gives Council the local evidence base it currently lacks.
 
-| Existing channel | What it does | Gap CyberNova fills |
+| Existing channel | What it does | Gap CyberKent fills |
 |---|---|---|
 | Scamwatch / National Anti-Scam Centre | National reporting and national trend reporting | No municipal visibility; no local alerting; no feedback loop to Council |
 | Bank and telco warnings | Warn their own customers about scams affecting their own products | Reach customers only; siloed; nothing for community organisations |
 | ACSC / cyber.gov.au guidance | General cybersecurity advice | Generic; no "is *this* message a scam?" capability; not locally targeted |
 | Council newsletters and social media | Occasional awareness posts | Ad hoc, not evidence-driven, no reporting path, no analytics |
-| **CyberNova** | Municipal checking, reporting, verification, alerting, education, recovery, local analytics | **Provides the local layer none of the above provides** |
+| **CyberKent** | Municipal checking, reporting, verification, alerting, education, recovery, local analytics | **Provides the local layer none of the above provides** |
 
 ## 2.4 Purpose of the project
 
@@ -358,7 +358,7 @@ Project duration: **30 June 2026 – 27 November 2026 (22 weeks)**.
 
 ## 3.1 Product perspective
 
-CyberNova is a new, self-contained, greenfield product. No existing system is being replaced. It sits alongside — and must not duplicate or contradict — Council's existing website and contact channels, the national Scamwatch/NASC reporting path, and the police and financial institutions that handle criminal and financial consequences.
+CyberKent is a new, self-contained, greenfield product. No existing system is being replaced. It sits alongside — and must not duplicate or contradict — Council's existing website and contact channels, the national Scamwatch/NASC reporting path, and the police and financial institutions that handle criminal and financial consequences.
 
 ### 3.1.1 System context
 
@@ -2000,7 +2000,7 @@ Consolidated list of every decision this project needs from stakeholders. Items 
 
 # 18. Conclusion
 
-Group CyberKent is building CyberNova, an Online Scam Detection and Reporting System for Hume City Council CyberSafe Services, addressing a problem that is real, local, measurable and currently unaddressed: residents and small organisations in Hume have no trusted local way to check whether something is a scam, no easy way to report one, and no source of timely warnings — while Council has no visibility of what is happening to its own community.
+Group CyberKent is building CyberKent, an Online Scam Detection and Reporting System for Hume City Council CyberSafe Services, addressing a problem that is real, local, measurable and currently unaddressed: residents and small organisations in Hume have no trusted local way to check whether something is a scam, no easy way to report one, and no source of timely warnings — while Council has no visibility of what is happening to its own community.
 
 This Final SRS establishes the complete requirements baseline. All **72 functional requirements** of the client brief are specified with testable acceptance criteria, none dropped and none silently reinterpreted. **Twenty enhanced functional requirements** are proposed separately, as the brief requires, with the six already implemented identified as such. **Thirty non-functional requirements** are specified and reconciled against the client's twenty-five. **Nine ethical requirements** and **fifteen database ethical risks** are recorded with enforcement mechanisms rather than intentions.
 

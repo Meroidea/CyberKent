@@ -124,6 +124,68 @@ function stripTitleBlock(markdown) {
 }
 
 /**
+ * Drops sections the reader page does not carry.
+ *
+ * A published document and its reader page are not the same artefact. The
+ * document is a submitted deliverable and keeps every section it was signed off
+ * with — a sign-off block, a reference list, a table of contents. The page has a
+ * contents rail down its left edge, front matter above the body, and no signature
+ * to collect, so those sections are duplication or dead weight on screen.
+ *
+ * Cutting them here rather than in `Documents/` is the point: the Markdown stays
+ * the document of record, and what the page leaves out is declared in the
+ * register beside everything else about that document.
+ *
+ * A named section runs from its heading to the next heading at the same level or
+ * shallower, and takes with it the blank lines and horizontal rules that closed
+ * it — a rule left behind prints as a divider introducing nothing.
+ */
+function omitSections(markdown, titles) {
+  if (!titles?.length) {
+    return markdown;
+  }
+
+  const wanted = new Set(titles.map((title) => title.toLowerCase()));
+  const lines = markdown.split("\n");
+  const kept = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const heading = /^(#{1,6})\s+(.*\S)\s*$/.exec(lines[index] ?? "");
+
+    if (!heading || !wanted.has(stripTags(heading[2]).toLowerCase())) {
+      kept.push(lines[index]);
+      continue;
+    }
+
+    const level = heading[1].length;
+    let end = index + 1;
+
+    while (end < lines.length) {
+      const next = /^(#{1,6})\s+\S/.exec(lines[end] ?? "");
+
+      if (next && next[1].length <= level) {
+        break;
+      }
+
+      end += 1;
+    }
+
+    /* One blank line stands in for the removed span, so the heading that follows
+       cannot end up appended to the paragraph that preceded it. */
+    kept.push("");
+    index = end - 1;
+  }
+
+  const missing = titles.filter((title) => !markdown.toLowerCase().includes(title.toLowerCase()));
+
+  if (missing.length > 0) {
+    console.warn(`    ! omit list names sections not in the source: ${missing.join(", ")}`);
+  }
+
+  return kept.join("\n");
+}
+
+/**
  * Gives every heading an id and returns the contents outline alongside the
  * rewritten HTML.
  *
@@ -328,12 +390,23 @@ function numberHeadings(html, entries) {
   return { html: rewritten, entries: updated };
 }
 
-/** Wraps every table so a wide one scrolls itself rather than the page. */
+/**
+ * Wraps every table so a wide one scrolls itself rather than the page.
+ *
+ * The column count travels with the wrapper because the width a table needs is a
+ * function of how many columns it has, and CSS cannot count them. These documents
+ * run from two-column glossaries to nine-column matrices: one floor for all of
+ * them either makes the glossary scroll for no reason or squeezes the matrix into
+ * columns four words wide. `data-columns` lets the stylesheet set a floor per
+ * shape, so a table scrolls only where scrolling is the better trade.
+ */
 function wrapTables(html) {
-  return html.replace(
-    /<table>[\s\S]*?<\/table>/g,
-    (table) => `<div class="table-scroll" tabindex="0" role="region" aria-label="Table">${table}</div>`,
-  );
+  return html.replace(/<table>[\s\S]*?<\/table>/g, (table) => {
+    const header = /<tr>([\s\S]*?)<\/tr>/.exec(table);
+    const columns = header ? (header[1].match(/<th[\s>]/g) ?? []).length : 0;
+
+    return `<div class="table-scroll" data-columns="${columns}" tabindex="0" role="region" aria-label="Table">${table}</div>`;
+  });
 }
 
 /* --------------------------------------------------------------- figures -- */
@@ -458,7 +531,7 @@ function placeFigures(html, authored) {
 
 async function render(document) {
   const raw = await readFile(join(SOURCE, document.build.source), "utf8");
-  let markdown = stripTitleBlock(raw);
+  let markdown = omitSections(stripTitleBlock(raw), document.build.omit);
 
   for (const appendix of document.build.appendices ?? []) {
     const extra = await readFile(join(SOURCE, appendix.source), "utf8");

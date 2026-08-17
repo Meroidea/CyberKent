@@ -1,13 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, ListTree } from "lucide-react";
+import { ArrowRight, ChevronRight, ListTree } from "lucide-react";
 import { DOCUMENTS } from "@/content/documents";
 import { ROUTES } from "@/config/site";
-import { ContentsRail, OutlineLabel, type OutlineEntry } from "@/components/documents/ContentsRail";
+import { ContentsDrawer } from "@/components/documents/ContentsDrawer";
+import { ContentsRail, type OutlineEntry } from "@/components/documents/ContentsRail";
 import { DocumentFrontMatter } from "@/components/documents/DocumentFrontMatter";
+import { PresentCard, PresentTab } from "@/components/documents/PresentAction";
 import { ShareRail } from "@/components/documents/ShareRail";
+import { PRESENTABLE_DOCUMENT_ID } from "@/components/present/manifest";
 import { ActionLink } from "@/components/ui/ActionLink";
+import { DECK_MIN_WIDTH, RAIL_BREAKPOINT } from "@/config/layout";
+import { useEdgeSwipe } from "@/hooks/useEdgeSwipe";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
@@ -26,6 +32,19 @@ interface DocumentContent {
   entries: OutlineEntry[];
   html: string;
 }
+
+/**
+ * The deck is loaded on the click, not on the page.
+ *
+ * Ten slide compositions and the content behind them are a chunk of their own,
+ * and the reader who came to read has no use for it. Splitting it here keeps the
+ * document page's cost the document (G6).
+ */
+const PresentationDeck = lazy(() =>
+  import("@/components/present/PresentationDeck").then((module) => ({
+    default: module.PresentationDeck,
+  })),
+);
 
 /** The register is keyed by href; the route carries only the final segment. */
 function findDocument(slug: string | undefined) {
@@ -48,6 +67,8 @@ export function DocumentPage() {
 
   const [content, setContent] = useState<DocumentContent | null>(null);
   const [failed, setFailed] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+  const [contentsOpen, setContentsOpen] = useState(false);
 
   const body = useRef<HTMLElement>(null);
   const percent = useReadingProgress(body);
@@ -86,7 +107,33 @@ export function DocumentPage() {
   const ids = useMemo(() => entries.map((entry) => entry.id), [entries]);
   const [active, setActive] = useScrollSpy(ids, content !== null);
 
+  /*
+   * Below the rail breakpoint the contents have nowhere to sit beside the
+   * measure, so they move into a drawer. The same query gates both the drawer
+   * and the gesture: above it, no listener is installed at all.
+   */
+  const hasDrawer = useMediaQuery(`(max-width: ${RAIL_BREAKPOINT - 0.02}px)`);
+
+  /* The deck has a legibility floor rather than a responsive fallback — see
+     `DECK_MIN_WIDTH`. Below it there is nothing to offer. */
+  const wideEnoughToPresent = useMediaQuery(`(min-width: ${DECK_MIN_WIDTH}px)`);
+
+  useEdgeSwipe({
+    enabled: hasDrawer && entries.length > 0,
+    onOpen: () => setContentsOpen(true),
+    onClose: () => setContentsOpen(false),
+  });
+
   useRevealOnScroll(body, content !== null);
+
+  /* Rotating a tablet to portrait, or dragging a window narrow, crosses the
+     floor with the deck already open. It closes rather than carrying on at a
+     size it was just declared unreadable at. */
+  useEffect(() => {
+    if (!wideEnoughToPresent) {
+      setPresenting(false);
+    }
+  }, [wideEnoughToPresent]);
 
   /* A hash in the address bar is followed once the body it points into exists. */
   useEffect(() => {
@@ -111,6 +158,7 @@ export function DocumentPage() {
   const others = DOCUMENTS.filter((entry) => entry.id !== document.id);
   const index = DOCUMENTS.findIndex((entry) => entry.id === document.id);
   const next = DOCUMENTS[(index + 1) % DOCUMENTS.length];
+  const presentable = document.id === PRESENTABLE_DOCUMENT_ID && wideEnoughToPresent;
 
   const navigate = (id: string) => {
     scrollToHeading(id);
@@ -143,32 +191,21 @@ export function DocumentPage() {
             minutes={content?.minutes ?? 0}
           />
 
+          {/* The way into the drawer for anyone who does not think to swipe. A
+              gesture nobody is told about is a gesture nobody uses. */}
           {entries.length > 0 ? (
-            <details className="glass-surface mb-10 rounded-2xl rail:hidden">
-              <summary className="flex cursor-pointer items-center gap-2 px-4 py-3.5 font-mono text-caption font-bold uppercase tracking-[0.16em] text-slate-900 dark:text-white">
-                <ListTree className="h-4 w-4" aria-hidden="true" />
-                Contents
-              </summary>
-              <ol className="px-4 pb-4">
-                {entries.map((entry) => (
-                  <li key={entry.id}>
-                    <a
-                      href={`#${entry.id}`}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        navigate(entry.id);
-                        event.currentTarget.closest("details")?.removeAttribute("open");
-                      }}
-                      className={`block py-1 text-copy text-slate-600 hover:text-indigo-700 dark:text-slate-400 dark:hover:text-cyan-300 ${
-                        entry.level > 1 ? "pl-4" : ""
-                      }`}
-                    >
-                      <OutlineLabel entry={entry} />
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </details>
+            <button
+              type="button"
+              onClick={() => setContentsOpen(true)}
+              className="glass-surface interactive mb-10 flex w-full items-center gap-2 rounded-2xl px-4 py-3.5 text-left font-mono text-caption font-bold uppercase tracking-[0.16em] text-slate-900 rail:hidden dark:text-white"
+            >
+              <ListTree className="h-4 w-4 shrink-0" aria-hidden="true" />
+              On this page
+              <span className="ml-auto flex items-center gap-1.5 font-normal normal-case tracking-normal text-slate-400 dark:text-slate-500">
+                <span className="hidden sm:inline">swipe right to open</span>
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </button>
           ) : null}
 
           {failed ? (
@@ -220,7 +257,7 @@ export function DocumentPage() {
           ) : null}
 
           <p className="mt-10 border-t border-slate-900/[0.08] pt-6 text-caption leading-relaxed text-slate-400 dark:border-white/10 dark:text-slate-500">
-            CyberNova — Online Scam Detection and Reporting System, prepared by Group CyberKent for
+            CyberKent — Online Scam Detection and Reporting System, prepared by Group CyberKent for
             Hume City Council CyberSafe Services. This is a project document describing an advisory
             service; it does not constitute professional cybersecurity certification.
           </p>
@@ -234,11 +271,34 @@ export function DocumentPage() {
         </div>
 
         <aside className="hidden rails:block">
-          <div className="sticky top-24">
+          <div className="sticky top-24 flex flex-col gap-4">
+            {presentable ? <PresentCard onOpen={() => setPresenting(true)} /> : null}
             <ShareRail document={document} others={others} />
           </div>
         </aside>
       </div>
+
+      {/* The tab hides itself at the width the rail appears, so exactly one of
+          the two entry points is ever on screen. */}
+      {presentable ? <PresentTab onOpen={() => setPresenting(true)} /> : null}
+
+      {/* Only where the static rail is absent — above 1180px the contents are
+          already beside the measure, and a drawer over them would be a second
+          copy of something the reader can see. */}
+      <ContentsDrawer
+        open={contentsOpen && hasDrawer}
+        onClose={() => setContentsOpen(false)}
+        entries={entries}
+        active={active}
+        percent={percent}
+        onNavigate={navigate}
+      />
+
+      {presenting ? (
+        <Suspense fallback={null}>
+          <PresentationDeck onClose={() => setPresenting(false)} />
+        </Suspense>
+      ) : null}
     </section>
   );
 }

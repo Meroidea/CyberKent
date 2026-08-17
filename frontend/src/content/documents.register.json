@@ -1,5 +1,5 @@
 {
-  "$comment": "The one document register. Read by src/content/documents.ts for the app (page cards and the Documents dropdown) and by scripts/build-documents.mjs for the published reader pages. Held as data rather than in the TypeScript module because the build script runs in plain Node and cannot import TypeScript — and a second copy of version, date and status is exactly the duplication Rule 1.3 rules out. The `build` key is the only build-time concern: `source` names the Markdown in Documents/ to render, `copy` names a file already in its final format.",
+  "$comment": "The one document register. Read by src/content/documents.ts for the app (page cards and the Documents dropdown) and by scripts/build-documents.mjs for the published reader pages. Held as data rather than in the TypeScript module because the build script runs in plain Node and cannot import TypeScript — and a second copy of version, date and status is exactly the duplication Rule 1.3 rules out. The `build` key is the only build-time concern: `source` names the Markdown in Documents/ to render, `copy` names a file already in its final format, and `omit` names sections the reader page leaves out because the page already carries them another way (the contents rail, the front matter) or because they belong to the signed deliverable rather than to the screen. The Markdown itself keeps every section.",
   "documents": [
     {
       "id": "project-requirements",
@@ -97,7 +97,15 @@
       "status": "Published",
       "build": {
         "source": "Final-SRS-Report.md",
-        "subtitle": "The authoritative software requirements specification, version 1.0"
+        "subtitle": "The authoritative software requirements specification, version 1.0",
+        "omit": [
+          "Project team",
+          "Approval and sign-off",
+          "Table of contents",
+          "1.4 References",
+          "1.5 Document conventions",
+          "1.6 How to read this document"
+        ]
       }
     },
     {

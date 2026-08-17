@@ -48,7 +48,7 @@ export const DOCUMENTS_PAGE = {
   eyebrow: "Project documentation",
   title: "Every document behind this service.",
   lede:
-    "CyberNova is built for Hume City Council as a capstone project by Group CyberKent. The requirements, the architecture, the specification and the delivery record are published here in full — open to anyone, no account needed. A service that asks people to trust an automated judgement should be willing to show its own workings.",
+    "CyberKent is built for Hume City Council as a capstone project by Group CyberKent. The requirements, the architecture, the specification and the delivery record are published here in full — open to anyone, no account needed. A service that asks people to trust an automated judgement should be willing to show its own workings.",
   note:
     "These documents open in your browser and can be printed or saved as PDF. They describe an advisory service and are project records, not Council policy.",
 } as const;

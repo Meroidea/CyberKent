@@ -55,7 +55,7 @@ export function DocumentFrontMatter({ document: doc, subtitle, minutes }: Docume
       </span>
 
       <p className="mt-5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
-        CyberNova · Project documentation
+        CyberKent · Project documentation
       </p>
 
       <h1 className="display-depth mx-auto mt-3 max-w-2xl text-balance font-display text-display-2 font-bold text-slate-900 dark:text-white">
