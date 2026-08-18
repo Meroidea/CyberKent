@@ -2,32 +2,39 @@ import { type ReactElement } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Ban, Check, CheckCircle2, ShieldCheck, TriangleAlert } from "lucide-react";
 import {
-  BASELINE,
-  BUILD,
-  CONFORMANCE,
+  ARCHITECTURE,
+  BUDGET,
+  CLOSE,
   COVER,
-  DECISIONS,
   DECK_META,
   ENHANCED,
-  ETHICS,
-  POSITION,
+  GOVERNANCE,
+  OBJECTIVES,
+  PLAN,
   PROBLEM,
-  SERVICE,
+  REQUIREMENTS,
+  SCOPE,
+  STORYBOARD,
+  TEAM,
+  TESTING,
+  USECASES,
 } from "@/content/presentation";
 import {
   Donut,
-  DotGrid,
   Footline,
+  GanttBar,
   Glyph,
   Headline,
   Label,
   Panel,
   Slide,
+  StateRow,
   Stat,
   Tag,
   Tile,
   TONE,
   rise,
+  toneFor,
   type Tone,
 } from "@/components/present/primitives";
 import { DECK_OUTLINE, type SlideEntry } from "@/components/present/manifest";
@@ -35,11 +42,9 @@ import { cn } from "@/lib/cn";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-/* ── 1 ────────────────────────────────────────────────────────────────────── */
+/* ── 1 · Cover ────────────────────────────────────────────────────────────── */
 
 /**
- * The cover.
- *
  * The emblem is the scanner's globe reduced to two dimensions: concentric rings
  * with one sweeping arm and four contacts on them, so the mark reads as a thing
  * that *looks* rather than a badge that certifies — the distinction ETH-1 spends
@@ -155,7 +160,6 @@ function CoverSlide() {
                 strokeWidth={1.3}
               />
             </g>
-            {/* Contacts on the rings, as if something had been found. */}
             {[
               [246, 108],
               [96, 62],
@@ -183,7 +187,7 @@ function CoverSlide() {
   );
 }
 
-/* ── 2 ────────────────────────────────────────────────────────────────────── */
+/* ── 2 · Background and problem ───────────────────────────────────────────── */
 
 function ProblemSlide() {
   return (
@@ -255,65 +259,346 @@ function ProblemSlide() {
   );
 }
 
-/* ── 3 ────────────────────────────────────────────────────────────────────── */
+/* ── 3 · Objectives and purpose ───────────────────────────────────────────── */
 
-function ServiceSlide() {
+function ObjectiveColumn({
+  label,
+  items,
+}: {
+  label: string;
+  items: readonly { id: string; text: string; state: string }[];
+}) {
   return (
-    <Slide eyebrow={SERVICE.eyebrow} title={SERVICE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-8">
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label className="mb-2.5">For the community · no account</Label>
-          <div className="grid flex-1 grid-cols-2 gap-2.5">
-            {SERVICE.community.map((item) => (
+    <div className="flex min-h-0 flex-col">
+      <Label>{label}</Label>
+      <ul className="mt-2 flex flex-1 flex-col gap-1">
+        {items.map((item) => (
+          <StateRow key={item.id} id={item.id} text={item.text} state={item.state} className="flex-1" />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ObjectivesSlide() {
+  return (
+    <Slide eyebrow={OBJECTIVES.eyebrow} title={OBJECTIVES.title}>
+      <motion.div variants={rise} className="shrink-0">
+        <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
+          <Label>Purpose of the project</Label>
+          <p className="mt-1.5 text-[13.5px] font-semibold leading-snug text-slate-800 dark:text-slate-100">
+            {OBJECTIVES.purpose}
+          </p>
+        </Panel>
+      </motion.div>
+
+      <motion.div variants={rise} className="mt-4 grid min-h-0 flex-1 grid-cols-4 gap-4">
+        <ObjectiveColumn label="Product · PO" items={OBJECTIVES.product} />
+        <ObjectiveColumn label="Quality · QO" items={OBJECTIVES.quality} />
+        <ObjectiveColumn label="Ethical · EO" items={OBJECTIVES.ethical} />
+        <ObjectiveColumn label="Delivery · DO" items={OBJECTIVES.delivery} />
+      </motion.div>
+
+      <motion.div variants={rise} className="mt-4 flex shrink-0 items-center gap-3">
+        <Label className="shrink-0">Three commitments that constrain every decision</Label>
+        {OBJECTIVES.commitments.map((item) => (
+          <span
+            key={item}
+            className="flex-1 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-500 px-3 py-2 text-center text-[13px] font-bold text-white dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950"
+          >
+            {item}
+          </span>
+        ))}
+      </motion.div>
+    </Slide>
+  );
+}
+
+/* ── 4 · Scope and deliverables ───────────────────────────────────────────── */
+
+function ScopeSlide() {
+  return (
+    <Slide eyebrow={SCOPE.eyebrow} title={SCOPE.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_320px] gap-6">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
+          <div className="grid flex-1 grid-cols-4 gap-2.5">
+            {SCOPE.community.map((item) => (
               <Tile key={item.verb} icon={item.icon} title={item.verb} meta={item.maps} />
             ))}
           </div>
+          <div className="grid flex-1 grid-cols-4 gap-2.5">
+            {SCOPE.council.map((item) => (
+              <Tile key={item.verb} icon={item.icon} title={item.verb} meta={item.maps} />
+            ))}
+          </div>
+
+          <Panel tone="bad" className="shrink-0">
+            <Label>Deliberately out of scope this release</Label>
+            <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+              {SCOPE.outOfScope.map((item) => (
+                <li key={item} className="flex items-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-300">
+                  <Ban className="h-2.5 w-2.5 shrink-0 text-rose-500" aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Panel>
         </motion.div>
 
         <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label className="mb-2.5">For Council · the same platform</Label>
-          <div className="grid flex-1 grid-cols-2 gap-2.5">
-            {SERVICE.council.map((item) => (
-              <Tile key={item.verb} icon={item.icon} title={item.verb} meta={item.maps} />
+          <Label>Twelve deliverables, D1–D12</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1">
+            {SCOPE.deliverables.map((item) => (
+              <StateRow
+                key={item.id}
+                id={item.id}
+                text={item.text}
+                state={item.state}
+                trailing={item.milestone}
+                className="flex-1"
+              />
             ))}
-          </div>
+          </ul>
         </motion.div>
       </div>
 
-      <motion.div variants={rise} className="mt-5 grid shrink-0 grid-cols-[1fr_300px] gap-5">
-        <Panel>
-          <div className="flex items-center gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              {SERVICE.existing.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-md border border-slate-900/10 px-2 py-1 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400"
-                >
-                  {item}
+      <Footline className="mt-4">
+        Community functions need no account at all — the largest user class is anonymous by design (FR85).
+      </Footline>
+    </Slide>
+  );
+}
+
+/* ── 5 · Team and performance ─────────────────────────────────────────────── */
+
+function TeamSlide() {
+  return (
+    <Slide eyebrow={TEAM.eyebrow} title={TEAM.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px] gap-6">
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Capability · primary → backup · what it has delivered</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+            {TEAM.capabilities.map((row) => (
+              <li
+                key={row.capability}
+                className="grid flex-1 grid-cols-[1.1fr_1fr_1fr] items-center gap-3 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3.5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">{row.capability}</span>
+                <span className="flex items-center gap-1.5 text-[10.5px] text-slate-500 dark:text-slate-400">
+                  {row.primary}
+                  <ArrowRight className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+                  {row.backup}
                 </span>
-              ))}
+                <span className="text-right font-mono text-[10px] text-indigo-600 dark:text-cyan-400">
+                  {row.delivered}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Skills, assessed honestly</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1">
+            {TEAM.skills.map((row) => (
+              <StateRow key={row.skill} text={row.skill} state={row.state} trailing={row.level} className="flex-1" />
+            ))}
+          </ul>
+        </motion.div>
+      </div>
+
+      <motion.div variants={rise} className="mt-4 grid shrink-0 grid-cols-2 gap-4">
+        <p className="rounded-xl border-l-[3px] border-l-slate-400 bg-slate-500/[0.07] px-4 py-2.5 text-[11.5px] leading-snug text-slate-600 dark:text-slate-300">
+          {TEAM.note}
+        </p>
+        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2.5 text-[11.5px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
+          {TEAM.transfer}
+        </p>
+      </motion.div>
+    </Slide>
+  );
+}
+
+/* ── 6 · Work breakdown and schedule ──────────────────────────────────────── */
+
+function PlanSlide() {
+  return (
+    <Slide eyebrow={PLAN.eyebrow} title={PLAN.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
+        {/* The WBS: six level-1 packages, each decomposed once and closed by a
+            gate. Drawn as a tree so the decomposition is the picture. */}
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Work breakdown — level 1 → level 2 → gate</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+            {PLAN.wbs.map((pack) => (
+              <li
+                key={pack.id}
+                className="flex flex-1 items-center gap-2.5 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-600 to-cyan-500 font-mono text-[11px] font-bold text-white dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950">
+                  {pack.id}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12px] font-bold leading-tight text-slate-800 dark:text-slate-100">
+                    {pack.name}
+                  </span>
+                  <span className="mt-0.5 flex flex-wrap gap-x-2 text-[9px] leading-tight text-slate-500 dark:text-slate-400">
+                    {pack.tasks.map((task) => (
+                      <span key={task}>· {task}</span>
+                    ))}
+                  </span>
+                </span>
+                <Tag className="shrink-0">{pack.gate}</Tag>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+
+        {/* The same six packages against the calendar. */}
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Schedule — 22 weeks, 30 Jun → 27 Nov 2026</Label>
+
+          <div className="mt-2 flex min-h-0 flex-1 flex-col justify-center gap-2 rounded-xl border border-slate-900/[0.07] bg-white/55 p-3.5 dark:border-white/10 dark:bg-white/[0.04]">
+            {PLAN.gantt.map((row, index) => (
+              <div key={row.id + row.name} className="grid grid-cols-[128px_1fr] items-center gap-2">
+                <span className="truncate text-[10.5px] font-semibold text-slate-700 dark:text-slate-200">
+                  {row.name}
+                </span>
+                <GanttBar
+                  start={row.start}
+                  span={row.span}
+                  weeks={PLAN.weeks}
+                  state={row.state}
+                  delay={0.25 + index * 0.07}
+                />
+              </div>
+            ))}
+
+            {/* The calendar the bars are read against. */}
+            <div className="mt-1 grid grid-cols-[128px_1fr] items-center gap-2">
+              <span />
+              <span className="flex justify-between font-mono text-[8.5px] text-slate-400 dark:text-slate-500">
+                {PLAN.ticks.map((tick) => (
+                  <span key={tick}>{tick}</span>
+                ))}
+              </span>
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-indigo-500 dark:text-cyan-400" aria-hidden="true" />
-            <span className="rounded-md border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-[12.5px] font-bold text-indigo-700 dark:border-cyan-400/30 dark:bg-cyan-400/10 dark:text-cyan-300">
-              {SERVICE.fills}
-            </span>
           </div>
-          <div className="mt-3 flex items-center gap-2.5">
-            <Label className="shrink-0">Roles</Label>
-            {SERVICE.roles.map((role) => (
-              <span key={role} className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                {role}
+
+          <p className="mt-2 shrink-0 text-[10px] leading-snug text-slate-500 dark:text-slate-400">{PLAN.float}.</p>
+        </motion.div>
+      </div>
+
+      <Footline className="mt-4">{PLAN.gateNote}</Footline>
+    </Slide>
+  );
+}
+
+/* ── 7 · Use-case model ───────────────────────────────────────────────────── */
+
+/** A stick actor, drawn rather than iconified so the diagram reads as UML. */
+function Actor({ name, note }: { name: string; note: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg viewBox="0 0 24 34" className="h-8 w-6 shrink-0" aria-hidden="true">
+        <g className="stroke-indigo-600 dark:stroke-cyan-400" strokeWidth="1.6" strokeLinecap="round" fill="none">
+          <circle cx="12" cy="6" r="4.5" />
+          <path d="M12 11v10M4 15h16M12 21l-5 9M12 21l5 9" />
+        </g>
+      </svg>
+      <span className="min-w-0">
+        <span className="block text-[11px] font-bold leading-tight text-slate-800 dark:text-slate-100">{name}</span>
+        <span className="block text-[8.5px] leading-tight text-slate-400 dark:text-slate-500">{note}</span>
+      </span>
+    </div>
+  );
+}
+
+function UseCasesSlide() {
+  return (
+    <Slide eyebrow={USECASES.eyebrow} title={USECASES.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[118px_1fr_118px] items-stretch gap-3">
+        <motion.div variants={rise} className="flex flex-col justify-center gap-5">
+          {USECASES.actors.left.map((actor) => (
+            <Actor key={actor.name} name={actor.name} note={actor.note} />
+          ))}
+        </motion.div>
+
+        {/* The system boundary. Everything inside it is a use case; the actors
+            outside it are who drives one. */}
+        <motion.div
+          variants={rise}
+          className="flex min-h-0 flex-col rounded-2xl border-2 border-dashed border-indigo-500/35 bg-indigo-500/[0.04] p-3 dark:border-cyan-400/30 dark:bg-cyan-400/[0.04]"
+        >
+          <p className="shrink-0 text-center font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-cyan-400">
+            CyberKent — system boundary
+          </p>
+
+          <div className="mt-2 grid min-h-0 flex-1 grid-cols-3 gap-2.5">
+            {USECASES.groups.map((group) => (
+              <div key={group.name} className="flex min-h-0 flex-col">
+                <p className="shrink-0 text-center font-mono text-[8.5px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                  {group.name}
+                </p>
+                <ul className="mt-1.5 flex flex-1 flex-col gap-1">
+                  {group.cases.map((useCase) => (
+                    <li
+                      key={useCase.id}
+                      /* An ellipse is the UML shape; a very round pill is the
+                         same silhouette at a size that still holds a label. */
+                      className="flex flex-1 items-center gap-1.5 rounded-full border border-slate-900/10 bg-white/70 px-2 dark:border-white/10 dark:bg-white/[0.06]"
+                    >
+                      <span className="shrink-0 font-mono text-[8px] font-bold text-indigo-600 dark:text-cyan-400">
+                        {useCase.id}
+                      </span>
+                      <span className="min-w-0 truncate text-[9px] text-slate-700 dark:text-slate-200">
+                        {useCase.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex flex-col justify-center gap-5">
+          {USECASES.actors.right.map((actor) => (
+            <Actor key={actor.name} name={actor.name} note={actor.note} />
+          ))}
+        </motion.div>
+      </div>
+
+      <motion.div variants={rise} className="mt-4 grid shrink-0 grid-cols-[1fr_250px] gap-4">
+        <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
+          <Label>{USECASES.detail.label}</Label>
+          <div className="mt-2 flex items-center gap-1.5">
+            {USECASES.detail.flow.map((step, index) => (
+              <span key={step} className="flex items-center gap-1.5">
+                {index > 0 ? (
+                  <ArrowRight className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+                ) : null}
+                <span className="rounded-md bg-indigo-500/10 px-2 py-1 text-[10px] font-semibold text-indigo-700 dark:bg-cyan-400/10 dark:text-cyan-300">
+                  {step}
+                </span>
               </span>
             ))}
           </div>
+          <p className="mt-2 flex flex-wrap gap-x-3 text-[9.5px] text-slate-500 dark:text-slate-400">
+            {USECASES.detail.alternates.map((alternate) => (
+              <span key={alternate}>· {alternate}</span>
+            ))}
+          </p>
         </Panel>
 
-        <Panel tone="bad">
-          <Label>Out of scope</Label>
-          <ul className="mt-1.5 grid grid-cols-2 gap-x-3">
-            {SERVICE.outOfScope.map((item) => (
-              <li key={item} className="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300">
-                <Ban className="h-2.5 w-2.5 shrink-0 text-rose-500" aria-hidden="true" />
+        <Panel>
+          <Label>Supporting actors</Label>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {USECASES.supporting.map((item) => (
+              <li
+                key={item}
+                className="rounded border border-slate-900/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:border-white/10 dark:text-slate-400"
+              >
                 {item}
               </li>
             ))}
@@ -324,173 +609,16 @@ function ServiceSlide() {
   );
 }
 
-/* ── 4 ────────────────────────────────────────────────────────────────────── */
+/* ── 8 · Requirements ─────────────────────────────────────────────────────── */
 
-const ETH_TONE: Record<string, Tone> = {
-  met: "good",
-  partial: "warn",
-  open: "bad",
-  team: "accent",
-};
-
-function EthicsSlide() {
+function RequirementsSlide() {
   return (
-    <Slide eyebrow={ETHICS.eyebrow} title={ETHICS.title}>
-      <motion.div variants={rise} className="grid shrink-0 grid-cols-3 gap-3">
-        {ETHICS.commitments.map((item) => (
-          <Panel key={item.title} className="flex items-center gap-3">
-            <Glyph icon={item.icon} size={34} />
-            <p className="font-display text-[19px] font-bold leading-tight text-slate-900 dark:text-white">
-              {item.title}
-            </p>
-          </Panel>
-        ))}
-      </motion.div>
-
-      <div className="mt-4 grid min-h-0 flex-1 grid-cols-[1fr_360px] gap-5">
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
-          <ul className="grid grid-cols-3 gap-1.5">
-            {ETHICS.register.map((item) => {
-              const tone = ETH_TONE[item.state]!;
-              return (
-                <li key={item.id} className={cn("rounded-lg border px-2 py-1.5", TONE[tone].soft)}>
-                  <span className={cn("font-mono text-[10px] font-bold", TONE[tone].text)}>{item.id}</span>
-                  <span className="mt-0.5 block text-[10.5px] leading-snug text-slate-600 dark:text-slate-300">
-                    {item.text}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-
-          <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
-            <Label>{ETHICS.arithmetic.label}</Label>
-            <p className="mt-1.5 font-mono text-[16px] font-bold text-slate-900 dark:text-white">
-              {ETHICS.arithmetic.formula}
-            </p>
-            <p className="mt-1 text-[12px] font-semibold text-indigo-600 dark:text-cyan-400">
-              {ETHICS.arithmetic.detail}
-            </p>
-          </Panel>
-        </motion.div>
-
-        <motion.div variants={rise}>
-          <Panel className="h-full">
-            <Label>{ETHICS.audit.label}</Label>
-            <div className="mt-2.5">
-              <Donut segments={[...ETHICS.audit.segments]} size={132} caption="risks" />
-            </div>
-            <p className="mt-2.5 rounded-lg bg-rose-500/10 px-2.5 py-1.5 text-[10.5px] font-bold leading-snug text-rose-600 dark:text-rose-400">
-              {ETHICS.audit.critical}
-            </p>
-          </Panel>
-        </motion.div>
-      </div>
-
-      <motion.div variants={rise} className="mt-4 grid shrink-0 grid-cols-[1fr_300px] items-center gap-4">
-        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2.5 text-[12.5px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
-          {ETHICS.asymmetry}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {ETHICS.guards.map((guard) => (
-            <span
-              key={guard}
-              className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400"
-            >
-              <Check className="h-2.5 w-2.5" aria-hidden="true" />
-              {guard}
-            </span>
-          ))}
-        </div>
-      </motion.div>
-    </Slide>
-  );
-}
-
-/* ── 5 ────────────────────────────────────────────────────────────────────── */
-
-function ConformanceSlide() {
-  return (
-    <Slide eyebrow={CONFORMANCE.eyebrow} title={CONFORMANCE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[320px_1fr] gap-6">
-        <motion.div variants={rise} className="flex flex-col gap-3">
-          <Panel tone="good" className="flex-1">
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-[54px] font-bold leading-none tracking-[-0.04em] text-emerald-600 dark:text-emerald-400">
-                72
-              </span>
-              <span className="font-display text-[22px] font-bold text-slate-400 dark:text-slate-500">/ 72</span>
-            </div>
-            <p className="mt-2 text-[12px] font-semibold leading-snug text-slate-700 dark:text-slate-200">
-              {CONFORMANCE.match.label}
-            </p>
-            <div className="mt-3.5">
-              <DotGrid count={CONFORMANCE.match.total} columns={12} />
-            </div>
-          </Panel>
-
-          <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 px-4 py-3 text-white">
-            <p className="font-display text-[30px] font-bold leading-none tracking-[-0.03em]">
-              {CONFORMANCE.verdict.headline}
-            </p>
-            <p className="text-[11px] font-semibold leading-tight text-white/85">
-              {CONFORMANCE.verdict.qualifier}
-            </p>
-          </div>
-        </motion.div>
-
+    <Slide eyebrow={REQUIREMENTS.eyebrow} title={REQUIREMENTS.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_330px] gap-5">
         <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Four requirements that could not be built as written</Label>
-          <ul className="mt-2.5 flex flex-1 flex-col gap-2">
-            {CONFORMANCE.defects.map((defect) => (
-              <li
-                key={defect.id}
-                className="grid flex-1 grid-cols-[38px_1fr_18px_1fr] items-center gap-3 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3.5 dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                <Tag tone={defect.severity === "high" ? "bad" : "warn"}>{defect.id}</Tag>
-                <span className="text-[12.5px] leading-snug text-slate-400 line-through dark:text-slate-500">
-                  {defect.was}
-                </span>
-                <ArrowRight className="h-4 w-4 text-indigo-500 dark:text-cyan-400" aria-hidden="true" />
-                <span className="text-[12.5px] font-bold leading-snug text-slate-800 dark:text-slate-100">
-                  {defect.now}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-3 grid shrink-0 grid-cols-4 gap-2">
-            {CONFORMANCE.findings.map((finding) => (
-              <Panel key={finding.title} className="flex items-center gap-2.5">
-                <Glyph icon={finding.icon} size={28} />
-                <span>
-                  <span className="block font-display text-[22px] font-bold leading-none text-slate-900 dark:text-white">
-                    {finding.count}
-                  </span>
-                  <span className="mt-0.5 block text-[10px] font-semibold leading-tight text-slate-500 dark:text-slate-400">
-                    {finding.title}
-                  </span>
-                </span>
-              </Panel>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      <Footline className="mt-4">{CONFORMANCE.line}</Footline>
-    </Slide>
-  );
-}
-
-/* ── 6 ────────────────────────────────────────────────────────────────────── */
-
-function BaselineSlide() {
-  return (
-    <Slide eyebrow={BASELINE.eyebrow} title={BASELINE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_340px] gap-6">
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <div className="grid flex-1 grid-cols-4 gap-2">
-            {BASELINE.modules.map((module) => (
+          <Label>Functional — twelve modules, FR1–FR72, each with an acceptance criterion</Label>
+          <div className="mt-2 grid flex-1 grid-cols-4 gap-2">
+            {REQUIREMENTS.modules.map((module) => (
               <div
                 key={module.n}
                 className="flex flex-col justify-between rounded-xl border border-slate-900/[0.07] bg-white/55 p-2.5 dark:border-white/10 dark:bg-white/[0.04]"
@@ -518,49 +646,57 @@ function BaselineSlide() {
             ))}
           </div>
 
-          <Panel className="mt-3 grid shrink-0 grid-cols-6 gap-3">
-            {BASELINE.scaffold.map((item) => (
-              <Stat key={item.label} value={item.value} label={item.label} size="sm" tone="idle" />
-            ))}
+          <Panel className="mt-2.5 shrink-0">
+            <Label>Ethical requirements — binding constraints, not advice</Label>
+            <ul className="mt-1.5 flex flex-wrap gap-1">
+              {REQUIREMENTS.ethics.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-1 rounded border border-slate-900/10 px-1.5 py-0.5 dark:border-white/10"
+                >
+                  <span className="font-mono text-[8.5px] font-bold text-indigo-600 dark:text-cyan-400">
+                    {item.id}
+                  </span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400">{item.text}</span>
+                </li>
+              ))}
+            </ul>
           </Panel>
         </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
-          <Panel>
-            <Label>Non-functional, reconciled</Label>
-            <div className="mt-2.5 flex items-center gap-3">
-              <Stat value={String(BASELINE.nfr.client)} label="in the brief" size="sm" tone="idle" />
-              <span className="font-display text-[20px] font-bold text-slate-300 dark:text-slate-600">+</span>
-              <Stat value={String(BASELINE.nfr.added)} label="team-added" size="sm" tone="warn" />
-              <span className="font-display text-[20px] font-bold text-slate-300 dark:text-slate-600">=</span>
-              <Stat value={String(BASELINE.nfr.total)} label="specified" size="sm" />
-            </div>
-          </Panel>
-
-          <ul className="flex min-h-0 flex-1 flex-col gap-1.5">
-            {BASELINE.nfr.additions.map((item) => (
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Non-functional — eight attributes</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1">
+            {REQUIREMENTS.nfr.map((row) => (
               <li
-                key={item.id}
-                className="flex flex-1 items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+                key={row.attribute}
+                className="flex flex-1 flex-col justify-center rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
               >
-                <Tag tone="warn">{item.id}</Tag>
-                <span className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">{item.text}</span>
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{row.attribute}</span>
+                  <span className="font-mono text-[8.5px] text-indigo-600 dark:text-cyan-400">{row.ids}</span>
+                </span>
+                <span className="text-[9px] leading-tight text-slate-500 dark:text-slate-400">{row.note}</span>
               </li>
             ))}
           </ul>
 
-          <p className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-            {BASELINE.nfr.note}
-          </p>
+          <Panel className="mt-2 flex shrink-0 items-center justify-between gap-2">
+            <Stat value={String(REQUIREMENTS.reconciliation.client)} label="in the brief" size="sm" tone="idle" />
+            <span className="font-display text-[18px] font-bold text-slate-300 dark:text-slate-600">+</span>
+            <Stat value={String(REQUIREMENTS.reconciliation.added)} label="team-added" size="sm" tone="warn" />
+            <span className="font-display text-[18px] font-bold text-slate-300 dark:text-slate-600">=</span>
+            <Stat value={String(REQUIREMENTS.reconciliation.total)} label="specified" size="sm" />
+          </Panel>
         </motion.div>
       </div>
 
-      <Footline className="mt-4">{BASELINE.moscow}</Footline>
+      <Footline className="mt-4">{REQUIREMENTS.moscow}</Footline>
     </Slide>
   );
 }
 
-/* ── 7 ────────────────────────────────────────────────────────────────────── */
+/* ── 9 · Enhanced requirements and conformance ────────────────────────────── */
 
 function EnhancedSlide() {
   return (
@@ -575,7 +711,7 @@ function EnhancedSlide() {
         </p>
       </motion.div>
 
-      <div className="mt-4 grid min-h-0 flex-1 grid-cols-[1fr_330px] gap-6">
+      <div className="mt-3 grid min-h-0 flex-1 grid-cols-[1fr_370px] gap-5">
         <motion.div variants={rise} className="flex min-h-0 flex-col">
           <Panel className="flex shrink-0 items-end justify-between gap-2">
             {ENHANCED.counts.map((item) => (
@@ -583,7 +719,7 @@ function EnhancedSlide() {
             ))}
           </Panel>
 
-          <ul className="mt-3 grid flex-1 grid-cols-4 gap-1.5">
+          <ul className="mt-2.5 grid flex-1 grid-cols-4 gap-1.5">
             {ENHANCED.items.map((item) => (
               <li
                 key={item.id}
@@ -597,7 +733,7 @@ function EnhancedSlide() {
                 <span className="flex items-center justify-between gap-1">
                   <span
                     className={cn(
-                      "font-mono text-[11px] font-bold",
+                      "font-mono text-[10.5px] font-bold",
                       item.done ? "text-emerald-700 dark:text-emerald-400" : "text-indigo-600 dark:text-cyan-400",
                     )}
                   >
@@ -608,7 +744,7 @@ function EnhancedSlide() {
                   ) : (
                     <span
                       className={cn(
-                        "font-mono text-[8px] font-bold uppercase tracking-wider",
+                        "font-mono text-[7.5px] font-bold uppercase tracking-wider",
                         item.pri === "Must"
                           ? "text-rose-500"
                           : item.pri === "Should"
@@ -620,388 +756,759 @@ function EnhancedSlide() {
                     </span>
                   )}
                 </span>
-                <span className="text-[10px] leading-tight text-slate-600 dark:text-slate-300">{item.text}</span>
+                <span className="text-[9.5px] leading-tight text-slate-600 dark:text-slate-300">{item.text}</span>
               </li>
             ))}
           </ul>
         </motion.div>
 
         <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>The four that carry the argument</Label>
-          <ul className="mt-2 flex flex-1 flex-col gap-2">
-            {ENHANCED.headline.map((item) => (
-              <li key={item.id} className="flex-1">
-                <Panel className="h-full border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
-                  <span className="flex items-center gap-2">
-                    <Tag>{item.id}</Tag>
-                    <span className="font-display text-[15px] font-bold text-slate-900 dark:text-white">
-                      {item.title}
-                    </span>
+          <Label>Four requirements that could not be built as written</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+            {ENHANCED.defects.map((defect) => (
+              <li
+                key={defect.id}
+                className="flex flex-1 flex-col justify-center gap-0.5 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex items-center gap-2">
+                  <Tag tone={defect.severity === "high" ? "bad" : "warn"}>{defect.id}</Tag>
+                  <span className="min-w-0 truncate text-[10.5px] text-slate-400 line-through dark:text-slate-500">
+                    {defect.was}
                   </span>
-                  <p className="mt-1 text-[11px] leading-snug text-slate-500 dark:text-slate-400">{item.why}</p>
-                </Panel>
+                </span>
+                <span className="pl-1 text-[11px] font-bold leading-tight text-slate-800 dark:text-slate-100">
+                  → {defect.now}
+                </span>
               </li>
             ))}
           </ul>
+
+          <div className="mt-2 flex shrink-0 items-center gap-3 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 px-4 py-2.5 text-white">
+            <p className="font-display text-[26px] font-bold leading-none tracking-[-0.03em]">
+              {ENHANCED.verdict.headline}
+            </p>
+            <p className="text-[10.5px] font-semibold leading-tight text-white/85">{ENHANCED.verdict.qualifier}</p>
+          </div>
         </motion.div>
       </div>
 
-      <Footline tone="warn" className="mt-4">
-        {ENHANCED.reduction}
-      </Footline>
+      <Footline className="mt-3">{ENHANCED.line}</Footline>
     </Slide>
   );
 }
 
-/* ── 8 ────────────────────────────────────────────────────────────────────── */
+/* ── 10 · Architecture, ERD and DFD ───────────────────────────────────────── */
 
-function BuildSlide() {
-  const reduced = useReducedMotion();
-  const peak = Math.max(...BUILD.engine.cases.map((item) => item.score), 100);
-
+function ArchitectureSlide() {
   return (
-    <Slide eyebrow={BUILD.eyebrow} title={BUILD.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr] gap-5">
-        {/* The ramp of hue down the stack is the depth: the nine steps a request
-            passes through, in the order it meets them. */}
+    <Slide eyebrow={ARCHITECTURE.eyebrow} title={ARCHITECTURE.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_440px] gap-5">
+        {/* ERD, drawn at the level a room can read: entity groups and the
+            relationships between them, rather than 25 boxes and 34 lines. */}
         <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Nine layers, none skippable</Label>
-          <ol className="mt-2 flex flex-1 flex-col gap-[3px]">
-            {BUILD.layers.map((layer, index) => (
-              <motion.li
-                key={layer.name}
-                initial={{ opacity: 0, x: -14 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: reduced ? 0 : 0.35, delay: reduced ? 0 : 0.2 + index * 0.05, ease: EASE }}
-                className="flex min-h-0 flex-1 flex-col justify-center rounded-md border-l-[3px] px-2.5"
-                style={{
-                  borderLeftColor: `hsl(${243 - index * 7} 70% ${58 + index * 1.5}%)`,
-                  background: `hsl(${243 - index * 7} 70% 58% / 0.07)`,
-                }}
+          <Label>Entity–relationship — 9 groups, 25 entities</Label>
+          <div className="mt-2 grid flex-1 grid-cols-3 gap-1.5">
+            {ARCHITECTURE.erd.groups.map((group) => (
+              <div
+                key={group.id}
+                className="flex flex-col overflow-hidden rounded-lg border border-indigo-500/25 bg-white/60 dark:border-cyan-400/25 dark:bg-white/[0.05]"
               >
-                <span className="block text-[11.5px] font-bold leading-tight text-slate-800 dark:text-slate-100">
-                  {layer.name}
-                </span>
-                <span className="block text-[9px] leading-tight text-slate-500 dark:text-slate-400">
-                  {layer.detail}
-                </span>
-              </motion.li>
+                <p className="bg-indigo-500/10 px-2 py-0.5 font-mono text-[8.5px] font-bold uppercase tracking-[0.1em] text-indigo-700 dark:bg-cyan-400/10 dark:text-cyan-300">
+                  {group.name}
+                </p>
+                <ul className="flex flex-1 flex-col justify-center gap-px px-2 py-1">
+                  {group.entities.map((entity) => (
+                    <li
+                      key={entity}
+                      className="truncate font-mono text-[8px] leading-tight text-slate-600 dark:text-slate-300"
+                    >
+                      {entity}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ol>
+          </div>
+
+          <ul className="mt-2 flex shrink-0 flex-wrap gap-x-3 gap-y-0.5">
+            {ARCHITECTURE.erd.relations.map((relation) => (
+              <li key={relation.label + relation.from} className="flex items-center gap-1 text-[9px]">
+                <span className="font-mono text-slate-500 dark:text-slate-400">{relation.from}</span>
+                <ArrowRight className="h-2.5 w-2.5 text-indigo-500 dark:text-cyan-400" aria-hidden="true" />
+                <span className="font-mono text-slate-500 dark:text-slate-400">{relation.to}</span>
+                <span className="font-mono text-[8px] text-indigo-600 dark:text-cyan-400">{relation.label}</span>
+              </li>
+            ))}
+          </ul>
         </motion.div>
 
         <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
-          <div className="grid shrink-0 grid-cols-[minmax(0,330px)_1fr] gap-2.5">
-            <Panel>
-              <div className="flex items-baseline justify-between gap-2">
-                <Label>Data model</Label>
-                <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  <TriangleAlert className="h-2.5 w-2.5" aria-hidden="true" />
-                  {BUILD.dataNote}
-                </span>
-              </div>
-              <div className="mt-2 flex items-end justify-between gap-2">
-                {BUILD.data.map((item) => (
-                  <Stat key={item.label} value={item.value} label={item.label} size="sm" />
-                ))}
-              </div>
-            </Panel>
-
-            <Panel>
-              <Label>Defence in depth</Label>
-              <ul className="mt-2 flex flex-wrap gap-1">
-                {BUILD.securityLayers.map((item) => (
+          {/* DFD level 0: who supplies data, what transforms it, where it rests. */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Label>Data flow — level 0</Label>
+            <div className="mt-2 grid min-h-0 flex-1 grid-cols-3 items-center gap-2">
+              <ul className="flex flex-col gap-1.5">
+                {ARCHITECTURE.dfd.external.map((entity) => (
                   <li
-                    key={item}
-                    className="rounded border border-slate-900/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:border-white/10 dark:text-slate-400"
+                    key={entity.name}
+                    className="rounded border border-slate-400/40 bg-white/60 px-2 py-1 dark:border-white/20 dark:bg-white/[0.05]"
                   >
-                    {item}
+                    <span className="block text-[10px] font-bold leading-tight text-slate-800 dark:text-slate-100">
+                      {entity.name}
+                    </span>
+                    <span className="block text-[8px] leading-tight text-slate-400 dark:text-slate-500">
+                      {entity.flow}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </Panel>
+
+              <ul className="flex flex-col gap-1.5">
+                {ARCHITECTURE.dfd.processes.map((process) => (
+                  <li
+                    key={process.id}
+                    className="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-center dark:border-cyan-400/40 dark:bg-cyan-400/10"
+                  >
+                    <span className="block font-mono text-[8px] font-bold text-indigo-600 dark:text-cyan-400">
+                      {process.id}
+                    </span>
+                    <span className="block text-[9.5px] font-bold leading-tight text-slate-800 dark:text-slate-100">
+                      {process.name}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <ul className="flex flex-col gap-1.5">
+                {ARCHITECTURE.dfd.stores.map((store) => (
+                  <li
+                    key={store.id}
+                    /* The open-ended rectangle of a data store: ruled top and
+                       bottom, closed only on the left. */
+                    className="border-y border-l-2 border-y-slate-400/50 border-l-slate-400 bg-white/60 px-2 py-1 dark:border-y-white/20 dark:border-l-white/40 dark:bg-white/[0.05]"
+                  >
+                    <span className="font-mono text-[8px] font-bold text-slate-400 dark:text-slate-500">
+                      {store.id}
+                    </span>
+                    <span className="ml-1.5 text-[9.5px] font-semibold text-slate-700 dark:text-slate-200">
+                      {store.name}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-baseline justify-between gap-4">
-              <Label>{BUILD.engine.label}</Label>
-              <p className="font-mono text-[9px] text-slate-400 dark:text-slate-500">{BUILD.engine.rules}</p>
+          <Panel className="shrink-0">
+            <div className="flex items-end justify-between gap-2">
+              {ARCHITECTURE.stats.map((item) => (
+                <Stat key={item.label} value={item.value} label={item.label} size="sm" />
+              ))}
+            </div>
+            <p className="mt-2 flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
+              {ARCHITECTURE.governance}
+            </p>
+          </Panel>
+
+          <Panel className="shrink-0">
+            <Label>Nine layers, none skippable</Label>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {ARCHITECTURE.layers.map((layer, index) => (
+                <span
+                  key={layer}
+                  className="rounded px-1.5 py-0.5 font-mono text-[8.5px] text-slate-600 dark:text-slate-300"
+                  style={{ background: `hsl(${243 - index * 7} 70% 58% / 0.1)` }}
+                >
+                  {layer}
+                </span>
+              ))}
+            </div>
+          </Panel>
+        </motion.div>
+      </div>
+
+      <motion.div variants={rise} className="mt-3 flex shrink-0 flex-wrap gap-x-4 gap-y-0.5">
+        {ARCHITECTURE.decisions.map((decision) => (
+          <span key={decision} className="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300">
+            <Check className="h-2.5 w-2.5 shrink-0 text-emerald-500" aria-hidden="true" />
+            {decision}
+          </span>
+        ))}
+      </motion.div>
+    </Slide>
+  );
+}
+
+/* ── 11 · User storyboard ─────────────────────────────────────────────────── */
+
+/**
+ * A wireframe of one screen, drawn as shapes rather than as a screenshot.
+ *
+ * A storyboard frame is about what is on the screen and what the person does
+ * next, not about pixel fidelity — and a shrunken screenshot at this size is a
+ * grey smear where a diagram still reads.
+ */
+function Wireframe({ art }: { art: string }) {
+  const bar = "fill-slate-300 dark:fill-slate-600";
+  const accent = "fill-indigo-500 dark:fill-cyan-400";
+  const soft = "fill-slate-200 dark:fill-slate-700";
+
+  return (
+    <svg viewBox="0 0 100 62" className="w-full" aria-hidden="true">
+      <rect x="0" y="0" width="100" height="62" rx="4" className="fill-white/70 dark:fill-white/[0.06]" />
+      <rect x="0" y="0" width="100" height="8" rx="4" className={soft} />
+
+      {art === "landing" ? (
+        <>
+          <rect x="10" y="18" width="52" height="6" rx="2" className={accent} />
+          <rect x="10" y="28" width="72" height="3" rx="1.5" className={bar} />
+          <rect x="10" y="34" width="60" height="3" rx="1.5" className={bar} />
+          <rect x="10" y="44" width="30" height="9" rx="4.5" className={accent} />
+        </>
+      ) : null}
+
+      {art === "channel" ? (
+        <>
+          <rect x="10" y="14" width="34" height="3" rx="1.5" className={bar} />
+          {[0, 1, 2, 3, 4, 5].map((index) => (
+            <rect
+              key={index}
+              x={10 + (index % 3) * 28}
+              y={22 + Math.floor(index / 3) * 12}
+              width="24"
+              height="9"
+              rx="4.5"
+              className={index === 0 ? accent : soft}
+            />
+          ))}
+          <rect x="10" y="48" width="80" height="6" rx="3" className={soft} />
+        </>
+      ) : null}
+
+      {art === "paste" ? (
+        <>
+          <rect x="10" y="14" width="30" height="3" rx="1.5" className={bar} />
+          <rect x="10" y="20" width="80" height="22" rx="3" className={soft} />
+          {[0, 1, 2].map((index) => (
+            <rect key={index} x="14" y={24 + index * 6} width={64 - index * 14} height="2.5" rx="1.25" className={bar} />
+          ))}
+          <rect x="10" y="46" width="80" height="8" rx="4" className={accent} />
+        </>
+      ) : null}
+
+      {art === "scan" ? (
+        <>
+          <circle
+            cx="50"
+            cy="30"
+            r="14"
+            className="fill-none stroke-slate-300 dark:stroke-slate-600"
+            strokeWidth="1.5"
+          />
+          <circle
+            cx="50"
+            cy="30"
+            r="14"
+            className="origin-center fill-none stroke-indigo-500 motion-safe:animate-[hud-spin_2.2s_linear_infinite] dark:stroke-cyan-400"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray="28 60"
+          />
+          <rect x="30" y="50" width="40" height="3" rx="1.5" className={bar} />
+        </>
+      ) : null}
+
+      {art === "result" ? (
+        <>
+          <rect x="10" y="14" width="26" height="9" rx="4.5" className="fill-rose-500" />
+          <rect x="40" y="16" width="18" height="5" rx="2.5" className={bar} />
+          {[0, 1, 2].map((index) => (
+            <g key={index}>
+              <rect x="10" y={28 + index * 9} width="4" height="6" rx="1" className="fill-rose-400" />
+              <rect x="17" y={29 + index * 9} width={62 - index * 10} height="3.5" rx="1.75" className={bar} />
+            </g>
+          ))}
+        </>
+      ) : null}
+
+      {art === "next" ? (
+        <>
+          <rect x="10" y="16" width="80" height="3" rx="1.5" className={bar} />
+          <rect x="10" y="26" width="38" height="10" rx="5" className={accent} />
+          <rect x="52" y="26" width="38" height="10" rx="5" className={soft} />
+          <rect x="10" y="42" width="80" height="10" rx="3" className="fill-emerald-500/25" />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+function StoryboardSlide() {
+  return (
+    <Slide eyebrow={STORYBOARD.eyebrow} title={STORYBOARD.title}>
+      <motion.div variants={rise} className="grid min-h-0 flex-1 grid-cols-6 gap-2.5">
+        {STORYBOARD.frames.map((frame) => (
+          <figure
+            key={frame.n}
+            className="flex min-h-0 flex-col rounded-xl border border-slate-900/[0.07] bg-white/55 p-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+          >
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500/15 font-mono text-[8px] font-bold text-indigo-700 dark:bg-cyan-400/15 dark:text-cyan-300">
+                {frame.n}
+              </span>
+              <span className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                {frame.screen}
+              </span>
             </div>
 
-            <div className="mt-2 grid min-h-0 flex-1 grid-cols-[270px_1fr] gap-3">
-              <div className="flex flex-col gap-2">
-                <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
-                  <p className="font-mono text-[12px] font-bold text-slate-900 dark:text-white">
-                    {BUILD.engine.formula}
-                  </p>
-                  <p className="mt-1.5 font-mono text-[9.5px] text-slate-500 dark:text-slate-400">
-                    {BUILD.engine.weights}
-                  </p>
-                  <p className="font-mono text-[9.5px] text-slate-500 dark:text-slate-400">{BUILD.engine.bands}</p>
-                </Panel>
+            <div className="my-2 flex flex-1 items-center">
+              <Wireframe art={frame.art} />
+            </div>
 
-                <p className="mt-auto rounded-lg bg-emerald-500/10 px-2.5 py-2 text-[12px] font-bold leading-snug text-emerald-700 dark:text-emerald-400">
-                  {BUILD.engine.result}
-                </p>
-              </div>
+            <figcaption className="shrink-0 text-[9.5px] leading-tight text-slate-600 dark:text-slate-300">
+              {frame.does}
+            </figcaption>
+          </figure>
+        ))}
+      </motion.div>
 
-              {/* Seven cases, seven bars. The two that should read zero, do —
-                  which is the half of the result easiest to overlook. */}
-              <div className="flex min-h-0 items-end gap-2">
-                {BUILD.engine.cases.map((item) => {
-                  const tone: Tone = item.expected === "HIGH" ? "bad" : item.expected === "LOW" ? "good" : "idle";
-                  return (
-                    <div key={item.n} className="flex h-full flex-1 flex-col justify-end gap-1">
-                      <span className={cn("text-center font-mono text-[11px] font-bold tabular-nums", TONE[tone].text)}>
-                        {item.score}
-                      </span>
-                      <div className="relative min-h-0 flex-1 overflow-hidden rounded-md bg-slate-900/[0.05] dark:bg-white/[0.06]">
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${Math.max((item.score / peak) * 100, 2.5)}%` }}
-                          transition={{
-                            duration: reduced ? 0 : 0.7,
-                            delay: reduced ? 0 : 0.4 + item.n * 0.07,
-                            ease: EASE,
-                          }}
-                          className={cn("absolute bottom-0 w-full rounded-md", TONE[tone].bg)}
-                        />
-                      </div>
-                      <span className="text-center font-mono text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        {item.expected}
-                      </span>
-                      <span className="h-6 text-center text-[8.5px] leading-tight text-slate-500 dark:text-slate-400">
-                        {item.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+      <motion.div variants={rise} className="mt-4 flex shrink-0 items-center gap-3">
+        <Label className="shrink-0">Guaranteed at every frame</Label>
+        {STORYBOARD.guarantees.map((item) => (
+          <span
+            key={item}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400"
+          >
+            <Check className="h-3 w-3 shrink-0" aria-hidden="true" />
+            {item}
+          </span>
+        ))}
+      </motion.div>
+
+      <p className="mt-2 shrink-0 text-[10px] text-slate-400 dark:text-slate-500">{STORYBOARD.note}</p>
+    </Slide>
+  );
+}
+
+/* ── 12 · Test plan and test cases ────────────────────────────────────────── */
+
+function TestingSlide() {
+  const reduced = useReducedMotion();
+  const peak = Math.max(...TESTING.cases.map((item) => item.score), 100);
+
+  return (
+    <Slide eyebrow={TESTING.eyebrow} title={TESTING.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[290px_1fr] gap-5">
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Test plan — eight levels</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1">
+            {TESTING.strategy.map((row) => (
+              <li
+                key={row.level}
+                className="flex flex-1 flex-col justify-center rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className={cn("h-1.5 w-1.5 shrink-0 rounded-full", TONE[toneFor(row.state)].bg)}
+                      aria-hidden="true"
+                    />
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{row.level}</span>
+                  </span>
+                  <span className="font-mono text-[8px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {row.owner}
+                  </span>
+                </span>
+                <span className="pl-3 text-[9px] leading-tight text-slate-500 dark:text-slate-400">{row.method}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <div className="flex shrink-0 items-baseline justify-between gap-3">
+            <Label>Test cases executed 13 Aug 2026 — expected band vs result</Label>
+            <span className="font-mono text-[9px] text-slate-400 dark:text-slate-500">{TESTING.formula}</span>
+          </div>
+
+          {/* Seven cases, seven bars. The two that should read zero, do — which
+              is the half of the result easiest to overlook. */}
+          <div className="mt-2 flex min-h-0 flex-1 items-end gap-2.5">
+            {TESTING.cases.map((item) => {
+              const tone: Tone = item.expected === "HIGH" ? "bad" : item.expected === "LOW" ? "good" : "idle";
+              return (
+                <div key={item.n} className="flex h-full flex-1 flex-col justify-end gap-1">
+                  <span className={cn("text-center font-mono text-[12px] font-bold tabular-nums", TONE[tone].text)}>
+                    {item.score}
+                  </span>
+                  <div className="relative min-h-0 flex-1 overflow-hidden rounded-md bg-slate-900/[0.05] dark:bg-white/[0.06]">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max((item.score / peak) * 100, 2.5)}%` }}
+                      transition={{
+                        duration: reduced ? 0 : 0.7,
+                        delay: reduced ? 0 : 0.35 + item.n * 0.07,
+                        ease: EASE,
+                      }}
+                      className={cn("absolute bottom-0 w-full rounded-md", TONE[tone].bg)}
+                    />
+                  </div>
+                  <span className="text-center font-mono text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {item.expected}
+                  </span>
+                  <span className="flex items-center justify-center gap-1">
+                    <CheckCircle2 className="h-2.5 w-2.5 shrink-0 text-emerald-500" aria-hidden="true" />
+                    <span className="font-mono text-[8px] text-slate-400 dark:text-slate-500">
+                      c={item.confidence.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="h-7 text-center text-[8.5px] leading-tight text-slate-500 dark:text-slate-400">
+                    {item.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 grid shrink-0 grid-cols-2 gap-2">
+            <p className="rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-[11.5px] font-bold leading-snug text-emerald-700 dark:text-emerald-400">
+              {TESTING.result}
+            </p>
+            <p className="rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[10px] leading-snug text-amber-700 dark:text-amber-400">
+              {TESTING.gap}
+            </p>
+          </div>
+        </motion.div>
+      </div>
+
+      <motion.p
+        variants={rise}
+        className="mt-3 shrink-0 rounded-xl border-l-[3px] border-l-slate-400 bg-slate-500/[0.07] px-4 py-2 text-[10.5px] leading-snug text-slate-600 dark:text-slate-300"
+      >
+        {TESTING.acceptance}.
+      </motion.p>
+
+      <Footline className="mt-2.5">{TESTING.insight}</Footline>
+    </Slide>
+  );
+}
+
+/* ── 13 · Budget and financial breakdown ──────────────────────────────────── */
+
+function BudgetSlide() {
+  const reduced = useReducedMotion();
+  const total = BUDGET.operatingTotal;
+
+  return (
+    <Slide eyebrow={BUDGET.eyebrow} title={BUDGET.title}>
+      <motion.div variants={rise} className="grid shrink-0 grid-cols-4 gap-3">
+        {BUDGET.headline.map((item) => (
+          <Panel key={item.label} tone={item.tone === "idle" ? undefined : item.tone}>
+            <Stat value={item.value} label={item.label} tone={item.tone} />
+          </Panel>
+        ))}
+      </motion.div>
+
+      <div className="mt-4 grid min-h-0 flex-1 grid-cols-[1fr_300px] gap-5">
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Annual operating cost once promoted — where the $28,400 goes</Label>
+
+          {/* A stacked bar, because the point is the proportion: the cash line
+              everyone worries about is the smaller sixth of it. */}
+          <div className="mt-2.5 flex h-9 shrink-0 overflow-hidden rounded-lg">
+            {BUDGET.operating.map((line, index) => (
+              <motion.div
+                key={line.item}
+                initial={{ width: 0 }}
+                animate={{ width: `${(line.amount / total) * 100}%` }}
+                transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 0.3 + index * 0.15, ease: EASE }}
+                className={cn(
+                  "flex items-center justify-center",
+                  index === 0
+                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500"
+                    : "bg-gradient-to-r from-cyan-500 to-teal-500",
+                )}
+              >
+                <span className="font-mono text-[11px] font-bold text-white">${line.amount.toLocaleString()}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <ul className="mt-2 flex shrink-0 flex-col gap-1">
+            {BUDGET.operating.map((line, index) => (
+              <li key={line.item} className="flex items-center gap-2">
+                <span
+                  className={cn("h-2.5 w-2.5 shrink-0 rounded-sm", index === 0 ? "bg-indigo-500" : "bg-cyan-500")}
+                />
+                <span className="flex-1 text-[11px] text-slate-600 dark:text-slate-300">{line.item}</span>
+                <span className="font-mono text-[11px] font-bold tabular-nums text-slate-800 dark:text-slate-100">
+                  ${line.amount.toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <Label className="mt-3">What the infrastructure line buys</Label>
+          <ul className="mt-1.5 flex flex-1 flex-col gap-1">
+            {BUDGET.infrastructure.map((line) => (
+              <li
+                key={line.item}
+                className="flex flex-1 items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                  {line.item}
+                </span>
+                <span className="font-mono text-[9px] text-slate-400 dark:text-slate-500">{line.note}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+          <Panel className="flex-1">
+            <Label>The economic case</Label>
+            <ul className="mt-2 flex flex-col gap-2.5">
+              {BUDGET.benefit.map((item) => (
+                <li key={item.label}>
+                  <p className="font-display text-[22px] font-bold leading-none tracking-[-0.03em] text-indigo-600 dark:text-cyan-400">
+                    {item.value}
+                  </p>
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500 dark:text-slate-400">{item.label}</p>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+
+          <Panel tone="warn" className="shrink-0">
+            <p className="text-[10.5px] leading-snug text-slate-700 dark:text-slate-200">{BUDGET.condition}</p>
+          </Panel>
+        </motion.div>
+      </div>
+
+      <Footline className="mt-4">{BUDGET.line}</Footline>
+    </Slide>
+  );
+}
+
+/* ── 14 · Risks and communication ─────────────────────────────────────────── */
+
+function GovernanceSlide() {
+  return (
+    <Slide eyebrow={GOVERNANCE.eyebrow} title={GOVERNANCE.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-5">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Label>Critical risks — likelihood × impact</Label>
+            <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+              {GOVERNANCE.critical.map((risk) => (
+                <li
+                  key={risk.id}
+                  className="flex flex-1 items-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3"
+                >
+                  <span className="font-mono text-[10.5px] font-bold text-rose-600 dark:text-rose-400">{risk.id}</span>
+                  <span className="flex-1 text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">
+                    {risk.text}
+                  </span>
+                  <span className="font-display text-[15px] font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                    {risk.score}
+                  </span>
+                  <span className="w-[68px] shrink-0 text-right font-mono text-[8.5px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {risk.owner}
+                  </span>
+                </li>
+              ))}
+              {GOVERNANCE.materialised.map((risk) => (
+                <StateRow key={risk.id} id={risk.id} text={risk.text} state="fired" trailing="materialised" />
+              ))}
+            </ul>
+          </div>
+
+          <div className="shrink-0">
+            <Label>Treatment</Label>
+            <ul className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {GOVERNANCE.treatment.map((row) => (
+                <li
+                  key={row.approach}
+                  className="rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 py-1 dark:border-white/10 dark:bg-white/[0.04]"
+                >
+                  <span className="block font-mono text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-cyan-400">
+                    {row.approach}
+                  </span>
+                  <span className="block text-[9.5px] leading-tight text-slate-500 dark:text-slate-400">
+                    {row.example}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Label>Communication plan — audience, cadence, channel</Label>
+            <ul className="mt-2 flex flex-1 flex-col gap-1">
+              {GOVERNANCE.communication.map((row) => (
+                <li
+                  key={row.audience}
+                  className="grid flex-1 grid-cols-[1fr_84px_1fr] items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+                >
+                  <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                    {row.audience}
+                  </span>
+                  <span className="font-mono text-[9px] text-indigo-600 dark:text-cyan-400">{row.cadence}</span>
+                  <span className="truncate text-right text-[9.5px] text-slate-500 dark:text-slate-400">
+                    {row.channel}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="shrink-0">
+            <Label>Escalation</Label>
+            <div className="mt-1.5 flex gap-1">
+              {GOVERNANCE.escalation.map((step, index) => (
+                <div
+                  key={step.level}
+                  className={cn(
+                    "flex-1 rounded-lg px-2 py-1",
+                    index === 4
+                      ? "border border-rose-500/40 bg-rose-500/10"
+                      : "border border-slate-900/[0.07] bg-white/55 dark:border-white/10 dark:bg-white/[0.04]",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "block font-mono text-[9.5px] font-bold",
+                      index === 4 ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
+                    )}
+                  >
+                    {step.level}
+                  </span>
+                  <span className="block text-[8.5px] leading-tight text-slate-600 dark:text-slate-300">
+                    {step.scope}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[8px] text-slate-400 dark:text-slate-500">
+                    {step.time}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* The hardware and software recommendation the brief left to the team. */}
-      <motion.div
-        variants={rise}
-        className="mt-3 flex shrink-0 items-center gap-3 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3.5 py-1.5 dark:border-white/10 dark:bg-white/[0.04]"
-      >
-        <Label className="shrink-0">{BUILD.hosting.label}</Label>
-        <ul className="flex flex-1 flex-wrap gap-1.5">
-          {BUILD.hosting.items.map((item) => (
-            <li
-              key={item}
-              className="rounded border border-slate-900/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:border-white/10 dark:text-slate-400"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p className="shrink-0 font-mono text-[10px] font-bold text-indigo-600 dark:text-cyan-400">
-          {BUILD.hosting.cost}
+      <motion.div variants={rise} className="mt-3 grid shrink-0 grid-cols-2 gap-4">
+        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2 text-[10.5px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
+          {GOVERNANCE.triggerNote}
+        </p>
+        <p className="rounded-xl border-l-[3px] border-l-rose-500 bg-rose-500/[0.07] px-4 py-2 text-[10.5px] leading-snug text-slate-700 dark:text-slate-200">
+          {GOVERNANCE.escalationNote}
         </p>
       </motion.div>
-
-      <Footline className="mt-2.5">{BUILD.engine.insight}</Footline>
     </Slide>
   );
 }
 
-/* ── 9 ────────────────────────────────────────────────────────────────────── */
+/* ── 15 · Position, feedback and verdict ──────────────────────────────────── */
 
-const MILESTONE_TONE: Record<string, Tone> = {
-  done: "good",
-  early: "accent",
-  active: "warn",
-  blocked: "bad",
-  planned: "idle",
-};
-
-function PositionSlide() {
-  const reduced = useReducedMotion();
-
+function CloseSlide() {
   return (
-    <Slide eyebrow={POSITION.eyebrow} title={POSITION.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[320px_1fr] gap-6">
-        <motion.div variants={rise} className="flex flex-col gap-3">
+    <Slide eyebrow={CLOSE.eyebrow} title={CLOSE.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[290px_1fr_280px] gap-5">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
           <Panel>
-            <Label>72 requirements, audited at 83a4c62</Label>
-            <div className="mt-3">
-              <Donut segments={[...POSITION.donut]} size={140} caption="FRs" />
+            <Label>72 requirements, audited</Label>
+            <div className="mt-2.5">
+              <Donut segments={[...CLOSE.donut]} size={124} caption="FRs" />
             </div>
           </Panel>
 
-          <Panel className="flex flex-1 flex-col justify-between gap-2">
-            {POSITION.money.map((item) => (
-              <div key={item.label} className="flex items-baseline justify-between gap-2">
-                <span className="font-display text-[19px] font-bold tabular-nums text-slate-900 dark:text-white">
-                  {item.value}
-                </span>
-                <span className="text-right text-[10px] text-slate-500 dark:text-slate-400">{item.label}</span>
-              </div>
-            ))}
-          </Panel>
-        </motion.div>
-
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
-          <div className="grid grid-cols-3 gap-2.5">
-            {POSITION.complete.map((item) => (
-              <Panel key={item.title} tone="good" className="flex items-center gap-2.5">
-                <Glyph icon={item.icon} size={28} />
+          <div className="grid flex-1 grid-cols-1 gap-1.5">
+            {CLOSE.complete.map((item) => (
+              <Panel key={item.title} tone="good" className="flex items-center gap-2.5 p-2.5">
+                <Glyph icon={item.icon} size={26} />
                 <span>
-                  <span className="block text-[12px] font-bold leading-tight text-slate-900 dark:text-white">
+                  <span className="block text-[11.5px] font-bold leading-tight text-slate-900 dark:text-white">
                     {item.title}
                   </span>
-                  <span className="mt-0.5 block text-[10px] leading-tight text-slate-500 dark:text-slate-400">
+                  <span className="block text-[9.5px] leading-tight text-slate-500 dark:text-slate-400">
                     {item.detail}
                   </span>
                 </span>
               </Panel>
             ))}
           </div>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            {POSITION.missing.map((item) => (
-              <Panel key={item.id} tone="bad" className="flex flex-col gap-1">
-                <Tag tone="bad">{item.id}</Tag>
-                <span className="text-[12px] font-bold leading-tight text-slate-900 dark:text-white">
-                  {item.title}
-                </span>
-                <span className="text-[10px] leading-tight text-slate-500 dark:text-slate-400">{item.detail}</span>
-              </Panel>
-            ))}
-          </div>
-
-          <div className="mt-auto">
-            <div className="flex items-baseline justify-between gap-3">
-              <Label>Milestones · {POSITION.schedule}</Label>
-              <span className="font-mono text-[9px] text-slate-400 dark:text-slate-500">{POSITION.gapsNote}</span>
-            </div>
-            <div className="mt-2 flex items-center gap-1">
-              {POSITION.milestones.map((milestone, index) => (
-                <div key={milestone.id} className="flex flex-1 flex-col items-center gap-1">
-                  <motion.span
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{
-                      duration: reduced ? 0 : 0.3,
-                      delay: reduced ? 0 : 0.3 + index * 0.03,
-                      ease: EASE,
-                    }}
-                    className={cn(
-                      "h-3 w-full origin-bottom rounded-sm",
-                      TONE[MILESTONE_TONE[milestone.state]!].bg,
-                      milestone.state === "planned" && "opacity-45",
-                    )}
-                  />
-                  <span className="font-mono text-[8.5px] text-slate-400 dark:text-slate-500">{milestone.id}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-1.5 flex flex-wrap gap-x-3">
-              {POSITION.milestoneLegend.map((item) => (
-                <span key={item.state} className="flex items-center gap-1 text-[9px] text-slate-500 dark:text-slate-400">
-                  <span className={cn("h-2 w-2 rounded-sm", TONE[MILESTONE_TONE[item.state]!].bg)} />
-                  {item.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid shrink-0 grid-cols-4 gap-2">
-            {POSITION.risks.materialised.map((risk) => (
-              <Panel key={risk.id} tone="bad" className="p-2">
-                <span className="block font-mono text-[10px] font-bold text-rose-600 dark:text-rose-400">
-                  {risk.id}
-                </span>
-                <span className="mt-0.5 block text-[10px] leading-tight text-slate-600 dark:text-slate-300">
-                  {risk.text}
-                </span>
-              </Panel>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      <Footline tone="warn" className="mt-4">
-        {POSITION.risks.total} risks tracked · four past their trigger. {POSITION.risks.line}
-      </Footline>
-    </Slide>
-  );
-}
-
-/* ── 10 ───────────────────────────────────────────────────────────────────── */
-
-function DecisionsSlide() {
-  return (
-    <Slide eyebrow={DECISIONS.eyebrow} title={DECISIONS.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_340px] gap-6">
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Blocking</Label>
-          <ul className="mt-2 flex flex-col gap-2">
-            {DECISIONS.blocking.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5"
-              >
-                <span className="flex h-6 shrink-0 items-center rounded-md bg-rose-500/20 px-1.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                  {item.id}
-                </span>
-                <span className="flex-1 text-[14px] font-semibold leading-snug text-slate-800 dark:text-slate-100">
-                  {item.text}
-                </span>
-                <span className="shrink-0 text-right font-mono text-[9px] uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
-                  {item.from}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <Label className="mt-4">Seven further decisions requested</Label>
-          <ul className="mt-2 grid flex-1 grid-cols-2 content-start gap-1.5">
-            {DECISIONS.others.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                <Tag tone="idle">{item.id}</Tag>
-                <span className="text-[11.5px] text-slate-600 dark:text-slate-300">{item.text}</span>
-              </li>
-            ))}
-          </ul>
         </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
-          <Panel>
-            <Label>Feasibility</Label>
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+          <div className="shrink-0">
+            <Label>What is not built</Label>
             <ul className="mt-2 flex flex-col gap-1.5">
-              {DECISIONS.feasibility.map((item) => (
-                <li key={item.dimension} className="flex items-center gap-2">
-                  <span className={cn("h-2 w-2 shrink-0 rounded-full", TONE[item.tone].bg)} aria-hidden="true" />
-                  <span className="w-[80px] shrink-0 text-[11.5px] font-bold text-slate-800 dark:text-slate-100">
-                    {item.dimension}
-                  </span>
-                  <span className="text-[10.5px] text-slate-500 dark:text-slate-400">{item.verdict}</span>
+              {CLOSE.missing.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5"
+                >
+                  <span className="font-mono text-[10px] font-bold text-rose-600 dark:text-rose-400">{item.id}</span>
+                  <span className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">{item.title}</span>
                 </li>
               ))}
             </ul>
-          </Panel>
-
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 px-4 py-4 text-white">
-            <p className="font-display text-[62px] font-bold leading-none tracking-[-0.04em]">
-              {DECISIONS.verdict.headline}
-            </p>
-            <p className="mt-2 text-[12px] font-semibold text-white/85">{DECISIONS.verdict.qualifier}</p>
           </div>
 
-          <p className="shrink-0 rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-3.5 py-2.5 text-[12.5px] font-semibold italic leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
-            {DECISIONS.closing}
-          </p>
+          {/*
+           * The one criterion no project document answers. Left as prompts
+           * rather than filled in: the lecturer will know what they said, and a
+           * slide that invents their feedback is worse than one that waits.
+           */}
+          <div className="flex min-h-0 flex-1 flex-col rounded-xl border-2 border-dashed border-amber-500/45 bg-amber-500/[0.07] p-3">
+            <div className="flex shrink-0 items-center gap-2">
+              <TriangleAlert className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              <span className="font-mono text-[9.5px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">
+                {CLOSE.feedback.label}
+              </span>
+            </div>
+            <p className="mt-1 shrink-0 text-[9.5px] text-amber-700/80 dark:text-amber-400/80">
+              {CLOSE.feedback.todo}
+            </p>
+            <ul className="mt-2 flex flex-1 flex-col gap-1">
+              {CLOSE.feedback.prompts.map((prompt) => (
+                <li
+                  key={prompt.on}
+                  className="flex flex-1 items-center gap-2 rounded-lg border border-amber-500/25 bg-white/50 px-2.5 dark:bg-white/[0.04]"
+                >
+                  <span className="w-[142px] shrink-0 text-[10px] font-bold text-slate-700 dark:text-slate-200">
+                    {prompt.on}
+                  </span>
+                  <span className="font-mono text-[11px] text-slate-300 dark:text-slate-600">{prompt.answer}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+          <div className="shrink-0">
+            <Label>Blocking decisions</Label>
+            <ul className="mt-2 flex flex-col gap-1">
+              {CLOSE.blocking.map((item) => (
+                <StateRow key={item.id} id={item.id} text={item.text} state="blocked" />
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 px-4 py-4 text-white">
+            <p className="font-display text-[54px] font-bold leading-none tracking-[-0.04em]">
+              {CLOSE.verdict.headline}
+            </p>
+            <p className="mt-2 text-center text-[11.5px] font-semibold text-white/85">{CLOSE.verdict.qualifier}</p>
+          </div>
         </motion.div>
       </div>
 
-      <Footline className="mt-4">{DECISIONS.next}</Footline>
+      <Footline className="mt-4">{CLOSE.closing}</Footline>
     </Slide>
   );
 }
@@ -1019,14 +1526,19 @@ function DecisionsSlide() {
 const RENDERERS: Record<string, () => ReactElement> = {
   cover: CoverSlide,
   problem: ProblemSlide,
-  service: ServiceSlide,
-  ethics: EthicsSlide,
-  conformance: ConformanceSlide,
-  baseline: BaselineSlide,
+  objectives: ObjectivesSlide,
+  scope: ScopeSlide,
+  team: TeamSlide,
+  wbs: PlanSlide,
+  usecases: UseCasesSlide,
+  requirements: RequirementsSlide,
   enhanced: EnhancedSlide,
-  build: BuildSlide,
-  position: PositionSlide,
-  decisions: DecisionsSlide,
+  architecture: ArchitectureSlide,
+  storyboard: StoryboardSlide,
+  testing: TestingSlide,
+  budget: BudgetSlide,
+  risks: GovernanceSlide,
+  close: CloseSlide,
 };
 
 export interface DeckSlide extends SlideEntry {

@@ -51,6 +51,33 @@ export const TONE = {
 
 export type Tone = keyof typeof TONE;
 
+/**
+ * The states the content uses, mapped to tones once.
+ *
+ * Eight slides describe progress and they must agree on what green means, or
+ * the deck teaches the room one colour code and then breaks it. Anything
+ * finished is green, anything under way amber, anything blocked or at risk red,
+ * anything not started grey — with `active` in the accent so "being worked on
+ * right now" reads apart from "partly done".
+ */
+export const STATE_TONE: Record<string, Tone> = {
+  met: "good",
+  done: "good",
+  partial: "warn",
+  active: "accent",
+  planned: "idle",
+  idle: "idle",
+  risk: "bad",
+  blocked: "bad",
+  fired: "bad",
+  open: "bad",
+};
+
+/** A tone for a state name, defaulting rather than throwing on an unknown one. */
+export function toneFor(state: string): Tone {
+  return STATE_TONE[state] ?? "idle";
+}
+
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /** Staggered entrance for a slide's own contents, once the slide is in place. */
@@ -403,6 +430,87 @@ export function DotGrid({
           className={cn("h-2.5 rounded-[2px]", TONE[tone].bg, "opacity-80")}
         />
       ))}
+    </div>
+  );
+}
+
+/**
+ * A labelled row of the deck's own chart vocabulary — a state dot and a name.
+ *
+ * Repeated across the objective, deliverable, skill and test-strategy lists, so
+ * that "what state is this in" is answered the same way every time it is asked.
+ */
+export function StateRow({
+  id,
+  text,
+  state,
+  trailing,
+  className,
+}: {
+  id?: string;
+  text: string;
+  state: string;
+  trailing?: string;
+  className?: string;
+}) {
+  const tone = toneFor(state);
+
+  return (
+    <li
+      className={cn(
+        "flex items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2 py-1 dark:border-white/10 dark:bg-white/[0.04]",
+        className,
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", TONE[tone].bg)} aria-hidden="true" />
+      {id ? (
+        <span className={cn("shrink-0 font-mono text-[9.5px] font-bold", TONE[tone].text)}>{id}</span>
+      ) : null}
+      <span className="min-w-0 flex-1 truncate text-[10.5px] text-slate-700 dark:text-slate-200">{text}</span>
+      {trailing ? (
+        <span className="shrink-0 font-mono text-[9px] text-slate-400 dark:text-slate-500">{trailing}</span>
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * One bar of a Gantt, positioned and sized in weeks.
+ *
+ * Drawn as a percentage of the chart's own width rather than in pixels, so the
+ * same declaration lays out against any span the slide gives it. The bar grows
+ * from its left edge on arrival — a schedule reads as time passing, and a bar
+ * that simply appears at full length says nothing about direction.
+ */
+export function GanttBar({
+  start,
+  span,
+  weeks,
+  state,
+  delay = 0,
+}: {
+  start: number;
+  span: number;
+  weeks: number;
+  state: string;
+  delay?: number;
+}) {
+  const reduced = useReducedMotion();
+  const tone = toneFor(state);
+
+  return (
+    <div className="relative h-4 w-full">
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: reduced ? 0 : 0.55, delay: reduced ? 0 : delay, ease: EASE }}
+        style={{
+          left: `${(start / weeks) * 100}%`,
+          width: `${(span / weeks) * 100}%`,
+          transformOrigin: "left",
+        }}
+        className={cn("absolute inset-y-0 rounded-[3px]", TONE[tone].bg, state === "planned" && "opacity-45")}
+      />
     </div>
   );
 }
