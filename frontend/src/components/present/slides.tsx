@@ -10,19 +10,16 @@ import {
   ENHANCED,
   GOVERNANCE,
   OBJECTIVES,
-  PLAN,
   PROBLEM,
   REQUIREMENTS,
   SCOPE,
   STORYBOARD,
   TEAM,
   TESTING,
-  USECASES,
 } from "@/content/presentation";
+import { USE_CASE } from "@/content/diagrams";
 import {
-  Donut,
   Footline,
-  GanttBar,
   Glyph,
   Headline,
   Label,
@@ -31,12 +28,18 @@ import {
   StateRow,
   Stat,
   Tag,
-  Tile,
   TONE,
   rise,
   toneFor,
   type Tone,
 } from "@/components/present/primitives";
+import {
+  DataFlowDiagram,
+  EntityDiagram,
+  GanttDiagram,
+  UseCaseDiagram,
+  WbsDiagram,
+} from "@/components/present/diagrams";
 import { DECK_OUTLINE, type SlideEntry } from "@/components/present/manifest";
 import { cn } from "@/lib/cn";
 
@@ -286,63 +289,88 @@ function ObjectivesSlide() {
       <motion.div variants={rise} className="shrink-0">
         <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
           <Label>Purpose of the project</Label>
-          <p className="mt-1.5 text-[13.5px] font-semibold leading-snug text-slate-800 dark:text-slate-100">
+          <p className="mt-1.5 text-[12.5px] font-semibold leading-snug text-slate-800 dark:text-slate-100">
             {OBJECTIVES.purpose}
           </p>
         </Panel>
       </motion.div>
 
-      <motion.div variants={rise} className="mt-4 grid min-h-0 flex-1 grid-cols-4 gap-4">
+      <motion.div variants={rise} className="mt-3 grid min-h-0 flex-1 grid-cols-4 gap-3">
         <ObjectiveColumn label="Product · PO" items={OBJECTIVES.product} />
         <ObjectiveColumn label="Quality · QO" items={OBJECTIVES.quality} />
         <ObjectiveColumn label="Ethical · EO" items={OBJECTIVES.ethical} />
         <ObjectiveColumn label="Delivery · DO" items={OBJECTIVES.delivery} />
       </motion.div>
 
-      <motion.div variants={rise} className="mt-4 flex shrink-0 items-center gap-3">
-        <Label className="shrink-0">Three commitments that constrain every decision</Label>
-        {OBJECTIVES.commitments.map((item) => (
-          <span
-            key={item}
-            className="flex-1 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-500 px-3 py-2 text-center text-[13px] font-bold text-white dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950"
-          >
-            {item}
-          </span>
-        ))}
+      {/* Scope shares this slide: the objectives say what the project is for,
+          and the scope is the line drawn around them. */}
+      <motion.div variants={rise} className="mt-3 grid shrink-0 grid-cols-[1fr_300px] gap-4">
+        <div>
+          <Label>Scope — four verbs for the community, four for Council</Label>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {[...SCOPE.community, ...SCOPE.council].map((item) => (
+              <span
+                key={item.verb}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2 py-1 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.verb}</span>
+                <span className="font-mono text-[8.5px] text-indigo-600 dark:text-cyan-400">{item.maps}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <Panel tone="bad">
+          <Label>Out of scope</Label>
+          <ul className="mt-1 grid grid-cols-2 gap-x-2">
+            {SCOPE.outOfScope.map((item) => (
+              <li key={item} className="flex items-center gap-1 text-[9px] text-slate-600 dark:text-slate-300">
+                <Ban className="h-2 w-2 shrink-0 text-rose-500" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </Panel>
       </motion.div>
     </Slide>
   );
 }
 
-/* ── 4 · Scope and deliverables ───────────────────────────────────────────── */
+/* ── 4 · Team, performance and deliverables ───────────────────────────────── */
 
-function ScopeSlide() {
+function TeamSlide() {
   return (
-    <Slide eyebrow={SCOPE.eyebrow} title={SCOPE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_320px] gap-6">
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-3">
-          <div className="grid flex-1 grid-cols-4 gap-2.5">
-            {SCOPE.community.map((item) => (
-              <Tile key={item.verb} icon={item.icon} title={item.verb} meta={item.maps} />
+    <Slide eyebrow={TEAM.eyebrow} title={TEAM.title}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_260px_260px] gap-4">
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Capability · primary → backup · what it has delivered</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+            {TEAM.capabilities.map((row) => (
+              <li
+                key={row.capability}
+                className="flex flex-1 flex-col justify-center rounded-xl border border-slate-900/[0.07] bg-white/55 px-3 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12px] font-bold text-slate-800 dark:text-slate-100">{row.capability}</span>
+                  <span className="font-mono text-[9px] text-indigo-600 dark:text-cyan-400">{row.delivered}</span>
+                </span>
+                <span className="flex items-center gap-1.5 text-[9.5px] text-slate-500 dark:text-slate-400">
+                  {row.primary}
+                  <ArrowRight className="h-2.5 w-2.5 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+                  {row.backup}
+                </span>
+              </li>
             ))}
-          </div>
-          <div className="grid flex-1 grid-cols-4 gap-2.5">
-            {SCOPE.council.map((item) => (
-              <Tile key={item.verb} icon={item.icon} title={item.verb} meta={item.maps} />
-            ))}
-          </div>
+          </ul>
+        </motion.div>
 
-          <Panel tone="bad" className="shrink-0">
-            <Label>Deliberately out of scope this release</Label>
-            <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
-              {SCOPE.outOfScope.map((item) => (
-                <li key={item} className="flex items-center gap-1.5 text-[10.5px] text-slate-600 dark:text-slate-300">
-                  <Ban className="h-2.5 w-2.5 shrink-0 text-rose-500" aria-hidden="true" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </Panel>
+        <motion.div variants={rise} className="flex min-h-0 flex-col">
+          <Label>Skills, assessed honestly</Label>
+          <ul className="mt-2 flex flex-1 flex-col gap-1">
+            {TEAM.skills.map((row) => (
+              <StateRow key={row.skill} text={row.skill} state={row.state} trailing={row.level} className="flex-1" />
+            ))}
+          </ul>
         </motion.div>
 
         <motion.div variants={rise} className="flex min-h-0 flex-col">
@@ -362,56 +390,11 @@ function ScopeSlide() {
         </motion.div>
       </div>
 
-      <Footline className="mt-4">
-        Community functions need no account at all — the largest user class is anonymous by design (FR85).
-      </Footline>
-    </Slide>
-  );
-}
-
-/* ── 5 · Team and performance ─────────────────────────────────────────────── */
-
-function TeamSlide() {
-  return (
-    <Slide eyebrow={TEAM.eyebrow} title={TEAM.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px] gap-6">
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Capability · primary → backup · what it has delivered</Label>
-          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
-            {TEAM.capabilities.map((row) => (
-              <li
-                key={row.capability}
-                className="grid flex-1 grid-cols-[1.1fr_1fr_1fr] items-center gap-3 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3.5 dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                <span className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">{row.capability}</span>
-                <span className="flex items-center gap-1.5 text-[10.5px] text-slate-500 dark:text-slate-400">
-                  {row.primary}
-                  <ArrowRight className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
-                  {row.backup}
-                </span>
-                <span className="text-right font-mono text-[10px] text-indigo-600 dark:text-cyan-400">
-                  {row.delivered}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Skills, assessed honestly</Label>
-          <ul className="mt-2 flex flex-1 flex-col gap-1">
-            {TEAM.skills.map((row) => (
-              <StateRow key={row.skill} text={row.skill} state={row.state} trailing={row.level} className="flex-1" />
-            ))}
-          </ul>
-        </motion.div>
-      </div>
-
-      <motion.div variants={rise} className="mt-4 grid shrink-0 grid-cols-2 gap-4">
-        <p className="rounded-xl border-l-[3px] border-l-slate-400 bg-slate-500/[0.07] px-4 py-2.5 text-[11.5px] leading-snug text-slate-600 dark:text-slate-300">
+      <motion.div variants={rise} className="mt-3 grid shrink-0 grid-cols-2 gap-4">
+        <p className="rounded-xl border-l-[3px] border-l-slate-400 bg-slate-500/[0.07] px-4 py-2 text-[11px] leading-snug text-slate-600 dark:text-slate-300">
           {TEAM.note}
         </p>
-        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2.5 text-[11.5px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
+        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2 text-[11px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
           {TEAM.transfer}
         </p>
       </motion.div>
@@ -419,192 +402,129 @@ function TeamSlide() {
   );
 }
 
-/* ── 6 · Work breakdown and schedule ──────────────────────────────────────── */
+/* ── 5 · Work breakdown structure ─────────────────────────────────────────── */
 
-function PlanSlide() {
+/**
+ * The WBS gets the whole slide.
+ *
+ * It is a five-branch tree three levels deep; at half a slide the level-3 tasks
+ * fall under six point type and the decomposition — which is the entire content
+ * of a WBS — stops being legible. The same applies to the four diagrams that
+ * follow, which is why each has a slide of its own.
+ */
+function WbsSlide() {
   return (
-    <Slide eyebrow={PLAN.eyebrow} title={PLAN.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
-        {/* The WBS: six level-1 packages, each decomposed once and closed by a
-            gate. Drawn as a tree so the decomposition is the picture. */}
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Work breakdown — level 1 → level 2 → gate</Label>
-          <ul className="mt-2 flex flex-1 flex-col gap-1.5">
-            {PLAN.wbs.map((pack) => (
-              <li
-                key={pack.id}
-                className="flex flex-1 items-center gap-2.5 rounded-xl border border-slate-900/[0.07] bg-white/55 px-3 dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-600 to-cyan-500 font-mono text-[11px] font-bold text-white dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950">
-                  {pack.id}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[12px] font-bold leading-tight text-slate-800 dark:text-slate-100">
-                    {pack.name}
-                  </span>
-                  <span className="mt-0.5 flex flex-wrap gap-x-2 text-[9px] leading-tight text-slate-500 dark:text-slate-400">
-                    {pack.tasks.map((task) => (
-                      <span key={task}>· {task}</span>
-                    ))}
-                  </span>
-                </span>
-                <Tag className="shrink-0">{pack.gate}</Tag>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-
-        {/* The same six packages against the calendar. */}
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Schedule — 22 weeks, 30 Jun → 27 Nov 2026</Label>
-
-          <div className="mt-2 flex min-h-0 flex-1 flex-col justify-center gap-2 rounded-xl border border-slate-900/[0.07] bg-white/55 p-3.5 dark:border-white/10 dark:bg-white/[0.04]">
-            {PLAN.gantt.map((row, index) => (
-              <div key={row.id + row.name} className="grid grid-cols-[128px_1fr] items-center gap-2">
-                <span className="truncate text-[10.5px] font-semibold text-slate-700 dark:text-slate-200">
-                  {row.name}
-                </span>
-                <GanttBar
-                  start={row.start}
-                  span={row.span}
-                  weeks={PLAN.weeks}
-                  state={row.state}
-                  delay={0.25 + index * 0.07}
-                />
-              </div>
-            ))}
-
-            {/* The calendar the bars are read against. */}
-            <div className="mt-1 grid grid-cols-[128px_1fr] items-center gap-2">
-              <span />
-              <span className="flex justify-between font-mono text-[8.5px] text-slate-400 dark:text-slate-500">
-                {PLAN.ticks.map((tick) => (
-                  <span key={tick}>{tick}</span>
-                ))}
-              </span>
-            </div>
-          </div>
-
-          <p className="mt-2 shrink-0 text-[10px] leading-snug text-slate-500 dark:text-slate-400">{PLAN.float}.</p>
-        </motion.div>
-      </div>
-
-      <Footline className="mt-4">{PLAN.gateNote}</Footline>
+    <Slide eyebrow="Criterion 4 · Work breakdown structure" title={{ lead: "Five packages,", accent: "three levels deep." }}>
+      <motion.div variants={rise} className="min-h-0 flex-1">
+        <WbsDiagram />
+      </motion.div>
     </Slide>
   );
 }
 
-/* ── 7 · Use-case model ───────────────────────────────────────────────────── */
+/* ── 6 · Gantt and delivery position ──────────────────────────────────────── */
 
-/** A stick actor, drawn rather than iconified so the diagram reads as UML. */
-function Actor({ name, note }: { name: string; note: string }) {
+function GanttSlide() {
   return (
-    <div className="flex items-center gap-2">
-      <svg viewBox="0 0 24 34" className="h-8 w-6 shrink-0" aria-hidden="true">
-        <g className="stroke-indigo-600 dark:stroke-cyan-400" strokeWidth="1.6" strokeLinecap="round" fill="none">
-          <circle cx="12" cy="6" r="4.5" />
-          <path d="M12 11v10M4 15h16M12 21l-5 9M12 21l5 9" />
-        </g>
-      </svg>
-      <span className="min-w-0">
-        <span className="block text-[11px] font-bold leading-tight text-slate-800 dark:text-slate-100">{name}</span>
-        <span className="block text-[8.5px] leading-tight text-slate-400 dark:text-slate-500">{note}</span>
-      </span>
-    </div>
-  );
-}
-
-function UseCasesSlide() {
-  return (
-    <Slide eyebrow={USECASES.eyebrow} title={USECASES.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[118px_1fr_118px] items-stretch gap-3">
-        <motion.div variants={rise} className="flex flex-col justify-center gap-5">
-          {USECASES.actors.left.map((actor) => (
-            <Actor key={actor.name} name={actor.name} note={actor.note} />
-          ))}
+    <Slide eyebrow="Criterion 4 · Schedule & Gantt" title={{ lead: "Eight sprints,", accent: "six milestone releases." }}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_236px] gap-4">
+        <motion.div variants={rise} className="min-h-0">
+          <GanttDiagram />
         </motion.div>
 
-        {/* The system boundary. Everything inside it is a use case; the actors
-            outside it are who drives one. */}
-        <motion.div
-          variants={rise}
-          className="flex min-h-0 flex-col rounded-2xl border-2 border-dashed border-indigo-500/35 bg-indigo-500/[0.04] p-3 dark:border-cyan-400/30 dark:bg-cyan-400/[0.04]"
-        >
-          <p className="shrink-0 text-center font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-cyan-400">
-            CyberKent — system boundary
-          </p>
-
-          <div className="mt-2 grid min-h-0 flex-1 grid-cols-3 gap-2.5">
-            {USECASES.groups.map((group) => (
-              <div key={group.name} className="flex min-h-0 flex-col">
-                <p className="shrink-0 text-center font-mono text-[8.5px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-                  {group.name}
-                </p>
-                <ul className="mt-1.5 flex flex-1 flex-col gap-1">
-                  {group.cases.map((useCase) => (
-                    <li
-                      key={useCase.id}
-                      /* An ellipse is the UML shape; a very round pill is the
-                         same silhouette at a size that still holds a label. */
-                      className="flex flex-1 items-center gap-1.5 rounded-full border border-slate-900/10 bg-white/70 px-2 dark:border-white/10 dark:bg-white/[0.06]"
-                    >
-                      <span className="shrink-0 font-mono text-[8px] font-bold text-indigo-600 dark:text-cyan-400">
-                        {useCase.id}
-                      </span>
-                      <span className="min-w-0 truncate text-[9px] text-slate-700 dark:text-slate-200">
-                        {useCase.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+        {/* Where the schedule has actually reached. Monochrome like the chart
+            beside it: one slide should not teach two colour codes. */}
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2">
+          <div className="rounded border border-slate-900/40 p-2.5 dark:border-white/35">
+            <Label>72 requirements, audited</Label>
+            <div className="mt-2 flex h-5 overflow-hidden rounded-[3px] border border-slate-900/60 dark:border-white/50">
+              {CLOSE.donut.map((segment, index) => (
+                <span
+                  key={segment.label}
+                  style={{ width: `${(segment.value / 72) * 100}%` }}
+                  className={cn(
+                    index === 0 && "bg-slate-900 dark:bg-white",
+                    index === 1 &&
+                      "bg-[repeating-linear-gradient(45deg,currentColor_0_2px,transparent_2px_5px)] text-slate-900 dark:text-white",
+                    index === 2 && "bg-transparent",
+                    index > 0 && "border-l border-slate-900/60 dark:border-white/50",
+                  )}
+                />
+              ))}
+            </div>
+            <ul className="mt-2 flex flex-col gap-1">
+              {CLOSE.donut.map((segment, index) => (
+                <li key={segment.label} className="flex items-center gap-1.5 text-[9.5px]">
+                  <span
+                    className={cn(
+                      "h-2.5 w-4 shrink-0 rounded-[2px] border border-slate-900/60 dark:border-white/50",
+                      index === 0 && "bg-slate-900 dark:bg-white",
+                      index === 1 &&
+                        "bg-[repeating-linear-gradient(45deg,currentColor_0_2px,transparent_2px_5px)] text-slate-900 dark:text-white",
+                    )}
+                  />
+                  <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                    {segment.value}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">{segment.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </motion.div>
 
-        <motion.div variants={rise} className="flex flex-col justify-center gap-5">
-          {USECASES.actors.right.map((actor) => (
-            <Actor key={actor.name} name={actor.name} note={actor.note} />
-          ))}
-        </motion.div>
-      </div>
-
-      <motion.div variants={rise} className="mt-4 grid shrink-0 grid-cols-[1fr_250px] gap-4">
-        <Panel className="border-l-[3px] border-l-indigo-500 dark:border-l-cyan-400">
-          <Label>{USECASES.detail.label}</Label>
-          <div className="mt-2 flex items-center gap-1.5">
-            {USECASES.detail.flow.map((step, index) => (
-              <span key={step} className="flex items-center gap-1.5">
-                {index > 0 ? (
-                  <ArrowRight className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
-                ) : null}
-                <span className="rounded-md bg-indigo-500/10 px-2 py-1 text-[10px] font-semibold text-indigo-700 dark:bg-cyan-400/10 dark:text-cyan-300">
-                  {step}
-                </span>
-              </span>
-            ))}
-          </div>
-          <p className="mt-2 flex flex-wrap gap-x-3 text-[9.5px] text-slate-500 dark:text-slate-400">
-            {USECASES.detail.alternates.map((alternate) => (
-              <span key={alternate}>· {alternate}</span>
-            ))}
-          </p>
-        </Panel>
-
-        <Panel>
-          <Label>Supporting actors</Label>
-          <ul className="mt-2 flex flex-wrap gap-1.5">
-            {USECASES.supporting.map((item) => (
+          <ul className="flex min-h-0 flex-1 flex-col gap-1">
+            {CLOSE.complete.map((item) => (
               <li
-                key={item}
-                className="rounded border border-slate-900/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:border-white/10 dark:text-slate-400"
+                key={item.title}
+                className="flex flex-1 flex-col justify-center rounded border border-slate-900/40 px-2 dark:border-white/35"
               >
-                {item}
+                <span className="text-[10px] font-bold text-slate-900 dark:text-slate-100">{item.title}</span>
+                <span className="text-[8.5px] text-slate-500 dark:text-slate-400">{item.detail}</span>
+              </li>
+            ))}
+            {CLOSE.missing.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-1 items-center gap-1.5 rounded border border-dashed border-slate-900/45 px-2 dark:border-white/40"
+              >
+                <span className="font-mono text-[9px] font-bold text-slate-900 dark:text-slate-100">{item.id}</span>
+                <span className="min-w-0 flex-1 text-[9px] leading-tight text-slate-600 dark:text-slate-300">
+                  {item.title}
+                </span>
               </li>
             ))}
           </ul>
-        </Panel>
+        </motion.div>
+      </div>
+
+      <Footline className="mt-3">{"A milestone is a gate, not an activity: a verifiable state that must be reached before the next phase begins."}</Footline>
+    </Slide>
+  );
+}
+
+/* ── 7 · Use-case diagram ─────────────────────────────────────────────────── */
+
+function UseCasesSlide() {
+  return (
+    <Slide
+      eyebrow="Criterion 5 · Requirement analysis"
+      title={{ lead: "Two actors,", accent: "one boundary, four includes." }}
+    >
+      <motion.div variants={rise} className="min-h-0 flex-1">
+        <UseCaseDiagram />
       </motion.div>
+
+      <motion.ul variants={rise} className="mt-2 flex shrink-0 flex-wrap gap-x-4 gap-y-1">
+        {USE_CASE.includes.map((entry: (typeof USE_CASE.includes)[number]) => (
+          <li key={entry.to} className="text-[10px] text-slate-600 dark:text-slate-300">
+            <span className="font-mono text-[8.5px] uppercase tracking-wider text-indigo-600 dark:text-cyan-400">
+              &#171;include&#187;
+            </span>{" "}
+            {entry.from} → <span className="font-semibold">{entry.to}</span>
+            {entry.note ? <span className="text-slate-400 dark:text-slate-500"> ({entry.note})</span> : null}
+          </li>
+        ))}
+      </motion.ul>
     </Slide>
   );
 }
@@ -797,140 +717,64 @@ function EnhancedSlide() {
   );
 }
 
-/* ── 10 · Architecture, ERD and DFD ───────────────────────────────────────── */
+/* ── 10 · Entity-relationship diagram ─────────────────────────────────────── */
 
-function ArchitectureSlide() {
+function ErdSlide() {
   return (
-    <Slide eyebrow={ARCHITECTURE.eyebrow} title={ARCHITECTURE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_440px] gap-5">
-        {/* ERD, drawn at the level a room can read: entity groups and the
-            relationships between them, rather than 25 boxes and 34 lines. */}
-        <motion.div variants={rise} className="flex min-h-0 flex-col">
-          <Label>Entity–relationship — 9 groups, 25 entities</Label>
-          <div className="mt-2 grid flex-1 grid-cols-3 gap-1.5">
-            {ARCHITECTURE.erd.groups.map((group) => (
-              <div
-                key={group.id}
-                className="flex flex-col overflow-hidden rounded-lg border border-indigo-500/25 bg-white/60 dark:border-cyan-400/25 dark:bg-white/[0.05]"
-              >
-                <p className="bg-indigo-500/10 px-2 py-0.5 font-mono text-[8.5px] font-bold uppercase tracking-[0.1em] text-indigo-700 dark:bg-cyan-400/10 dark:text-cyan-300">
-                  {group.name}
-                </p>
-                <ul className="flex flex-1 flex-col justify-center gap-px px-2 py-1">
-                  {group.entities.map((entity) => (
-                    <li
-                      key={entity}
-                      className="truncate font-mono text-[8px] leading-tight text-slate-600 dark:text-slate-300"
-                    >
-                      {entity}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+    <Slide
+      eyebrow="Criterion 8 · Database structure"
+      title={{ lead: "Four clusters,", accent: "eighteen entities." }}
+    >
+      <motion.div variants={rise} className="min-h-0 flex-1">
+        <EntityDiagram />
+      </motion.div>
+    </Slide>
+  );
+}
 
-          <ul className="mt-2 flex shrink-0 flex-wrap gap-x-3 gap-y-0.5">
-            {ARCHITECTURE.erd.relations.map((relation) => (
-              <li key={relation.label + relation.from} className="flex items-center gap-1 text-[9px]">
-                <span className="font-mono text-slate-500 dark:text-slate-400">{relation.from}</span>
-                <ArrowRight className="h-2.5 w-2.5 text-indigo-500 dark:text-cyan-400" aria-hidden="true" />
-                <span className="font-mono text-slate-500 dark:text-slate-400">{relation.to}</span>
-                <span className="font-mono text-[8px] text-indigo-600 dark:text-cyan-400">{relation.label}</span>
-              </li>
-            ))}
-          </ul>
+/* ── 11 · Data-flow diagram ───────────────────────────────────────────────── */
+
+function DfdSlide() {
+  return (
+    <Slide
+      eyebrow="Criterion 8 · Data flow"
+      title={{ lead: "Four processes,", accent: "four stores, two actors." }}
+    >
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_216px] gap-4">
+        <motion.div variants={rise} className="min-h-0">
+          <DataFlowDiagram />
         </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
-          {/* DFD level 0: who supplies data, what transforms it, where it rests. */}
-          <div className="flex min-h-0 flex-1 flex-col">
-            <Label>Data flow — level 0</Label>
-            <div className="mt-2 grid min-h-0 flex-1 grid-cols-3 items-center gap-2">
-              <ul className="flex flex-col gap-1.5">
-                {ARCHITECTURE.dfd.external.map((entity) => (
-                  <li
-                    key={entity.name}
-                    className="rounded border border-slate-400/40 bg-white/60 px-2 py-1 dark:border-white/20 dark:bg-white/[0.05]"
-                  >
-                    <span className="block text-[10px] font-bold leading-tight text-slate-800 dark:text-slate-100">
-                      {entity.name}
-                    </span>
-                    <span className="block text-[8px] leading-tight text-slate-400 dark:text-slate-500">
-                      {entity.flow}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <ul className="flex flex-col gap-1.5">
-                {ARCHITECTURE.dfd.processes.map((process) => (
-                  <li
-                    key={process.id}
-                    className="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-center dark:border-cyan-400/40 dark:bg-cyan-400/10"
-                  >
-                    <span className="block font-mono text-[8px] font-bold text-indigo-600 dark:text-cyan-400">
-                      {process.id}
-                    </span>
-                    <span className="block text-[9.5px] font-bold leading-tight text-slate-800 dark:text-slate-100">
-                      {process.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <ul className="flex flex-col gap-1.5">
-                {ARCHITECTURE.dfd.stores.map((store) => (
-                  <li
-                    key={store.id}
-                    /* The open-ended rectangle of a data store: ruled top and
-                       bottom, closed only on the left. */
-                    className="border-y border-l-2 border-y-slate-400/50 border-l-slate-400 bg-white/60 px-2 py-1 dark:border-y-white/20 dark:border-l-white/40 dark:bg-white/[0.05]"
-                  >
-                    <span className="font-mono text-[8px] font-bold text-slate-400 dark:text-slate-500">
-                      {store.id}
-                    </span>
-                    <span className="ml-1.5 text-[9.5px] font-semibold text-slate-700 dark:text-slate-200">
-                      {store.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <Panel className="shrink-0">
-            <div className="flex items-end justify-between gap-2">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2">
+          <Panel>
+            <Label>As migrated</Label>
+            <div className="mt-2 grid grid-cols-2 gap-y-2">
               {ARCHITECTURE.stats.map((item) => (
                 <Stat key={item.label} value={item.value} label={item.label} size="sm" />
               ))}
             </div>
-            <p className="mt-2 flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+            <p className="mt-2 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
               {ARCHITECTURE.governance}
             </p>
           </Panel>
 
-          <Panel className="shrink-0">
+          <Panel className="flex-1">
             <Label>Nine layers, none skippable</Label>
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {ARCHITECTURE.layers.map((layer, index) => (
-                <span
-                  key={layer}
-                  className="rounded px-1.5 py-0.5 font-mono text-[8.5px] text-slate-600 dark:text-slate-300"
-                  style={{ background: `hsl(${243 - index * 7} 70% 58% / 0.1)` }}
-                >
+            <ul className="mt-1.5 flex flex-col gap-px">
+              {ARCHITECTURE.layers.map((layer) => (
+                <li key={layer} className="font-mono text-[8.5px] text-slate-600 dark:text-slate-300">
                   {layer}
-                </span>
+                </li>
               ))}
-            </div>
+            </ul>
           </Panel>
         </motion.div>
       </div>
 
-      <motion.div variants={rise} className="mt-3 flex shrink-0 flex-wrap gap-x-4 gap-y-0.5">
+      <motion.div variants={rise} className="mt-2.5 flex shrink-0 flex-wrap gap-x-4 gap-y-0.5">
         {ARCHITECTURE.decisions.map((decision) => (
-          <span key={decision} className="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300">
+          <span key={decision} className="flex items-center gap-1.5 text-[9.5px] text-slate-600 dark:text-slate-300">
             <Check className="h-2.5 w-2.5 shrink-0 text-emerald-500" aria-hidden="true" />
             {decision}
           </span>
@@ -1291,224 +1135,136 @@ function BudgetSlide() {
   );
 }
 
-/* ── 14 · Risks and communication ─────────────────────────────────────────── */
+/* ── 15 · Risks, communication and feedback ───────────────────────────────── */
 
-function GovernanceSlide() {
+function CloseSlide() {
   return (
-    <Slide eyebrow={GOVERNANCE.eyebrow} title={GOVERNANCE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-5">
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+    <Slide eyebrow={GOVERNANCE.eyebrow} title={{ lead: "Four risks fired,", accent: "and a GO." }}>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_1fr_280px] gap-4">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2">
           <div className="flex min-h-0 flex-1 flex-col">
             <Label>Critical risks — likelihood × impact</Label>
-            <ul className="mt-2 flex flex-1 flex-col gap-1.5">
+            <ul className="mt-1.5 flex flex-1 flex-col gap-1">
               {GOVERNANCE.critical.map((risk) => (
                 <li
                   key={risk.id}
-                  className="flex flex-1 items-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3"
+                  className="flex flex-1 items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5"
                 >
-                  <span className="font-mono text-[10.5px] font-bold text-rose-600 dark:text-rose-400">{risk.id}</span>
-                  <span className="flex-1 text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">
+                  <span className="font-mono text-[10px] font-bold text-rose-600 dark:text-rose-400">{risk.id}</span>
+                  <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold text-slate-800 dark:text-slate-100">
                     {risk.text}
                   </span>
-                  <span className="font-display text-[15px] font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                  <span className="font-display text-[13px] font-bold tabular-nums text-rose-600 dark:text-rose-400">
                     {risk.score}
-                  </span>
-                  <span className="w-[68px] shrink-0 text-right font-mono text-[8.5px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    {risk.owner}
                   </span>
                 </li>
               ))}
               {GOVERNANCE.materialised.map((risk) => (
-                <StateRow key={risk.id} id={risk.id} text={risk.text} state="fired" trailing="materialised" />
+                <StateRow key={risk.id} id={risk.id} text={risk.text} state="fired" className="flex-1" />
               ))}
             </ul>
           </div>
 
-          <div className="shrink-0">
-            <Label>Treatment</Label>
-            <ul className="mt-1.5 grid grid-cols-2 gap-1.5">
-              {GOVERNANCE.treatment.map((row) => (
-                <li
-                  key={row.approach}
-                  className="rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 py-1 dark:border-white/10 dark:bg-white/[0.04]"
-                >
-                  <span className="block font-mono text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-cyan-400">
-                    {row.approach}
-                  </span>
-                  <span className="block text-[9.5px] leading-tight text-slate-500 dark:text-slate-400">
-                    {row.example}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="grid shrink-0 grid-cols-2 gap-1">
+            {GOVERNANCE.treatment.map((row) => (
+              <li
+                key={row.approach}
+                className="rounded-lg border border-slate-900/[0.07] bg-white/55 px-2 py-0.5 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <span className="block font-mono text-[8.5px] font-bold uppercase tracking-wider text-indigo-600 dark:text-cyan-400">
+                  {row.approach}
+                </span>
+                <span className="block text-[8.5px] leading-tight text-slate-500 dark:text-slate-400">
+                  {row.example}
+                </span>
+              </li>
+            ))}
+          </ul>
         </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2">
           <div className="flex min-h-0 flex-1 flex-col">
-            <Label>Communication plan — audience, cadence, channel</Label>
-            <ul className="mt-2 flex flex-1 flex-col gap-1">
+            <Label>Communication plan</Label>
+            <ul className="mt-1.5 flex flex-1 flex-col gap-1">
               {GOVERNANCE.communication.map((row) => (
                 <li
                   key={row.audience}
-                  className="grid flex-1 grid-cols-[1fr_84px_1fr] items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+                  className="flex flex-1 items-center gap-2 rounded-lg border border-slate-900/[0.07] bg-white/55 px-2 dark:border-white/10 dark:bg-white/[0.04]"
                 >
-                  <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                  <span className="min-w-0 flex-1 truncate text-[10px] font-bold text-slate-800 dark:text-slate-100">
                     {row.audience}
                   </span>
-                  <span className="font-mono text-[9px] text-indigo-600 dark:text-cyan-400">{row.cadence}</span>
-                  <span className="truncate text-right text-[9.5px] text-slate-500 dark:text-slate-400">
-                    {row.channel}
+                  <span className="shrink-0 font-mono text-[8.5px] text-indigo-600 dark:text-cyan-400">
+                    {row.cadence}
                   </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="shrink-0">
-            <Label>Escalation</Label>
-            <div className="mt-1.5 flex gap-1">
-              {GOVERNANCE.escalation.map((step, index) => (
-                <div
-                  key={step.level}
+          <div className="flex shrink-0 gap-1">
+            {GOVERNANCE.escalation.map((step, index) => (
+              <div
+                key={step.level}
+                className={cn(
+                  "flex-1 rounded px-1.5 py-0.5",
+                  index === 4
+                    ? "border border-rose-500/40 bg-rose-500/10"
+                    : "border border-slate-900/[0.07] bg-white/55 dark:border-white/10 dark:bg-white/[0.04]",
+                )}
+              >
+                <span
                   className={cn(
-                    "flex-1 rounded-lg px-2 py-1",
-                    index === 4
-                      ? "border border-rose-500/40 bg-rose-500/10"
-                      : "border border-slate-900/[0.07] bg-white/55 dark:border-white/10 dark:bg-white/[0.04]",
+                    "block font-mono text-[9px] font-bold",
+                    index === 4 ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "block font-mono text-[9.5px] font-bold",
-                      index === 4 ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
-                    )}
-                  >
-                    {step.level}
-                  </span>
-                  <span className="block text-[8.5px] leading-tight text-slate-600 dark:text-slate-300">
-                    {step.scope}
-                  </span>
-                  <span className="mt-0.5 block font-mono text-[8px] text-slate-400 dark:text-slate-500">
-                    {step.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      <motion.div variants={rise} className="mt-3 grid shrink-0 grid-cols-2 gap-4">
-        <p className="rounded-xl border-l-[3px] border-l-indigo-500 bg-indigo-500/[0.07] px-4 py-2 text-[10.5px] leading-snug text-slate-700 dark:border-l-cyan-400 dark:bg-cyan-400/[0.07] dark:text-slate-200">
-          {GOVERNANCE.triggerNote}
-        </p>
-        <p className="rounded-xl border-l-[3px] border-l-rose-500 bg-rose-500/[0.07] px-4 py-2 text-[10.5px] leading-snug text-slate-700 dark:text-slate-200">
-          {GOVERNANCE.escalationNote}
-        </p>
-      </motion.div>
-    </Slide>
-  );
-}
-
-/* ── 15 · Position, feedback and verdict ──────────────────────────────────── */
-
-function CloseSlide() {
-  return (
-    <Slide eyebrow={CLOSE.eyebrow} title={CLOSE.title}>
-      <div className="grid min-h-0 flex-1 grid-cols-[290px_1fr_280px] gap-5">
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
-          <Panel>
-            <Label>72 requirements, audited</Label>
-            <div className="mt-2.5">
-              <Donut segments={[...CLOSE.donut]} size={124} caption="FRs" />
-            </div>
-          </Panel>
-
-          <div className="grid flex-1 grid-cols-1 gap-1.5">
-            {CLOSE.complete.map((item) => (
-              <Panel key={item.title} tone="good" className="flex items-center gap-2.5 p-2.5">
-                <Glyph icon={item.icon} size={26} />
-                <span>
-                  <span className="block text-[11.5px] font-bold leading-tight text-slate-900 dark:text-white">
-                    {item.title}
-                  </span>
-                  <span className="block text-[9.5px] leading-tight text-slate-500 dark:text-slate-400">
-                    {item.detail}
-                  </span>
+                  {step.level}
                 </span>
-              </Panel>
+                <span className="block text-[7.5px] leading-tight text-slate-600 dark:text-slate-300">
+                  {step.time}
+                </span>
+              </div>
             ))}
           </div>
         </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
-          <div className="shrink-0">
-            <Label>What is not built</Label>
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {CLOSE.missing.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5"
-                >
-                  <span className="font-mono text-[10px] font-bold text-rose-600 dark:text-rose-400">{item.id}</span>
-                  <span className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">{item.title}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
+        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2">
           {/*
            * The one criterion no project document answers. Left as prompts
            * rather than filled in: the lecturer will know what they said, and a
            * slide that invents their feedback is worse than one that waits.
            */}
-          <div className="flex min-h-0 flex-1 flex-col rounded-xl border-2 border-dashed border-amber-500/45 bg-amber-500/[0.07] p-3">
-            <div className="flex shrink-0 items-center gap-2">
-              <TriangleAlert className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-              <span className="font-mono text-[9.5px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">
-                {CLOSE.feedback.label}
-              </span>
-            </div>
-            <p className="mt-1 shrink-0 text-[9.5px] text-amber-700/80 dark:text-amber-400/80">
+          <div className="flex min-h-0 flex-1 flex-col rounded-xl border-2 border-dashed border-amber-500/45 bg-amber-500/[0.07] p-2.5">
+            <span className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-400">
+              {CLOSE.feedback.label}
+            </span>
+            <p className="mt-0.5 shrink-0 text-[8.5px] leading-tight text-amber-700/80 dark:text-amber-400/80">
               {CLOSE.feedback.todo}
             </p>
-            <ul className="mt-2 flex flex-1 flex-col gap-1">
+            <ul className="mt-1.5 flex flex-1 flex-col gap-1">
               {CLOSE.feedback.prompts.map((prompt) => (
                 <li
                   key={prompt.on}
-                  className="flex flex-1 items-center gap-2 rounded-lg border border-amber-500/25 bg-white/50 px-2.5 dark:bg-white/[0.04]"
+                  className="flex flex-1 flex-col justify-center rounded border border-amber-500/25 bg-white/50 px-2 dark:bg-white/[0.04]"
                 >
-                  <span className="w-[142px] shrink-0 text-[10px] font-bold text-slate-700 dark:text-slate-200">
-                    {prompt.on}
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-300 dark:text-slate-600">{prompt.answer}</span>
+                  <span className="text-[9px] font-bold text-slate-700 dark:text-slate-200">{prompt.on}</span>
+                  <span className="font-mono text-[10px] text-slate-300 dark:text-slate-600">{prompt.answer}</span>
                 </li>
               ))}
             </ul>
           </div>
-        </motion.div>
 
-        <motion.div variants={rise} className="flex min-h-0 flex-col gap-2.5">
-          <div className="shrink-0">
-            <Label>Blocking decisions</Label>
-            <ul className="mt-2 flex flex-col gap-1">
-              {CLOSE.blocking.map((item) => (
-                <StateRow key={item.id} id={item.id} text={item.text} state="blocked" />
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 px-4 py-4 text-white">
-            <p className="font-display text-[54px] font-bold leading-none tracking-[-0.04em]">
+          <div className="flex shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 px-3 py-3 text-white">
+            <p className="font-display text-[40px] font-bold leading-none tracking-[-0.04em]">
               {CLOSE.verdict.headline}
             </p>
-            <p className="mt-2 text-center text-[11.5px] font-semibold text-white/85">{CLOSE.verdict.qualifier}</p>
+            <p className="mt-1 text-center text-[10px] font-semibold text-white/85">{CLOSE.verdict.qualifier}</p>
           </div>
         </motion.div>
       </div>
 
-      <Footline className="mt-4">{CLOSE.closing}</Footline>
+      <Footline className="mt-3">{CLOSE.closing}</Footline>
     </Slide>
   );
 }
@@ -1527,18 +1283,18 @@ const RENDERERS: Record<string, () => ReactElement> = {
   cover: CoverSlide,
   problem: ProblemSlide,
   objectives: ObjectivesSlide,
-  scope: ScopeSlide,
   team: TeamSlide,
-  wbs: PlanSlide,
+  wbs: WbsSlide,
+  gantt: GanttSlide,
   usecases: UseCasesSlide,
   requirements: RequirementsSlide,
   enhanced: EnhancedSlide,
-  architecture: ArchitectureSlide,
+  erd: ErdSlide,
+  dfd: DfdSlide,
   storyboard: StoryboardSlide,
   testing: TestingSlide,
   budget: BudgetSlide,
-  risks: GovernanceSlide,
-  close: CloseSlide,
+  risks: CloseSlide,
 };
 
 export interface DeckSlide extends SlideEntry {
