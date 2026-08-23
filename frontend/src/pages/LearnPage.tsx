@@ -1,100 +1,116 @@
-import { motion } from "framer-motion";
-import { BookOpen, Construction } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BookOpen, Hammer, LifeBuoy } from "lucide-react";
 import { LEARN_ARTICLES } from "@/content/learn";
+import { SegmentedControl, type Segment } from "@/components/settings/SegmentedControl";
 import { ROUTES } from "@/config/site";
-import { ArticleCard } from "@/components/learn/ArticleCard";
-import { ActionLink } from "@/components/ui/ActionLink";
-import { GradientText } from "@/components/ui/GradientText";
-import { Pill } from "@/components/ui/Pill";
-import { fadeUp, REVEAL_VIEWPORT, staggerParent } from "@/lib/motion";
+import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
+import { SettingsGroup } from "@/components/settings/SettingsGroup";
+import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
+
+/**
+ * Who each guide is for, as the one axis worth filtering on.
+ *
+ * Derived from the library rather than listed, so publishing a guide for a new
+ * audience puts the segment on the control and there is nothing to remember.
+ * "Everyone" is prepended because a filter with no way back to the full list
+ * is a dead end.
+ */
+const AUDIENCE_SEGMENTS: readonly Segment<string>[] = [
+  { value: "all", label: "Everyone" },
+  ...Array.from(new Set(LEARN_ARTICLES.map((article) => article.category))).map((category) => ({
+    value: category,
+    label: category,
+  })),
+];
 
 /**
  * The awareness library.
  *
- * Every guide the service has published, at two columns so the covers have room
- * to be looked at rather than scanned past. The landing page shows the same
- * four through the same card — this is where they live, and where the ones
- * still being written will appear.
+ * Every guide the service has published, as a grouped list rather than as a
+ * grid of covers. The landing page is where a guide is sold; this is the index
+ * of them, and an index is read down a column — a reader here already knows
+ * they want a guide and is choosing which, which is a scan of titles and
+ * reading times, not of artwork.
  */
 export function LearnPage() {
+  const [audience, setAudience] = useState("all");
+
+  const guides = useMemo(
+    () =>
+      audience === "all"
+        ? LEARN_ARTICLES
+        : LEARN_ARTICLES.filter((article) => article.category === audience),
+    [audience],
+  );
+
   return (
-    <section className="relative z-10 pb-section pt-28 sm:pt-32">
-      <div className="container">
-        <motion.header
-          variants={staggerParent(0.1)}
-          initial="hidden"
-          animate="visible"
-          className="flex max-w-3xl flex-col items-start"
+    <ConsoleLayout
+      title="Awareness library"
+      subtitle="Short, practical guides for residents, small businesses and volunteer-run organisations."
+    >
+      <header className="-mt-2 flex flex-col items-center pb-1 text-center">
+        <span
+          aria-hidden="true"
+          className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-[1.375rem] bg-sky-500 text-white"
         >
-          <motion.div variants={fadeUp}>
-            <Pill>
-              <BookOpen
-                className="h-3.5 w-3.5 text-indigo-600 dark:text-cyan-400"
-                aria-hidden="true"
-              />
-              Awareness library
-            </Pill>
-          </motion.div>
+          <BookOpen className="h-9 w-9" />
+        </span>
+        <p className="mt-4 max-w-[30rem] text-[0.9375rem] leading-relaxed text-ui-label-2">
+          Each one is written to be read in a sitting and acted on the same day. None of them
+          assumes you work in security.
+        </p>
+      </header>
 
-          <motion.h1
-            variants={fadeUp}
-            className="display-depth mt-7 text-balance font-display text-display-2 font-bold text-slate-900 dark:text-white"
-          >
-            Know what to do{" "}
-            <GradientText>before it happens.</GradientText>
-          </motion.h1>
-
-          <motion.p
-            variants={fadeUp}
-            className="mt-5 max-w-2xl text-lede text-slate-600 dark:text-slate-400"
-          >
-            Short, practical guides written for residents, small businesses and volunteer-run
-            organisations — not for security specialists. Each one is written to be read in a sitting
-            and acted on the same day.
-          </motion.p>
-        </motion.header>
-
-        <motion.ul
-          variants={staggerParent(0.09, 0.1)}
-          initial="hidden"
-          whileInView="visible"
-          viewport={REVEAL_VIEWPORT}
-          className="mt-section-gap grid gap-6 md:grid-cols-2"
-        >
-          {LEARN_ARTICLES.map((article) => (
-            <motion.li key={article.id} variants={fadeUp}>
-              <ArticleCard article={article} wide />
-            </motion.li>
-          ))}
-        </motion.ul>
-
-        {/*
-         * Avoid.md §14: the library is specified as searchable and grouped by
-         * situation, and it is not yet. Saying so is what keeps the four guides
-         * above readable as the whole of what exists today rather than as a
-         * sample of something larger that cannot be found.
-         */}
-        <motion.aside
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={REVEAL_VIEWPORT}
-          className="glass-surface mt-12 flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:gap-6"
-        >
-          <Construction
-            className="h-5 w-5 shrink-0 text-amber-500"
-            aria-hidden="true"
-          />
-          <p className="text-copy text-slate-600 dark:text-slate-400">
-            Search, situation-based grouping and the rest of the library are still being built —
-            these four are what is published today. Recovery checklists you can work through and
-            tick off are a separate module, also in development.
-          </p>
-          <ActionLink href={ROUTES.recover} variant="secondary" className="shrink-0">
-            Recovery checklists
-          </ActionLink>
-        </motion.aside>
+      <div className="-mt-2">
+        <SegmentedControl
+          label="Filter guides by who they are written for"
+          segments={AUDIENCE_SEGMENTS}
+          value={audience}
+          onChange={setAudience}
+        />
       </div>
-    </section>
+
+      <SettingsGroup
+        title={`${guides.length} ${guides.length === 1 ? "guide" : "guides"}`}
+        footer="Reading times are for the whole guide. Every one of them opens with what you will leave knowing, so a skim is a fair way to read it."
+      >
+        <SettingsRows>
+          {guides.map((article) => (
+            <SettingsRow
+              key={article.id}
+              to={`${ROUTES.learn}/${article.id}`}
+              label={article.title}
+              detail={article.summary}
+              value={article.readingTime}
+            />
+          ))}
+        </SettingsRows>
+      </SettingsGroup>
+
+      {/*
+       * Avoid.md §14: the library is specified as searchable and grouped by
+       * situation, and it is not yet. Saying so is what keeps the list above
+       * readable as the whole of what exists today rather than as a sample of
+       * something larger that cannot be found.
+       */}
+      <SettingsGroup title="Still being built">
+        <SettingsRows>
+          <SettingsRow
+            icon={Hammer}
+            iconClassName="bg-amber-500"
+            label="Search and grouping"
+            detail="Situation-based grouping and a search field over the library."
+            value="In development"
+          />
+          <SettingsRow
+            icon={LifeBuoy}
+            iconClassName="bg-teal-500"
+            label="Recovery checklists"
+            detail="Steps you can work through and tick off, with progress saved."
+            to={ROUTES.recover}
+          />
+        </SettingsRows>
+      </SettingsGroup>
+    </ConsoleLayout>
   );
 }

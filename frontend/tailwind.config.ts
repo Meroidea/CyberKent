@@ -68,14 +68,57 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /*
+         * The grouped-list surface, declared as raw colours rather than HSL
+         * channels because several of them are translucent: a separator and a
+         * segmented-control track are alpha over whatever is behind them, and
+         * the `hsl(var(--x))` convention above cannot carry an alpha channel.
+         */
+        ui: {
+          grouped: "var(--ui-grouped)",
+          card: "var(--ui-card)",
+          "card-hover": "var(--ui-card-hover)",
+          separator: "var(--ui-separator)",
+          label: "var(--ui-label)",
+          "label-2": "var(--ui-label-2)",
+          "label-3": "var(--ui-label-3)",
+          fill: "var(--ui-fill)",
+          "fill-strong": "var(--ui-fill-strong)",
+          tint: "var(--ui-tint)",
+          sidebar: "var(--ui-sidebar)",
+          selected: "var(--ui-selected)",
+        },
       },
       borderRadius: {
+        /** The grouped card's corner, and the segmented control's. */
+        ui: "0.875rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        /*
+         * The platform's own UI face, ahead of the web font.
+         *
+         * Used only on the grouped-list surface. On an Apple device this
+         * resolves to SF Pro — the typeface the idiom was drawn in, with its
+         * optical sizes and its tabular figures — and everywhere else it lands
+         * on Inter, which is the closest widely available substitute and is
+         * already loaded. Asking a Mac to render an Apple interface in a
+         * downloaded imitation of its own system font is the one thing that
+         * would give the borrow away immediately.
+         */
+        system: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "SF Pro Text",
+          "SF Pro Display",
+          "Inter",
+          "Segoe UI",
+          "system-ui",
+          "sans-serif",
+        ],
         display: ["Sora", "Inter", "ui-sans-serif", "sans-serif"],
         mono: ["'JetBrains Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
       },

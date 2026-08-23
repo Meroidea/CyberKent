@@ -25,6 +25,35 @@
     --ring: 243 75% 59%;
     --radius: 0.5rem;
 
+    /*
+     * The grouped-list surface.
+     *
+     * A second, quieter palette for everything behind the landing page: the
+     * portal, the checker's report, the reading lists. Those screens are
+     * settings and records rather than a pitch, and the marketing palette —
+     * glass over a moving backdrop — makes a form harder to fill in and a
+     * verdict harder to trust.
+     *
+     * The values are Apple's grouped-table system colours, because that is the
+     * idiom being borrowed and approximating it by eye is what makes a
+     * lookalike look like one. Two exceptions, both deliberate: `--ui-tint` is
+     * the CyberKent accent rather than system blue, so the interface stays this
+     * service's; and the dark card sits at #111 to match the surfaces the rest
+     * of the site already uses rather than Apple's #1C1C1E.
+     */
+    --ui-grouped: #f2f2f7;
+    --ui-card: #ffffff;
+    --ui-card-hover: #f7f7fa;
+    --ui-separator: rgba(60, 60, 67, 0.18);
+    --ui-label: #111113;
+    --ui-label-2: rgba(60, 60, 67, 0.62);
+    --ui-label-3: rgba(60, 60, 67, 0.4);
+    --ui-fill: rgba(118, 118, 128, 0.12);
+    --ui-fill-strong: rgba(118, 118, 128, 0.2);
+    --ui-tint: #4f46e5;
+    --ui-sidebar: rgba(255, 255, 255, 0.72);
+    --ui-selected: rgba(118, 118, 128, 0.14);
+
     /* Hover fill for the decorative background grid. */
     --tile: rgba(99, 102, 241, 0.15);
 
@@ -86,6 +115,19 @@
     --border: 0 0% 100% / 0.1;
     --input: 0 0% 100% / 0.14;
     --ring: 187 92% 60%;
+
+    --ui-grouped: #0a0a0a;
+    --ui-card: #141416;
+    --ui-card-hover: #1b1b1e;
+    --ui-separator: rgba(84, 84, 88, 0.55);
+    --ui-label: #ffffff;
+    --ui-label-2: rgba(235, 235, 245, 0.58);
+    --ui-label-3: rgba(235, 235, 245, 0.36);
+    --ui-fill: rgba(118, 118, 128, 0.24);
+    --ui-fill-strong: rgba(118, 118, 128, 0.36);
+    --ui-tint: #22d3ee;
+    --ui-sidebar: rgba(22, 22, 24, 0.72);
+    --ui-selected: rgba(118, 118, 128, 0.28);
 
     --tile: rgba(6, 182, 212, 0.12);
 

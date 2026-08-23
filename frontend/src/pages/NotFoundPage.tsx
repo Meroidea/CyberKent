@@ -1,7 +1,11 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, SearchX } from "lucide-react";
+import { SearchX } from "lucide-react";
 import { ROUTES } from "@/config/site";
-import { ActionLink } from "@/components/ui/ActionLink";
+import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
+import { SettingsGroup } from "@/components/settings/SettingsGroup";
+import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
+import { CONSOLE_ICONS } from "@/components/settings/consoleIcons";
+import { CONSOLE_NAV } from "@/config/console";
+import { useCheckModal } from "@/components/check/useCheckModal";
 
 /**
  * Genuine 404.
@@ -10,52 +14,61 @@ import { ActionLink } from "@/components/ui/ActionLink";
  * routing, which means this component is the only thing standing between a
  * mistyped address and the landing page being served under it. Without it the
  * site would answer 200 for pages that do not exist.
+ *
+ * It offers the index rather than a way home. Someone who has mistyped an
+ * address is looking for a specific screen, and the useful answer to that is
+ * the list of screens there are — the same list the sidebar shows, restated
+ * here because on a phone the sidebar is behind a button they have no reason
+ * to press yet.
  */
 export function NotFoundPage() {
+  const { open } = useCheckModal();
+
   return (
-    <section className="relative z-10 flex min-h-[70svh] items-center py-section">
-      <div className="container flex max-w-xl flex-col items-start gap-6">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white/70 text-indigo-600 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:text-cyan-400">
-          <SearchX className="h-5 w-5" aria-hidden="true" />
+    <ConsoleLayout title="Page not found" subtitle="Error 404">
+      <header className="-mt-2 flex flex-col items-center pb-1 text-center">
+        <span
+          aria-hidden="true"
+          className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-[1.375rem] bg-slate-500 text-white"
+        >
+          <SearchX className="h-9 w-9" />
         </span>
-
-        <div>
-          <p className="font-mono text-caption font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-cyan-400">
-            Error 404
-          </p>
-          <h1 className="display-depth mt-2 text-balance font-display text-display-2 font-bold text-slate-900 dark:text-white">
-            We could not find that page.
-          </h1>
-        </div>
-
-        <p className="text-lede text-slate-600 dark:text-slate-400">
-          The address may have changed, or it may never have existed. Nothing you
-          submitted has been lost — checks and reports are unaffected by this.
+        <p className="mt-4 max-w-[28rem] text-[0.9375rem] leading-relaxed text-ui-label-2">
+          The address may have changed, or it may never have existed. Nothing you submitted has been
+          lost — checks and reports are unaffected by this.
         </p>
+      </header>
 
-        <ActionLink href={ROUTES.home}>
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to the home page
-        </ActionLink>
+      <SettingsGroup title="Most people here wanted">
+        <SettingsRows>
+          <SettingsRow
+            icon={CONSOLE_ICONS.scan}
+            iconClassName="bg-indigo-500"
+            label="Check a message"
+            detail="Paste a text, link, email or number for an instant read."
+            onClick={open}
+            chevron
+          />
+        </SettingsRows>
+      </SettingsGroup>
 
-        <p className="text-copy text-slate-500 dark:text-slate-400">
-          Looking for something specific? Try the{" "}
-          <Link
-            to={ROUTES.checkMessage}
-            className="font-medium text-indigo-600 underline underline-offset-4 dark:text-cyan-400"
-          >
-            scam checker
-          </Link>{" "}
-          or{" "}
-          <Link
-            to={ROUTES.alerts}
-            className="font-medium text-indigo-600 underline underline-offset-4 dark:text-cyan-400"
-          >
-            community alerts
-          </Link>
-          .
-        </p>
-      </div>
-    </section>
+      {CONSOLE_NAV.map((section, index) => (
+        <SettingsGroup key={section.title ?? index} title={section.title ?? "Everything else"}>
+          <SettingsRows>
+            {section.items
+              .filter((item) => item.href !== ROUTES.checkMessage)
+              .map((item) => (
+                <SettingsRow
+                  key={item.href}
+                  to={item.href}
+                  icon={CONSOLE_ICONS[item.icon]}
+                  iconClassName={item.tint}
+                  label={item.label}
+                />
+              ))}
+          </SettingsRows>
+        </SettingsGroup>
+      ))}
+    </ConsoleLayout>
   );
 }
