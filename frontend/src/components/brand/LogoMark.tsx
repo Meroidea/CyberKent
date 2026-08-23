@@ -1,9 +1,7 @@
 import { useId } from "react";
-import {
-  MARK_BLADE_PATH,
-  MARK_BLADE_TRANSFORM,
-  MARK_VIEW_BOX,
-} from "@/components/brand/markGeometry";
+import { MarkBody, type MarkTone } from "@/components/brand/MarkBody";
+import { MARK_VIEW_BOX } from "@/components/brand/markGeometry";
+import { cn } from "@/lib/cn";
 import { SITE } from "@/config/site";
 
 interface LogoMarkProps {
@@ -14,6 +12,14 @@ interface LogoMarkProps {
    * is noise, so the mark goes decorative instead.
    */
   title?: string;
+  /**
+   * Runs the light sweep across the blades. On by default at the sizes the
+   * mark is normally used; pass `false` for a mark rendered small enough or
+   * numerous enough that an ambient loop is a cost with nothing to show.
+   */
+  glint?: boolean;
+  /** Overrides the theme tone. See `MarkTone`. */
+  tone?: MarkTone;
 }
 
 /**
@@ -21,49 +27,34 @@ interface LogoMarkProps {
  *
  * Both halves are the same path, one of them rotated, so the symmetry is a
  * property of the drawing rather than something two hand-tuned outlines have
- * to keep agreeing on.
+ * to keep agreeing on. The shading that makes it read as a form rather than a
+ * silhouette is described in `MarkBody`.
  *
- * Colour comes from the four `--mark-*` custom properties in `index.css`
- * rather than from literals, which is what lets one component serve both
- * themes: the light pair is indigo-600→cyan-500 to match the accent gradient
- * the rest of the site is built on, and the dark pair lifts to the -300/-400
- * steps so the mark stays lit against near-black instead of sinking into it.
+ * Colour comes from the `--mark-*` custom properties in `index.css`, which is
+ * what lets one component serve both themes: the light pair is built on the
+ * indigo-600 / cyan-500 accent the rest of the site uses, and the dark pair
+ * lifts the same ramp so the mark stays lit against near-black instead of
+ * sinking into it. The cast shadow swaps with them — a real shadow over a
+ * white page, and over near-black a shadow no one can see, so there it becomes
+ * a faint bloom of the mark's own colour instead.
  *
- * Both blades take the same gradient axis and let the rotation carry it, so
- * the shading turns with the geometry: light at the top of the upper blade,
- * light at the foot of the lower one, deepening where the two pass. A single
- * light source would have meant reversing one of them, and on a mark whose
- * entire read is a half-turn about its centre, shading that breaks the
- * symmetry costs more than the realism buys.
+ * The view box carries padding around the drawing for the shadow. A rendered
+ * height therefore buys a mark about 89% of it — worth knowing when sizing one
+ * against type.
  */
-export function LogoMark({ className, title }: LogoMarkProps) {
-  const id = useId();
-  const upper = `${id}-upper`;
-  const lower = `${id}-lower`;
+export function LogoMark({ className, title, glint = true, tone }: LogoMarkProps) {
+  const uid = useId().replace(/:/g, "");
 
   return (
     <svg
       viewBox={MARK_VIEW_BOX}
-      className={className}
+      className={cn("logo-mark", className)}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...(title ? { role: "img" } : { "aria-hidden": true, focusable: false })}
     >
       {title ? <title>{title}</title> : null}
-
-      <defs>
-        <linearGradient id={upper} x1="0" y1="0" x2="0.35" y2="1">
-          <stop offset="0%" stopColor="var(--mark-upper-from, #22d3ee)" />
-          <stop offset="100%" stopColor="var(--mark-upper-to, #0891b2)" />
-        </linearGradient>
-        <linearGradient id={lower} x1="0" y1="0" x2="0.35" y2="1">
-          <stop offset="0%" stopColor="var(--mark-lower-from, #6366f1)" />
-          <stop offset="100%" stopColor="var(--mark-lower-to, #4338ca)" />
-        </linearGradient>
-      </defs>
-
-      <path d={MARK_BLADE_PATH} transform={MARK_BLADE_TRANSFORM} fill={`url(#${lower})`} />
-      <path d={MARK_BLADE_PATH} fill={`url(#${upper})`} />
+      <MarkBody uid={uid} tone={tone} glint={glint} bladeClassName="logo-mark__blade" />
     </svg>
   );
 }

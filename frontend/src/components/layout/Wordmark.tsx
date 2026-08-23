@@ -16,12 +16,15 @@ const containerVariants: Variants = {
 
 /**
  * The mark arrives before the letters rather than with them: it is the brand,
- * and the word that follows is its caption. A half-turn on the way in echoes
- * the symmetry the two blades are built on.
+ * and the word that follows is its caption.
+ *
+ * Scale only. The mark runs its own entrance — the two blades converging into
+ * the interlock, in `index.css` — and a rotation here would turn the whole
+ * drawing while its halves were still finding each other.
  */
 const markVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.7, rotate: -35 },
-  visible: { opacity: 1, scale: 1, rotate: 0, transition: springSoft },
+  hidden: { opacity: 0, scale: 0.72 },
+  visible: { opacity: 1, scale: 1, transition: springSoft },
 };
 
 /**
@@ -50,7 +53,9 @@ export function Wordmark({ className }: { className?: string }) {
            and aligning it to one drops it visibly low. */
         className="block shrink-0"
       >
-        <LogoMark className="h-8 w-auto transition-transform duration-500 ease-out-expo group-hover:-rotate-12" />
+        {/* Sized against the view box, which carries padding for the cast
+            shadow — the drawing inside it stands about 89% of this. */}
+        <LogoMark className="h-9 w-auto" />
       </motion.span>
 
       <span className="flex flex-col">

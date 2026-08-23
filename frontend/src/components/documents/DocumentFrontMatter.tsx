@@ -73,7 +73,7 @@ export function DocumentFrontMatter({ document: doc, subtitle, minutes }: Docume
           aria-hidden="true"
           className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/90 bg-white/70 dark:border-white/10 dark:bg-white/5"
         >
-          <LogoMark className="h-[1.15rem] w-auto" />
+          <LogoMark className="h-[1.3rem] w-auto" glint={false} />
         </span>
         <span className="text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-slate-900 dark:text-white">
           Group CyberKent

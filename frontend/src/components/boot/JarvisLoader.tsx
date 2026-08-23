@@ -1,10 +1,6 @@
 import type { CSSProperties } from "react";
-import {
-  MARK_BLADE_PATH,
-  MARK_BLADE_TRANSFORM,
-  MARK_HEIGHT,
-  MARK_WIDTH,
-} from "@/components/brand/markGeometry";
+import { MarkBody, type MarkTone } from "@/components/brand/MarkBody";
+import { MARK_HEIGHT, MARK_WIDTH } from "@/components/brand/markGeometry";
 import { SITE } from "@/config/site";
 import { useTheme } from "@/theme/useTheme";
 
@@ -33,6 +29,16 @@ interface HudPalette {
       it only smears the edge, so the light dial barely uses it. */
   bloom: number;
   /**
+   * The mark's own shading inside the core.
+   *
+   * Overridden rather than inherited from the site tokens: the core is a lit
+   * teal well, and the brand's cyan blade laid on teal is one shape, not two.
+   * Held in the dial's own tonal family instead, so the mark still reads as a
+   * modelled form — the shading is what carries it — without competing with
+   * the instrument it sits in.
+   */
+  mark: MarkTone;
+  /**
    * Multiplier on every stroke opacity.
    *
    * The dark dial can sit at a fraction of full strength and still read,
@@ -54,6 +60,28 @@ const HUD_PALETTES: Record<"light" | "dark", HudPalette> = {
     coreTo: "#134e4a",
     coreText: "#5eead4",
     coreSub: "#99f6e4",
+    mark: {
+      upper: {
+        light: "#f0fdfa",
+        mid: "#99f6e4",
+        deep: "#0f766e",
+        facetFrom: "#15806f",
+        facetTo: "#0a544a",
+        crease: "#032c27",
+        creaseOpacity: 0.5,
+      },
+      lower: {
+        light: "#ccfbf1",
+        mid: "#5eead4",
+        deep: "#115e59",
+        facetFrom: "#ffffff",
+        facetTo: "#ccfbf1",
+        crease: "#ffffff",
+        creaseOpacity: 0.85,
+      },
+      cast: "#022c26",
+      castOpacity: 0.6,
+    },
     bloom: 3,
     strength: 1,
   },
@@ -68,6 +96,28 @@ const HUD_PALETTES: Record<"light" | "dark", HudPalette> = {
     coreTo: "#0f766e",
     coreText: "#ffffff",
     coreSub: "#ccfbf1",
+    mark: {
+      upper: {
+        light: "#ffffff",
+        mid: "#ccfbf1",
+        deep: "#0f766e",
+        facetFrom: "#14776b",
+        facetTo: "#0b4f47",
+        crease: "#032c27",
+        creaseOpacity: 0.45,
+      },
+      lower: {
+        light: "#f0fdfa",
+        mid: "#99f6e4",
+        deep: "#0d9488",
+        facetFrom: "#ffffff",
+        facetTo: "#d5fbf3",
+        crease: "#ffffff",
+        creaseOpacity: 0.85,
+      },
+      cast: "#022c26",
+      castOpacity: 0.5,
+    },
     bloom: 1.1,
     strength: 1.9,
   },
@@ -296,19 +346,12 @@ export function JarvisLoader({ className }: { className?: string }) {
           *
           * It is the one part of the drawing that is not invented for the
           * loader: everything around it is HUD furniture, and what the dial is
-          * assembling towards is the brand. Painted in the core's own text
-          * colours rather than the site tokens — inside a lit teal well the
-          * indigo blade goes muddy, and the mark reads better as one lit form
-          * than as two colours fighting the glow behind them.
+          * assembling towards is the brand. Shaded like the mark is everywhere
+          * else, but in the core's own tonal family — see `mark` on the
+          * palette for why it does not take the site's two colours here.
           */}
         <g transform={`translate(${200 - (MARK_WIDTH * CORE_MARK_SCALE) / 2} ${190 - (MARK_HEIGHT * CORE_MARK_SCALE) / 2}) scale(${CORE_MARK_SCALE})`}>
-          <path
-            d={MARK_BLADE_PATH}
-            transform={MARK_BLADE_TRANSFORM}
-            fill={c.coreSub}
-            opacity={o(0.75)}
-          />
-          <path d={MARK_BLADE_PATH} fill={c.coreText} />
+          <MarkBody uid="hud-mark" tone={c.mark} />
         </g>
 
         <text

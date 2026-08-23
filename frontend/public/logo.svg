@@ -1,32 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 65 100" role="img" aria-label="CyberKent">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -6.5 75 113" role="img" aria-label="CyberKent">
   <!--
     The CyberKent mark on its own, with no ground under it — for a README, a
-    partner deck, or anywhere the surface colour is not ours to choose. The
-    palette follows the reader's colour scheme for the same reason the app's
-    does: the light pair sinks into near-black, the dark pair washes out on
-    white. In-app the same drawing is src/components/brand/LogoMark.tsx.
+    partner deck, or anywhere the surface colour is not ours to choose.
+
+    Both palettes are drawn, and the media query hides one. Swapping stop
+    colours through a stylesheet is the tidier construction, but a host that
+    strips <style> would then serve a black mark; a host that strips it here
+    serves the light one, which is the safer thing to be wrong about.
   -->
-  <!-- The light pair is on the stops as attributes so the mark still draws
-       where a host strips <style> (GitHub serves README images through a proxy
-       that does); the rule below is the dark-scheme lift, not the base. -->
   <style>
+    .on-dark { display: none }
     @media (prefers-color-scheme: dark) {
-      .upper-from { stop-color: #67e8f9 }
-      .upper-to   { stop-color: #22d3ee }
-      .lower-from { stop-color: #a5b4fc }
-      .lower-to   { stop-color: #6366f1 }
+      .on-light { display: none }
+      .on-dark { display: inline }
     }
   </style>
-  <defs>
-    <linearGradient id="upper" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0" stop-color="#22d3ee" class="upper-from"/>
-      <stop offset="1" stop-color="#0891b2" class="upper-to"/>
-    </linearGradient>
-    <linearGradient id="lower" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0" stop-color="#6366f1" class="lower-from"/>
-      <stop offset="1" stop-color="#4338ca" class="lower-to"/>
-    </linearGradient>
+  <g class="on-light">
+<defs>
+    <path id="l-blade" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+    <path id="l-facet" d="M32.8 58.3Q46.1 63.15 59.4 57.4L72 96 20 96Z"/>
+    <path id="l-crease" d="M32.8 58.3Q46.1 63.15 59.4 57.4" fill="none"/>
+    <clipPath id="l-clip-upper"><use href="#l-blade"/></clipPath>
+    <clipPath id="l-clip-lower"><use href="#l-blade" transform="rotate(180 32.5 50)"/></clipPath>
+    <linearGradient id="l-base-upper" x1="0.12" y1="0" x2="0.62" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/><stop offset="0.38" stop-color="#06b6d4"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+    <linearGradient id="l-sheen-upper" x1="0" y1="0.25" x2="1" y2="0.75">
+      <stop offset="0.45" stop-color="#67e8f9" stop-opacity="0"/><stop offset="1" stop-color="#67e8f9" stop-opacity="0.95"/></linearGradient>
+    <linearGradient id="l-ao-upper" x1="1" y1="0.8" x2="0" y2="0.2">
+      <stop offset="0.4" stop-color="#0e7490" stop-opacity="0"/><stop offset="1" stop-color="#0e7490" stop-opacity="0.9"/></linearGradient>
+    <linearGradient id="l-facet-upper" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1b6b83"/><stop offset="1" stop-color="#0d4a5c"/></linearGradient>
+    <linearGradient id="l-base-lower" x1="0.12" y1="0" x2="0.62" y2="1">
+      <stop offset="0" stop-color="#818cf8"/><stop offset="0.38" stop-color="#4f46e5"/><stop offset="1" stop-color="#3730a3"/></linearGradient>
+    <linearGradient id="l-sheen-lower" x1="0" y1="0.25" x2="1" y2="0.75">
+      <stop offset="0.45" stop-color="#818cf8" stop-opacity="0"/><stop offset="1" stop-color="#818cf8" stop-opacity="0.95"/></linearGradient>
+    <linearGradient id="l-ao-lower" x1="1" y1="0.8" x2="0" y2="0.2">
+      <stop offset="0.4" stop-color="#3730a3" stop-opacity="0"/><stop offset="1" stop-color="#3730a3" stop-opacity="0.9"/></linearGradient>
+    <linearGradient id="l-facet-lower" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#c7d2fe"/><stop offset="1" stop-color="#8f9cf9"/></linearGradient>
+    <filter id="l-soften" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter>
+    <filter id="l-cast" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="1" dy="2.6" stdDeviation="2.6" flood-color="#1e293b" flood-opacity="0.32"/></filter>
   </defs>
-  <path transform="rotate(180 32.5 50)" fill="url(#lower)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
-  <path fill="url(#upper)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+  <g filter="url(#l-cast)">
+    <g clip-path="url(#l-clip-lower)">
+      <use href="#l-blade" transform="rotate(180 32.5 50)" fill="url(#l-base-lower)"/>
+      <use href="#l-facet" transform="rotate(180 32.5 50)" fill="url(#l-facet-lower)"/>
+      <use href="#l-blade" transform="rotate(180 32.5 50)" fill="none" stroke="url(#l-ao-lower)" stroke-width="11" filter="url(#l-soften)"/>
+      <use href="#l-blade" transform="rotate(180 32.5 50)" fill="none" stroke="url(#l-sheen-lower)" stroke-width="7" filter="url(#l-soften)"/>
+      <use href="#l-crease" transform="rotate(180 32.5 50)" stroke="#eef2ff" stroke-opacity="0.85" stroke-width="1.1" stroke-linecap="round"/>
+    </g>
+    <g clip-path="url(#l-clip-upper)">
+      <use href="#l-blade" fill="url(#l-base-upper)"/>
+      <use href="#l-facet" fill="url(#l-facet-upper)"/>
+      <use href="#l-blade" fill="none" stroke="url(#l-ao-upper)" stroke-width="11" filter="url(#l-soften)"/>
+      <use href="#l-blade" fill="none" stroke="url(#l-sheen-upper)" stroke-width="7" filter="url(#l-soften)"/>
+      <use href="#l-crease" stroke="#0b3f4e" stroke-opacity="0.5" stroke-width="1.1" stroke-linecap="round"/>
+    </g>
+  </g>
+  </g>
+  <g class="on-dark">
+<defs>
+    <path id="d-blade" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+    <path id="d-facet" d="M32.8 58.3Q46.1 63.15 59.4 57.4L72 96 20 96Z"/>
+    <path id="d-crease" d="M32.8 58.3Q46.1 63.15 59.4 57.4" fill="none"/>
+    <clipPath id="d-clip-upper"><use href="#d-blade"/></clipPath>
+    <clipPath id="d-clip-lower"><use href="#d-blade" transform="rotate(180 32.5 50)"/></clipPath>
+    <linearGradient id="d-base-upper" x1="0.12" y1="0" x2="0.62" y2="1">
+      <stop offset="0" stop-color="#a5f3fc"/><stop offset="0.38" stop-color="#22d3ee"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+    <linearGradient id="d-sheen-upper" x1="0" y1="0.25" x2="1" y2="0.75">
+      <stop offset="0.45" stop-color="#a5f3fc" stop-opacity="0"/><stop offset="1" stop-color="#a5f3fc" stop-opacity="0.95"/></linearGradient>
+    <linearGradient id="d-ao-upper" x1="1" y1="0.8" x2="0" y2="0.2">
+      <stop offset="0.4" stop-color="#0e7490" stop-opacity="0"/><stop offset="1" stop-color="#0e7490" stop-opacity="0.9"/></linearGradient>
+    <linearGradient id="d-facet-upper" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1b6b83"/><stop offset="1" stop-color="#0d4a5c"/></linearGradient>
+    <linearGradient id="d-base-lower" x1="0.12" y1="0" x2="0.62" y2="1">
+      <stop offset="0" stop-color="#a5b4fc"/><stop offset="0.38" stop-color="#6366f1"/><stop offset="1" stop-color="#3730a3"/></linearGradient>
+    <linearGradient id="d-sheen-lower" x1="0" y1="0.25" x2="1" y2="0.75">
+      <stop offset="0.45" stop-color="#a5b4fc" stop-opacity="0"/><stop offset="1" stop-color="#a5b4fc" stop-opacity="0.95"/></linearGradient>
+    <linearGradient id="d-ao-lower" x1="1" y1="0.8" x2="0" y2="0.2">
+      <stop offset="0.4" stop-color="#3730a3" stop-opacity="0"/><stop offset="1" stop-color="#3730a3" stop-opacity="0.9"/></linearGradient>
+    <linearGradient id="d-facet-lower" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#dbe1ff"/><stop offset="1" stop-color="#a5b4fc"/></linearGradient>
+    <filter id="d-soften" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter>
+    <filter id="d-cast" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="1" dy="2.6" stdDeviation="2.6" flood-color="#000000" flood-opacity="0.55"/></filter>
+  </defs>
+  <g filter="url(#d-cast)">
+    <g clip-path="url(#d-clip-lower)">
+      <use href="#d-blade" transform="rotate(180 32.5 50)" fill="url(#d-base-lower)"/>
+      <use href="#d-facet" transform="rotate(180 32.5 50)" fill="url(#d-facet-lower)"/>
+      <use href="#d-blade" transform="rotate(180 32.5 50)" fill="none" stroke="url(#d-ao-lower)" stroke-width="11" filter="url(#d-soften)"/>
+      <use href="#d-blade" transform="rotate(180 32.5 50)" fill="none" stroke="url(#d-sheen-lower)" stroke-width="7" filter="url(#d-soften)"/>
+      <use href="#d-crease" transform="rotate(180 32.5 50)" stroke="#eef2ff" stroke-opacity="0.9" stroke-width="1.1" stroke-linecap="round"/>
+    </g>
+    <g clip-path="url(#d-clip-upper)">
+      <use href="#d-blade" fill="url(#d-base-upper)"/>
+      <use href="#d-facet" fill="url(#d-facet-upper)"/>
+      <use href="#d-blade" fill="none" stroke="url(#d-ao-upper)" stroke-width="11" filter="url(#d-soften)"/>
+      <use href="#d-blade" fill="none" stroke="url(#d-sheen-upper)" stroke-width="7" filter="url(#d-soften)"/>
+      <use href="#d-crease" stroke="#0b3f4e" stroke-opacity="0.55" stroke-width="1.1" stroke-linecap="round"/>
+    </g>
+  </g>
+  </g>
 </svg>

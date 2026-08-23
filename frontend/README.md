@@ -25,7 +25,7 @@ npm run lint
 | `src/theme/` | Class-based light/dark theming (`ThemeProvider`, `useTheme`). |
 | `src/lib/` | `cn()` class merge and the shared motion vocabulary. |
 | `src/hooks/` | `useInterval`, `useScrollThreshold`, `useDeviceTier`, `useElementWidth`. |
-| `src/components/brand/` | The mark: its geometry as one blade in `markGeometry.ts`, and `LogoMark` — the only component that draws it. |
+| `src/components/brand/` | The mark: its geometry as one blade in `markGeometry.ts`, its shading in `MarkBody`, and `LogoMark` for the standalone case. |
 | `src/components/ui/` | Reusable primitives: `ActionLink`, `GlassPanel`, `Pill`, `SectionHeading`, `GradientText`. |
 | `src/components/background/` | Fixed page backdrop: gradient wash, tile grid, particle field, wave canvas. |
 | `src/components/layout/` | Header, mobile navigation, theme toggle, footer. |
@@ -43,9 +43,12 @@ mapped in `tailwind.config.ts` for the application UI that follows.
 
 The mark is two interlocking blades with 180° rotational symmetry, drawn from
 a single path — the second blade is the first turned about the centre of the
-box. It takes the same accent ramp as everything else: indigo-600 → cyan-500 in
-light, lifted to the -300/-400 steps in dark, carried by the four `--mark-*`
-custom properties in `src/index.css` so one component serves both themes.
+box. It is shaded rather than flat: one key light from above, a soft sheen on
+each blade's convex edge, occlusion in the curl, and the ribbon's reverse face
+showing where the blade folds over at its tail. The whole ramp stays inside the
+accent hues — cyan-500 and indigo-600 in light, lifted a step in dark — and is
+carried by the `--mark-*` custom properties in `src/index.css`, so one component
+serves both themes and the cast shadow swaps with them.
 
 Motion speeds are consistent: 150–250ms micro-interactions, 300–500ms component
 transitions, 700–1300ms reveals, 2–6s ambient loops. Ambient animation stops
