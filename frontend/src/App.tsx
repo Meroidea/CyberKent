@@ -11,6 +11,7 @@ import { BootScreen } from "@/components/boot/BootScreen";
 import { PageSkeleton } from "@/components/boot/PageSkeleton";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { ConsoleFooter } from "@/components/settings/ConsoleFooter";
 import { CheckModalProvider } from "@/components/check/CheckModalProvider";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { LandingPage } from "@/pages/LandingPage";
@@ -231,10 +232,16 @@ function AppShell({ booting }: { booting: boolean }) {
             </Routes>
           </main>
 
-          {/* The console's sidebar already lists every screen the footer does,
-              including the legal pages, so repeating them under a settings
-              pane is a second index disagreeing with the first. */}
-          {isConsole ? null : <SiteFooter />}
+          {/*
+           * The console's sidebar already lists every screen the marketing
+           * footer does, so repeating that index under a settings pane is a
+           * second index that will eventually disagree with the first. What
+           * the console does still need is the legal line — the reader and
+           * article pages keep their own layouts and have no sidebar, which
+           * would otherwise leave the accessibility statement unreachable
+           * from the longest documents on the site.
+           */}
+          {isConsole ? <ConsoleFooter /> : <SiteFooter />}
         </>
       )}
     </div>
