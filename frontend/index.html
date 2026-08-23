@@ -24,12 +24,13 @@
     <!--
       Share card.
 
-      The origin below is written out in full four times rather than left
+      The origin below is written out in full three times rather than left
       relative, because a share crawler resolves a relative URL against its own
-      host and drops the card. It is the only absolute address in the app, and
-      the only thing to change when the service moves off the preview domain
-      onto its Council address — search this file for `og:url` and the four
-      lines are together.
+      host and drops the card. It is the deployment's own production domain —
+      the Vercel project `cyber-kent` serves this app there — and the only
+      absolute address anywhere in the app, so it is the one thing to change
+      when the service moves onto its Council address. Search this file for
+      `og:url` and the three lines are together.
     -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CyberKent" />
@@ -38,8 +39,8 @@
       property="og:description"
       content="Check a suspicious message, link, phone number or email, report a scam to Hume City Council, and follow community scam alerts across the municipality."
     />
-    <meta property="og:url" content="https://cyberkent.vercel.app/" />
-    <meta property="og:image" content="https://cyberkent.vercel.app/og-image.png" />
+    <meta property="og:url" content="https://cyber-kent.vercel.app/" />
+    <meta property="og:image" content="https://cyber-kent.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -52,7 +53,7 @@
       name="twitter:description"
       content="Check a suspicious message, report a scam to Council, and follow verified community alerts across Hume."
     />
-    <meta name="twitter:image" content="https://cyberkent.vercel.app/og-image.png" />
+    <meta name="twitter:image" content="https://cyber-kent.vercel.app/og-image.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

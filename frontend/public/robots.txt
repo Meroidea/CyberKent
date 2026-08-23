@@ -1,0 +1,7 @@
+# CyberKent — Hume City Council CyberSafe Services
+# Everything here is public information about the service. Nothing is
+# disallowed; the line is present so /robots.txt answers rather than 404s,
+# which is also why vercel.json exempts it from the SPA rewrite.
+
+User-agent: *
+Allow: /
