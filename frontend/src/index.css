@@ -27,6 +27,21 @@
 
     /* Hover fill for the decorative background grid. */
     --tile: rgba(99, 102, 241, 0.15);
+
+    /*
+     * The four stops of the logo mark, upper blade then lower.
+     *
+     * Tokens rather than literals inside the SVG, because the mark is drawn
+     * once and rendered against every surface the site has — a white header,
+     * a glass panel, a near-black page — and only the theme knows which pair
+     * of the accent ramp keeps it lit. The values are the same indigo-600 and
+     * cyan-500 the accent gradient uses, so the mark and the wordmark beside
+     * it are demonstrably the same two colours rather than approximately so.
+     */
+    --mark-upper-from: #22d3ee;
+    --mark-upper-to: #0891b2;
+    --mark-lower-from: #6366f1;
+    --mark-lower-to: #4338ca;
   }
 
   .dark {
@@ -49,6 +64,13 @@
     --ring: 187 92% 60%;
 
     --tile: rgba(6, 182, 212, 0.12);
+
+    /* Lifted a step over near-black: the light pair reads as two dark
+       silhouettes there rather than as a mark. */
+    --mark-upper-from: #67e8f9;
+    --mark-upper-to: #22d3ee;
+    --mark-lower-from: #a5b4fc;
+    --mark-lower-to: #6366f1;
   }
 
   * {

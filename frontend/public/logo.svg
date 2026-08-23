@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 65 100" role="img" aria-label="CyberKent">
+  <!--
+    The CyberKent mark on its own, with no ground under it — for a README, a
+    partner deck, or anywhere the surface colour is not ours to choose. The
+    palette follows the reader's colour scheme for the same reason the app's
+    does: the light pair sinks into near-black, the dark pair washes out on
+    white. In-app the same drawing is src/components/brand/LogoMark.tsx.
+  -->
+  <!-- The light pair is on the stops as attributes so the mark still draws
+       where a host strips <style> (GitHub serves README images through a proxy
+       that does); the rule below is the dark-scheme lift, not the base. -->
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .upper-from { stop-color: #67e8f9 }
+      .upper-to   { stop-color: #22d3ee }
+      .lower-from { stop-color: #a5b4fc }
+      .lower-to   { stop-color: #6366f1 }
+    }
+  </style>
+  <defs>
+    <linearGradient id="upper" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#22d3ee" class="upper-from"/>
+      <stop offset="1" stop-color="#0891b2" class="upper-to"/>
+    </linearGradient>
+    <linearGradient id="lower" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#6366f1" class="lower-from"/>
+      <stop offset="1" stop-color="#4338ca" class="lower-to"/>
+    </linearGradient>
+  </defs>
+  <path transform="rotate(180 32.5 50)" fill="url(#lower)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+  <path fill="url(#upper)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+</svg>

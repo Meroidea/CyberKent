@@ -1,4 +1,10 @@
 import type { CSSProperties } from "react";
+import {
+  MARK_BLADE_PATH,
+  MARK_BLADE_TRANSFORM,
+  MARK_HEIGHT,
+  MARK_WIDTH,
+} from "@/components/brand/markGeometry";
 import { SITE } from "@/config/site";
 import { useTheme } from "@/theme/useTheme";
 
@@ -66,6 +72,13 @@ const HUD_PALETTES: Record<"light" | "dark", HudPalette> = {
     strength: 1.9,
   },
 };
+
+/**
+ * How large the brand mark sits inside the core, as a multiple of its own
+ * 65 × 100 box. At 0.46 the mark is 46 units tall in a well of radius 56, which
+ * leaves room under it for the wordmark without either crowding the rim.
+ */
+const CORE_MARK_SCALE = 0.46;
 
 /** Evenly spaced radial ticks, drawn once and rotated as a group. */
 function Ticks({
@@ -278,20 +291,29 @@ export function JarvisLoader({ className }: { className?: string }) {
           style={{ animation: "hud-pulse 2.2s ease-in-out infinite" }}
         />
 
+        {/*
+          * The mark, held at the centre of the dial.
+          *
+          * It is the one part of the drawing that is not invented for the
+          * loader: everything around it is HUD furniture, and what the dial is
+          * assembling towards is the brand. Painted in the core's own text
+          * colours rather than the site tokens — inside a lit teal well the
+          * indigo blade goes muddy, and the mark reads better as one lit form
+          * than as two colours fighting the glow behind them.
+          */}
+        <g transform={`translate(${200 - (MARK_WIDTH * CORE_MARK_SCALE) / 2} ${190 - (MARK_HEIGHT * CORE_MARK_SCALE) / 2}) scale(${CORE_MARK_SCALE})`}>
+          <path
+            d={MARK_BLADE_PATH}
+            transform={MARK_BLADE_TRANSFORM}
+            fill={c.coreSub}
+            opacity={o(0.75)}
+          />
+          <path d={MARK_BLADE_PATH} fill={c.coreText} />
+        </g>
+
         <text
           x="200"
-          y="196"
-          textAnchor="middle"
-          fill={c.coreText}
-          fontSize="17"
-          fontFamily="ui-monospace, SFMono-Regular, monospace"
-          letterSpacing="2"
-        >
-          {SITE.name.toUpperCase()}
-        </text>
-        <text
-          x="200"
-          y="214"
+          y="230"
           textAnchor="middle"
           fill={c.coreSub}
           fontSize="9"
@@ -299,7 +321,7 @@ export function JarvisLoader({ className }: { className?: string }) {
           letterSpacing="3"
           opacity="0.85"
         >
-          CYBERSAFE
+          {SITE.name.toUpperCase()}
         </text>
       </g>
 

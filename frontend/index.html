@@ -10,6 +10,50 @@
       name="description"
       content="Check a suspicious message, link, phone number or email, report a scam to Hume City Council, and follow community scam alerts across the municipality."
     />
+    <!--
+      Icons. The SVG is the one every current browser prefers; the .ico carries
+      16/32/48/64 for the ones that do not, and the Apple icon is full bleed
+      because iOS applies its own mask over whatever it is handed.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="CyberKent" />
+
+    <!--
+      Share card.
+
+      The origin below is written out in full four times rather than left
+      relative, because a share crawler resolves a relative URL against its own
+      host and drops the card. It is the only absolute address in the app, and
+      the only thing to change when the service moves off the preview domain
+      onto its Council address — search this file for `og:url` and the four
+      lines are together.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CyberKent" />
+    <meta property="og:title" content="CyberKent — Hume City Council CyberSafe Services" />
+    <meta
+      property="og:description"
+      content="Check a suspicious message, link, phone number or email, report a scam to Hume City Council, and follow community scam alerts across the municipality."
+    />
+    <meta property="og:url" content="https://cyberkent.vercel.app/" />
+    <meta property="og:image" content="https://cyberkent.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The CyberKent mark beside the wordmark, over the service's three entry points: scam checker, report to Council, community alerts."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CyberKent — Hume City Council CyberSafe Services" />
+    <meta
+      name="twitter:description"
+      content="Check a suspicious message, report a scam to Council, and follow verified community alerts across Hume."
+    />
+    <meta name="twitter:image" content="https://cyberkent.vercel.app/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

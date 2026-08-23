@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CyberKent">
+  <!--
+    The CyberKent mark on the site's own page colour, drawn as an app tile so it
+    keeps its shape in a tab strip at 16px, where a transparent two-blade mark
+    goes to noise. Geometry matches src/components/brand/markGeometry.ts — one
+    blade, drawn twice, the second turned a half turn about the centre.
+  -->
+  <defs>
+    <linearGradient id="upper" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="lower" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#a5b4fc"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+  <g transform="translate(18.26 10.88) scale(0.4224)">
+    <path transform="rotate(180 32.5 50)" fill="url(#lower)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+    <path fill="url(#upper)" d="M32.43 0C38.25 6.84 64.94 36.55 64.94 43.16C64.94 57.77 55.25 61.44 43.16 70.78C41.25 68.48 32.63 59.71 32.63 56.97C32.63 52.68 43.09 48.39 43.09 44.91C43.09 39.13 24.99 28.01 24.99 13.81C24.99 5.01 29.81 3.49 32.43 0Z"/>
+  </g>
+</svg>
