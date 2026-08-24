@@ -30,6 +30,77 @@ const t = analyse({ text: cases[0]!.text, channel: "sms" });
 console.log("Extraction:", JSON.stringify(t.extracted));
 console.log("Indicators:", t.indicators.map((i) => `${i.id}(${i.weight})`).join(" · "));
 
+/* ---------------------------------------------------------------------------
+ * Links.
+ *
+ * Every case here came back "No strong scam indicators" before the link
+ * inspector existed, which is the complaint that produced it. They are kept as
+ * a suite because the failure they represent is silent: a checker that scores
+ * a hostile link zero looks exactly like a checker that is working.
+ * ------------------------------------------------------------------------- */
+
+const linkCases: { name: string; text: string; channel: Channel; expect: string }[] = [
+  { name: "bare shortener", channel: "sms", expect: "medium", text: "https://bit.ly/3xK9pQr" },
+  { name: "userinfo spoof", channel: "email", expect: "high",
+    text: "Sign in here: https://paypal.com@evil-collect.ru/login" },
+  { name: "punycode homograph", channel: "email", expect: "high",
+    text: "Visit https://xn--pypal-4ve.com/verify to continue" },
+  { name: "hyphen lookalike", channel: "sms", expect: "high",
+    text: "https://paypal-secure-login.com/account" },
+  { name: "plain http sign-in", channel: "email", expect: "high",
+    text: "http://account-verify-secure.com/signin.php" },
+  { name: "apk payload", channel: "sms", expect: "high",
+    text: "Install the update: https://cdn-update-app.com/bank.apk" },
+  { name: "open redirect", channel: "email", expect: "medium",
+    text: "https://google.com/url?q=http://evil-collect.ru/login" },
+  { name: "credential path", channel: "email", expect: "high",
+    text: "https://secure-mybank-verify.com/login/verify-account.php?id=99" },
+  { name: "org.au is not restricted", channel: "email", expect: "high",
+    text: "https://hume-rates-refund.org.au/claim" },
+];
+
+console.log("");
+for (const c of linkCases) {
+  const r = analyse({ text: c.text, channel: c.channel });
+  const ok = r.band === c.expect;
+  if (ok) pass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(28)} band=${r.band.padEnd(8)} score=${String(r.score).padStart(3)} checks=${r.links.reduce((n, l) => n + l.checks.length, 0)}`);
+  if (!ok) console.log(`      expected ${c.expect}; got: ${r.indicators.map((i) => `${i.id}:${i.weight}`).join(", ")}`);
+}
+
+/* ---------------------------------------------------------------------------
+ * The other direction, which matters just as much.
+ *
+ * A checker that flags a bank's own website teaches people to ignore it. These
+ * are all genuine addresses and must stay in the low band; several of them
+ * failed while the link rules were being tightened, which is exactly why they
+ * are pinned here.
+ * ------------------------------------------------------------------------- */
+
+const genuineCases: { name: string; text: string; channel: Channel }[] = [
+  { name: "paypal's own sign-in", channel: "email",
+    text: "Your receipt is available. Sign in at https://www.paypal.com/signin to view it." },
+  { name: "the council itself", channel: "email",
+    text: "Green waste changes from Tuesday. Details at https://www.hume.vic.gov.au/Residents/Waste" },
+  { name: "commbank netbank", channel: "email",
+    text: "You can view your statement any time at https://www.commbank.com.au/personal/netbank.html" },
+  { name: "the ATO", channel: "email",
+    text: "Lodge your return through https://www.ato.gov.au/individuals/lodging-your-tax-return" },
+  { name: "amazon order history", channel: "email",
+    text: "Your parcel is on its way. Track it at https://www.amazon.com.au/gp/your-account/order-history" },
+  { name: "microsoft support", channel: "email",
+    text: "The fix is documented at https://support.microsoft.com/en-au/account-billing/reset-password" },
+];
+
+console.log("");
+for (const c of genuineCases) {
+  const r = analyse({ text: c.text, channel: c.channel });
+  const ok = r.band === "low" || r.band === "unclear";
+  if (ok) pass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(28)} band=${r.band.padEnd(8)} score=${String(r.score).padStart(3)}  (must not alarm)`);
+  if (!ok) console.log(`      false positive: ${r.indicators.map((i) => `${i.id}:${i.weight}`).join(", ")}`);
+}
+
 /* --- Media envelope rules (no file contents, name and type only) --- */
 const mediaCases: { name: string; media: Parameters<typeof analyse>[0]["media"]; expect: string }[] = [
   { name: "invoice that is really a program", expect: "high",
@@ -52,3 +123,7 @@ for (const c of mediaCases) {
   if (!ok) console.log(`      expected ${c.expect}; got: ${r.indicators.map((i) => i.id).join(", ")}`);
   console.log(`      examined: ${r.examined.map((e) => `${e.label} [${e.status}]`).join(" | ")}`);
 }
+
+console.log(
+  `\n${pass}/${cases.length + linkCases.length + genuineCases.length + mediaCases.length} checks passed overall`,
+);

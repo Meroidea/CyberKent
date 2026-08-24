@@ -80,6 +80,58 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
 
   for (const file of media) {
     const extension = extensionOf(file.name);
+    const metadata = file.metadata;
+
+    /*
+     * The strongest finding available about any upload, and the reason the
+     * metadata read was moved to the front of the pipeline: the file's own
+     * bytes contradict its name. Every other rule in this function reasons
+     * about the name, which the sender chose; this one reasons about the
+     * contents, which they had to actually produce.
+     */
+    if (metadata?.disguised && metadata.actualType) {
+      const program = /^application\/x-(msdownload|elf|mach-binary)$/.test(metadata.actualType);
+
+      indicators.push({
+        id: `file-disguised-${file.name}`,
+        label: program ? "Attachment is a program wearing a document's name" : "File is not what its name says",
+        detail: program
+          ? `"${file.name}" is named as a document but its opening bytes are an executable program. Opening it runs code. There is no innocent way for a file to end up in this state.`
+          : `"${file.name}" is named as one kind of file and its contents are a ${metadata.actualType}. A mismatch this broad is deliberate.`,
+        weight: "critical",
+        evidence: `${file.name} → ${metadata.actualType}`,
+      });
+    }
+
+    /* An archive or PDF that carries something which runs on opening. */
+    const activeContent = metadata?.fields.filter(
+      (field) =>
+        /^Contains (javascript|open action|launch action|embedded file)$/i.test(field.label) &&
+        field.value === "Yes",
+    );
+
+    if (activeContent && activeContent.length > 0) {
+      indicators.push({
+        id: `file-active-content-${file.name}`,
+        label: "Document carries active content",
+        detail: `${activeContent
+          .map((field) => field.label.replace(/^Contains /i, ""))
+          .join(", ")} found inside "${file.name}". A document that acts on its own when opened is doing something a document has no reason to do.`,
+        weight: "high",
+        evidence: file.name,
+      });
+    }
+
+    if (metadata?.fields.some((field) => field.label === "Macros" && field.value === "Present")) {
+      indicators.push({
+        id: `file-macro-project-${file.name}`,
+        label: "Document contains a macro project",
+        detail:
+          "Read from inside the file rather than guessed from its extension: there is code packaged in this document, which runs if macros are enabled.",
+        weight: "critical",
+        evidence: file.name,
+      });
+    }
 
     if (BIDI_OVERRIDE.test(file.name)) {
       indicators.push({

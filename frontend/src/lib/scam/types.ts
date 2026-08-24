@@ -7,14 +7,27 @@
  * modules 3 and 4 (FR13–FR24) are expressed here.
  */
 
+import type { FileMetadata } from "@/lib/scam/metadata";
+import type { UrlReport } from "@/lib/scam/url";
+
 /** FR14 — the channel the message arrived through. */
 export type Channel = "sms" | "email" | "phone" | "website" | "social" | "other";
 
 /** FR17 — the band a score falls into. */
 export type RiskBand = "high" | "medium" | "low" | "unclear";
 
-/** How strongly an indicator argues for a scam. */
-export type IndicatorWeight = "high" | "medium" | "low";
+/**
+ * How strongly an indicator argues for a scam.
+ *
+ * `critical` exists because some findings are not evidence to be weighed
+ * against other evidence — they are deceptions with no innocent reading. A link
+ * that puts a bank's name in the userinfo field so it appears to lead there,
+ * or a filename with a bidi override in it, is not "high risk on balance": it
+ * was built to mislead, and one of them alone is enough for a verdict. Without
+ * a tier above `high` those findings sit in the same bucket as an uncommon
+ * top-level domain and need a second signal to reach the band they deserve.
+ */
+export type IndicatorWeight = "critical" | "high" | "medium" | "low";
 
 /**
  * One reason contributing to a score.
@@ -48,6 +61,14 @@ export interface MediaDescriptor {
   /** The browser's declared MIME type. May be empty. */
   type: string;
   kind: MediaKind;
+  /**
+   * What the file's own bytes say about it.
+   *
+   * Read before anything else is done with the file, so every later step is
+   * reasoning about an established type rather than a claimed one. Optional
+   * only because a descriptor can be built by hand in a test.
+   */
+  metadata?: FileMetadata;
   extractedText?: string;
   unreadable?: string;
 }
@@ -90,4 +111,12 @@ export interface Analysis {
   };
   /** What the verdict actually got to look at, source by source. */
   examined: ExaminedSource[];
+  /**
+   * Every link, taken apart check by check.
+   *
+   * Carried on the analysis rather than derived in the view, so the downloaded
+   * copy and the screen show the same inspection: a report whose detail exists
+   * only in JSX is a report that loses its detail the moment anyone exports it.
+   */
+  links: UrlReport[];
 }

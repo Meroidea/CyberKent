@@ -241,7 +241,9 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
      * rather than a wait beside it.
      */
     void atLeast(
-      describeFiles(files, (_, name) => setReading(name)),
+      describeFiles(files, (_, name, step) =>
+        setReading(step === "metadata" ? `Reading ${name}’s metadata` : `Reading text from ${name}`),
+      ),
       holdMs,
     ).then((described) => {
       if (run !== runRef.current) {

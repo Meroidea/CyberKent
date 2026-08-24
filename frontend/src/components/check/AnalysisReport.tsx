@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { AlertTriangle, AtSign, Link2, Phone, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { ROUTES } from "@/config/site";
 import { ReportActions } from "@/components/check/ReportActions";
+import { LinkInspection } from "@/components/check/LinkInspection";
+import { MediaInspection } from "@/components/check/MediaInspection";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
 import { ProgressRing } from "@/components/settings/ProgressRing";
@@ -53,9 +55,10 @@ const BAND_STYLES: Record<
 };
 
 const WEIGHT_CHIP: Record<string, string> = {
+  critical: "bg-rose-600/15 text-rose-700 dark:text-rose-300",
   high: "bg-rose-500/12 text-rose-600 dark:text-rose-400",
   medium: "bg-amber-500/12 text-amber-600 dark:text-amber-400",
-  low: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400",
+  low: "bg-sky-500/12 text-sky-600 dark:text-sky-400",
 };
 
 /**
@@ -167,6 +170,49 @@ export function AnalysisReport({
   const { Icon } = style;
 
   /*
+   * Link findings are listed once, not twice.
+   *
+   * Every check the inspector runs already appears in full below, with its
+   * wording and its outcome. Repeating each one here as an indicator row made
+   * the report say everything twice, which is its own kind of dishonesty: it
+   * reads as more evidence than was actually found. So the score explanation
+   * keeps the wording rules and the cross-checks, and collapses each link into
+   * a single line that points at the inspection.
+   */
+  const summarised = useMemo(
+    () => analysis.indicators.filter((indicator) => !indicator.id.startsWith("url-")),
+    [analysis],
+  );
+
+  const linkSummaries = useMemo(
+    () =>
+      analysis.links
+        .map((link) => {
+          const serious = link.checks.filter((check) => check.outcome === "critical").length;
+          const concerns = link.checks.filter((check) => check.outcome === "concern").length;
+          const shown = link.displayHost || link.raw;
+
+          if (serious + concerns === 0) {
+            return null;
+          }
+
+          const parts = [
+            serious > 0 ? `${serious} serious` : null,
+            concerns > 0 ? `${concerns} of concern` : null,
+          ].filter(Boolean);
+
+          return {
+            id: `link-summary-${shown}`,
+            label: `The link to ${shown}`,
+            detail: `${parts.join(" and ")} out of ${link.checks.length} checks run on it. Each one is set out in full below.`,
+            weight: serious > 0 ? ("critical" as const) : ("high" as const),
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
+    [analysis],
+  );
+
+  /*
    * Stamped when this verdict is first shown rather than when a copy of it is
    * taken, so the downloaded file, the emailed summary and the line on screen
    * all name the same moment — a reader who exports twice should not get two
@@ -207,7 +253,7 @@ export function AnalysisReport({
         </p>
       </motion.header>
 
-      {analysis.indicators.length > 0 ? (
+      {summarised.length > 0 ? (
         <motion.div variants={fadeUp}>
           <SettingsGroup
             title={`Why — ${analysis.indicators.length} ${
@@ -216,7 +262,24 @@ export function AnalysisReport({
             footer="Each signal is a pattern seen in reported scams, not proof. Weight is how much it moved the score."
           >
             <SettingsRows>
-              {analysis.indicators.map((indicator) => (
+              {linkSummaries.map((summary) => (
+                <SettingsRow
+                  key={summary.id}
+                  label={summary.label}
+                  detail={summary.detail}
+                  trailing={
+                    <span
+                      className={cn(
+                        "shrink-0 self-start rounded-md px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase",
+                        WEIGHT_CHIP[summary.weight],
+                      )}
+                    >
+                      {summary.weight}
+                    </span>
+                  }
+                />
+              ))}
+              {summarised.map((indicator) => (
                 <SettingsRow
                   key={indicator.id}
                   label={indicator.label}
@@ -247,15 +310,75 @@ export function AnalysisReport({
         </motion.div>
       ) : null}
 
+      {analysis.links.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <LinkInspection links={analysis.links} />
+        </motion.div>
+      ) : null}
+
+      {submission.media && submission.media.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <MediaInspection media={submission.media} />
+        </motion.div>
+      ) : null}
+
       <motion.div variants={fadeUp}>
         <ExtractedEntities analysis={analysis} />
+      </motion.div>
+
+      {/*
+       * What the check could not do.
+       *
+       * Stated as its own card rather than folded into the small print,
+       * because the complaint that prompted this section was that the report
+       * read as more certain than it was. A reader who is shown eleven checks
+       * that ran will reasonably assume the list is the whole of it; the three
+       * that cannot run in a browser are exactly the three that would settle
+       * most cases, and leaving them unmentioned is what made a thin result
+       * look like a thorough one.
+       */}
+      <motion.div variants={fadeUp}>
+        <SettingsGroup
+          title="What this check could not do"
+          footer="These need a lookup against a service outside your device. The checker does not make one, because everything you paste or attach stays here — that privacy is a deliberate trade, and this card is its cost."
+        >
+          <SettingsRows>
+            <SettingsRow
+              label="How old a domain is"
+              detail="A registration date comes from WHOIS. Days-old domains are one of the strongest signals there is."
+              value="Not checked"
+            />
+            <SettingsRow
+              label="Reputation and blocklists"
+              detail="Whether anyone else has reported this address already."
+              value="Not checked"
+            />
+            <SettingsRow
+              label="Where a link actually lands"
+              detail="Following a redirect means requesting it, which is the risk this check exists to avoid."
+              value="Not checked"
+            />
+          </SettingsRows>
+        </SettingsGroup>
       </motion.div>
 
       <motion.div variants={fadeUp}>
         <SettingsGroup title="How much to trust this">
           <SettingsRows>
-            <SettingsRow label="Confidence" value={analysis.confidence.toFixed(2)} />
-            <SettingsRow label="Checked" value="On your device" />
+            <SettingsRow
+              label="Confidence"
+              detail="How much the submission gave the checker to work with — not how sure it is that the verdict is right."
+              value={`${Math.round(analysis.confidence * 100)}%`}
+            />
+            <SettingsRow
+              label="Checks run"
+              detail="Wording rules, link inspection and attachment metadata."
+              value={`${
+                analysis.links.reduce((total, link) => total + link.checks.length, 0) +
+                analysis.indicators.length
+              }`}
+            />
+            <SettingsRow label="Where it ran" value="On your device" />
             <SettingsRow label="Standing" value="Advisory only" />
           </SettingsRows>
         </SettingsGroup>

@@ -140,6 +140,97 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     sections.push(["WHY", "", "  No indicators from the checked rule set were found."].join("\n"));
   }
 
+  /*
+   * The link inspection, in full, including the checks that passed.
+   *
+   * The downloaded copy is the one that gets forwarded to a family member or
+   * attached to a report, and it has to carry the same reasoning the screen
+   * showed. A file that lists only what was wrong cannot answer the question
+   * the reader will actually be asked — "did you check X?" — which is the
+   * whole reason the on-screen version shows its passes too.
+   */
+  if (analysis.links.length > 0) {
+    const OUTCOME_LABEL: Record<string, string> = {
+      critical: "SERIOUS",
+      concern: "CONCERN",
+      note: "NOTE   ",
+      unknown: "NOT RUN",
+      clear: "CLEAR  ",
+    };
+
+    const body = analysis.links
+      .map((link, index) => {
+        const heading =
+          analysis.links.length > 1
+            ? `  Link ${index + 1} of ${analysis.links.length}: ${link.raw}`
+            : `  ${link.raw}`;
+
+        const anatomy = link.parsed
+          ? [
+              `    scheme      ${link.scheme}`,
+              link.userinfo ? `    before @    ${link.userinfo}  (ignored by the browser)` : null,
+              `    goes to     ${link.displayHost}${link.host !== link.displayHost ? `  (written as ${link.host})` : ""}`,
+              link.port ? `    port        ${link.port}` : null,
+              link.path && link.path !== "/" ? `    path        ${link.path}` : null,
+              link.query ? `    parameters  ${link.query}` : null,
+            ].filter(Boolean).join("\n")
+          : "    could not be parsed as a link";
+
+        const checks = link.checks
+          .map((check) =>
+            [
+              `    [${OUTCOME_LABEL[check.outcome] ?? check.outcome}] ${check.label}`,
+              indent(wrap(check.finding, 62), 14),
+            ].join("\n"),
+          )
+          .join("\n\n");
+
+        return [heading, "", anatomy, "", checks].join("\n");
+      })
+      .join(`\n\n${"-".repeat(72)}\n\n`);
+
+    sections.push(["EVERY LINK, CHECK BY CHECK", "", body].join("\n"));
+  }
+
+  /* What each attachment turned out to be, metadata first. */
+  const media = submission.media ?? [];
+
+  if (media.length > 0) {
+    const body = media
+      .map((file) => {
+        const facts = (file.metadata?.fields ?? [])
+          .map((field) => `    ${field.label.padEnd(26)} ${field.value}`)
+          .join("\n");
+
+        const gaps = (file.metadata?.gaps ?? [])
+          .map((gap) => indent(wrap(`Gap: ${gap}`, 66), 4))
+          .join("\n");
+
+        const readText = file.extractedText?.trim()
+          ? `    Text recognised            ${file.extractedText.trim().length} characters, checked against the wording rules`
+          : `    Text recognised            none — ${file.unreadable ?? "not examined"}`;
+
+        return [`  ${file.name}`, "", facts, readText, gaps].filter(Boolean).join("\n");
+      })
+      .join("\n\n");
+
+    sections.push(["ATTACHMENTS, AS READ FROM THE FILES THEMSELVES", "", body].join("\n"));
+  }
+
+  sections.push(
+    [
+      "WHAT THIS CHECK COULD NOT DO",
+      "",
+      indent(
+        wrap(
+          "Three checks that would settle most cases need a lookup against a service outside your device, and this checker does not make one: how long the domain has existed (WHOIS), whether it appears on any reputation blocklist, and where a link actually lands once redirects are followed. Nothing you pasted or attached left your device, and that privacy is the reason these are missing. Treat the result as one input, not as the answer.",
+          72,
+        ),
+        2,
+      ),
+    ].join("\n"),
+  );
+
   const extracted: string[] = [];
 
   if (analysis.extracted.urls.length > 0) {
@@ -158,7 +249,9 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     sections.push(["PULLED OUT OF THE MESSAGE", "", ...extracted].join("\n"));
   }
 
-  sections.push(["THE MESSAGE AS SUBMITTED", "", indent(submission.text.trim(), 2)].join("\n"));
+  if (submission.text.trim().length > 0) {
+    sections.push(["THE MESSAGE AS SUBMITTED", "", indent(submission.text.trim(), 2)].join("\n"));
+  }
 
   sections.push(["IMPORTANT", "", indent(wrap(ADVISORY, 72), 2)].join("\n"));
 

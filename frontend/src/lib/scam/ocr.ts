@@ -1,5 +1,6 @@
 import type { MediaDescriptor } from "@/lib/scam/types";
 import { kindOf } from "@/lib/scam/media";
+import { readMetadata } from "@/lib/scam/metadata";
 
 /**
  * Reading the text out of an uploaded image, in the browser.
@@ -84,25 +85,58 @@ const NOT_READ: Record<string, string> = {
 /**
  * Turns picked files into what the analyser reasons about.
  *
+ * The order here is deliberate and is the answer to a real weakness. Metadata
+ * is read first, for every file, whatever it claims to be — so the type is
+ * established from the bytes before anything acts on the name. Only then does
+ * recognition run, and only on files whose contents really are an image.
+ *
+ * That ordering matters beyond tidiness. A file named `receipt.png` whose bytes
+ * are a Windows executable used to be handed to the text recogniser, which
+ * would find nothing, report "no readable text", and leave the reader with a
+ * shrug about a screenshot instead of a warning about a program. Now the sniff
+ * happens first and the disguise is the finding.
+ *
  * `onProgress` reports which file is being worked through so the wait can name
  * it: reading three screenshots takes long enough that a single unchanging
  * "analysing" would look stuck.
  */
 export async function describeFiles(
   files: File[],
-  onProgress?: (index: number, name: string) => void,
+  onProgress?: (index: number, name: string, step: "metadata" | "reading") => void,
 ): Promise<MediaDescriptor[]> {
   const described: MediaDescriptor[] = [];
 
   for (const [index, file] of files.entries()) {
-    onProgress?.(index, file.name);
+    onProgress?.(index, file.name, "metadata");
+
+    /* Step one, always, for every kind of file. */
+    const metadata = await readMetadata(file);
 
     const kind = kindOf(file.type, file.name);
-    const base = { name: file.name, size: file.size, type: file.type, kind };
+    const base = { name: file.name, size: file.size, type: file.type, kind, metadata };
 
-    if (kind === "image") {
+    /*
+     * Step two, and only where the bytes agree it is an image. Running text
+     * recognition over something that is not an image wastes several megabytes
+     * of WebAssembly to produce noise, and dresses a disguised file up as an
+     * unremarkable one.
+     */
+    const reallyAnImage = metadata.actualType?.startsWith("image/") ?? false;
+
+    if (kind === "image" && reallyAnImage) {
+      onProgress?.(index, file.name, "reading");
       const { text, unreadable } = await readImage(file);
       described.push({ ...base, extractedText: text, unreadable });
+      continue;
+    }
+
+    if (kind === "image" && !reallyAnImage) {
+      described.push({
+        ...base,
+        unreadable: metadata.actualType
+          ? `Not read as an image: the contents are a ${metadata.actualType}, not a picture, whatever the name says.`
+          : "Not read as an image: the opening bytes match no known image format, so there was nothing to recognise text in.",
+      });
       continue;
     }
 

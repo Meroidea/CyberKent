@@ -1,11 +1,6 @@
-import { extractEmails, extractPhones, extractUrls, hostOf } from "@/lib/scam/extract";
-import {
-  IMPERSONATED_BRANDS,
-  OFFICIAL_SUFFIXES,
-  SUSPICIOUS_TLDS,
-  TEXT_RULES,
-  URL_SHORTENERS,
-} from "@/lib/scam/patterns";
+import { extractEmails, extractPhones, extractUrls } from "@/lib/scam/extract";
+import { BRAND_DOMAINS, IMPERSONATED_BRANDS, TEXT_RULES } from "@/lib/scam/patterns";
+import { inspectUrls, registrableDomain, type UrlReport } from "@/lib/scam/url";
 import { analyseMedia } from "@/lib/scam/media";
 import type {
   Analysis,
@@ -20,16 +15,27 @@ import type {
 
 /** Evidence each weight contributes, before saturation. */
 const WEIGHT_POINTS: Record<IndicatorWeight, number> = {
-  high: 30,
-  medium: 16,
-  low: 7,
+  critical: 62,
+  high: 34,
+  medium: 20,
+  low: 8,
 };
 
 /**
  * Controls how fast the score saturates. Larger means evidence accumulates more
- * slowly. Tuned so one high indicator lands mid-band and two clear it.
+ * slowly.
+ *
+ * Retuned along with the weights above, because the old pair produced the
+ * complaint that prompted this work: a single medium indicator scored 30, which
+ * fell in the low band, which printed the headline "No strong scam indicators".
+ * A bare link shortener — a thing whose entire purpose is to conceal where it
+ * goes — was therefore reported as though it had been examined and found sound.
+ *
+ * The floor is now set so that any one medium finding reaches the caution band
+ * on its own, and one `critical` finding reaches the high band on its own,
+ * since a critical finding is a deception rather than a probability.
  */
-const SATURATION = 45;
+const SATURATION = 42;
 
 /** FR17 — band thresholds. */
 const BAND_THRESHOLDS: { band: RiskBand; min: number }[] = [
@@ -52,10 +58,19 @@ const BAND_COPY: Record<RiskBand, { headline: string; summary: string }> = {
     summary:
       "Some indicators are present but not conclusive. Verify through a channel you found yourself — a bill, a bookmark, or a number you already had — before acting on it.",
   },
+  /*
+   * Worded as the absence of a finding rather than as a clearance.
+   *
+   * "No strong scam indicators" was read as "this is safe", which is not what
+   * the checker is able to say about anything. What it can say is what it
+   * looked at and what it did not find — so the headline names the check
+   * rather than the message, and the summary leads with the limit instead of
+   * burying it in the third sentence.
+   */
   low: {
-    headline: "No strong scam indicators",
+    headline: "Nothing matched, but little was checkable",
     summary:
-      "Nothing here matches the patterns we check for. That is not a guarantee it is genuine: a scam written carefully will not trip these checks. Verify independently if it asks for money or details.",
+      "None of the patterns this checker knows about appear here. That is a statement about the checks, not about the message: a careful scam trips none of them, and the checks that would settle it — how old the domain is, who registered it, where a link really leads — cannot run on your device. If it asks for money, details or urgency, verify through a number or address you already had.",
   },
   unclear: {
     headline: "Not enough to assess",
@@ -73,6 +88,58 @@ const BAND_COPY: Record<RiskBand, { headline: string; summary: string }> = {
 const CHANNEL_EXEMPT_RULES: Partial<Record<Channel, string[]>> = {
   phone: ["link-bait"],
 };
+
+/**
+ * The organisation a message claims to be from, set against where it points.
+ *
+ * This is the check that "impersonation" should always have been. A genuine
+ * message from a bank names the bank and links to the bank; a scam names the
+ * bank and links somewhere else. Neither half is evidence alone — every real
+ * notice names its sender, and plenty of honest messages carry a link to a
+ * third party — but the two together are close to decisive, and they are the
+ * single most common shape a phishing message takes.
+ *
+ * Only fires when there is a link to disagree with. A message naming a bank
+ * with no link in it is just a message naming a bank.
+ */
+function brandAgainstDestination(text: string, links: UrlReport[]): Indicator[] {
+  const named = IMPERSONATED_BRANDS.filter((brand) =>
+    new RegExp(`\\b${brand.replace(/[-]/g, "[- ]?")}\\b`, "i").test(text),
+  );
+
+  const resolvable = links.filter((link) => link.parsed && link.host);
+
+  if (named.length === 0 || resolvable.length === 0) {
+    return [];
+  }
+
+  return named.flatMap((brand) => {
+    const owned = BRAND_DOMAINS[brand] ?? [];
+
+    if (owned.length === 0) {
+      return [];
+    }
+
+    const destinations = resolvable.map((link) => registrableDomain(link.host));
+
+    /* One link landing where it should is enough to settle it. */
+    if (destinations.some((destination) => owned.includes(destination))) {
+      return [];
+    }
+
+    return [
+      {
+        id: `brand-mismatch-${brand}`,
+        label: `Says "${brand}", but does not link to ${brand}`,
+        detail: `The message names ${brand}, and the ${
+          destinations.length === 1 ? "link in it goes" : "links in it go"
+        } to ${[...new Set(destinations)].join(", ")} instead. A genuine message from an organisation links to its own address. This is the commonest shape a phishing message takes.`,
+        weight: "critical" as const,
+        evidence: [...new Set(destinations)].join(", "),
+      },
+    ];
+  });
+}
 
 function runTextRules(text: string, channel: Channel): Indicator[] {
   const exempt = CHANNEL_EXEMPT_RULES[channel] ?? [];
@@ -96,93 +163,6 @@ function runTextRules(text: string, channel: Channel): Indicator[] {
       },
     ];
   });
-}
-
-/** FR20, FR21 — validate the shape of each URL, then inspect the host. */
-function runUrlRules(urls: string[]): Indicator[] {
-  const indicators: Indicator[] = [];
-
-  for (const url of urls) {
-    const host = hostOf(url);
-
-    if (!host) {
-      indicators.push({
-        id: `url-malformed-${url}`,
-        label: "Link is malformed",
-        detail: "The address could not be parsed, which is itself unusual in a genuine message.",
-        weight: "medium",
-        evidence: url,
-      });
-      continue;
-    }
-
-    /* An official Australian domain cannot be registered by a scammer, so it
-       clears the host-shape rules below rather than being scored by them. */
-    if (OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      continue;
-    }
-
-    const tld = host.split(".").pop() ?? "";
-
-    if (SUSPICIOUS_TLDS.includes(tld)) {
-      indicators.push({
-        id: `url-tld-${host}`,
-        label: "Uncommon top-level domain",
-        detail: `".${tld}" is cheap to register and carries a high share of abuse.`,
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    if (URL_SHORTENERS.includes(host)) {
-      indicators.push({
-        id: `url-shortener-${host}`,
-        label: "Shortened link",
-        detail: "A shortener hides the real destination until you have already opened it.",
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    /*
-     * Lookalike test: the host names a brand but is not that brand's own
-     * domain. "hume-rates-refund.online" contains "hume" without being
-     * anything hume.vic.gov.au controls.
-     */
-    const brand = IMPERSONATED_BRANDS.find((candidate) => host.includes(candidate));
-
-    if (brand && !OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      indicators.push({
-        id: `url-lookalike-${host}`,
-        label: "Lookalike domain",
-        detail: `Contains "${brand}" but is not an official address for it.`,
-        weight: "high",
-        evidence: host,
-      });
-    }
-
-    if (host.split(".").length > 3) {
-      indicators.push({
-        id: `url-depth-${host}`,
-        label: "Deeply nested subdomain",
-        detail: "Stacking subdomains pushes the real domain out of view on a phone.",
-        weight: "low",
-        evidence: host,
-      });
-    }
-
-    if (/\d{1,3}(\.\d{1,3}){3}/.test(host)) {
-      indicators.push({
-        id: `url-ip-${host}`,
-        label: "Link points to a raw IP address",
-        detail: "Genuine services publish a domain name, not a bare address.",
-        weight: "high",
-        evidence: host,
-      });
-    }
-  }
-
-  return indicators;
 }
 
 /**
@@ -238,7 +218,12 @@ function confidenceFor(
 }
 
 /** Strongest first, so the reason that mattered most is read first. */
-const WEIGHT_ORDER: Record<IndicatorWeight, number> = { high: 0, medium: 1, low: 2 };
+const WEIGHT_ORDER: Record<IndicatorWeight, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
 
 /**
  * The single entry point. FR13–FR24.
@@ -271,7 +256,11 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
   /* Envelope rules stand on their own: they need no text to have been read. */
   const fileIndicators = analyseMedia(media);
 
-  if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0) {
+  if (
+    corpus.length < MINIMUM_USEFUL_LENGTH &&
+    fileIndicators.length === 0 &&
+    extracted.urls.length === 0
+  ) {
     return {
       score: 0,
       band: "unclear",
@@ -280,15 +269,40 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
       indicators: [],
       extracted,
       examined,
+      links: [],
     };
   }
 
+  /*
+   * Links are inspected whatever the length of the message around them.
+   *
+   * The old guard ran the URL rules only once the whole submission cleared the
+   * minimum useful length, so pasting a bare shortened link — nine characters,
+   * and the single most common way a scam arrives — skipped link analysis
+   * entirely and returned "not enough to assess". A link is self-contained
+   * evidence; it does not need a sentence around it to be worth taking apart.
+   */
+  const links = inspectUrls(extracted.urls);
+  const linkIndicators = links.flatMap((link) => link.indicators);
+
+  /*
+   * The wording rules read the message with its links removed.
+   *
+   * A URL is a string of words too, and leaving them in meant the rules matched
+   * inside them: Microsoft's own support address ends in "reset-password",
+   * which tripped "asks for credentials" — a high-weight finding drawn from a
+   * path segment rather than from anything the sender wrote. Links now get the
+   * dedicated inspection in `url.ts` and are taken out of the prose before the
+   * wording rules see it, so neither double-counts the other.
+   */
+  const prose = extracted.urls.reduce((value, url) => value.split(url).join(" "), corpus);
+
   const textIndicators =
     corpus.length >= MINIMUM_USEFUL_LENGTH
-      ? [...runTextRules(corpus, channel), ...runUrlRules(extracted.urls)]
+      ? [...runTextRules(prose, channel), ...brandAgainstDestination(prose, links)]
       : [];
 
-  const indicators = [...textIndicators, ...fileIndicators].sort(
+  const indicators = [...textIndicators, ...linkIndicators, ...fileIndicators].sort(
     (a, b) => WEIGHT_ORDER[a.weight] - WEIGHT_ORDER[b.weight],
   );
 
@@ -303,6 +317,7 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
     indicators,
     extracted,
     examined,
+    links,
   };
 }
 
