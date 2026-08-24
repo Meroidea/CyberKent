@@ -7,8 +7,17 @@ interface ProgressRingProps {
   value: number;
   /** Sits inside the ring. Defaults to the value as a percentage. */
   children?: React.ReactNode;
-  /** Caption under the ring. */
-  caption?: string;
+  /**
+   * Where the percentage is drawn.
+   *
+   * Apple draws it both ways and the choice is about size: inside when the
+   * ring is large enough to hold it, below when the ring is small and the
+   * number would crowd the stroke. The accessory panel's battery rings are the
+   * second kind, which is why this exists.
+   */
+  valuePlacement?: "inside" | "below";
+  /** Caption under the ring, below the value. */
+  caption?: React.ReactNode;
   /** Tailwind `stroke-*` for the filled arc. Defaults to the accent. */
   trackClassName?: string;
   size?: number;
@@ -31,6 +40,7 @@ const CIRCUMFERENCE = 2 * Math.PI * R;
 export function ProgressRing({
   value,
   children,
+  valuePlacement = "inside",
   caption,
   trackClassName,
   size = 72,
@@ -60,13 +70,21 @@ export function ProgressRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {children ?? (
-            <span className="text-[0.9375rem] font-semibold tabular-nums text-ui-label">
-              {Math.round(clamped)}%
-            </span>
-          )}
+          {children ??
+            (valuePlacement === "inside" ? (
+              <span className="text-[0.9375rem] font-semibold tabular-nums text-ui-label">
+                {Math.round(clamped)}%
+              </span>
+            ) : null)}
         </div>
       </div>
+
+      {valuePlacement === "below" ? (
+        <span className="text-[1.0625rem] font-medium leading-none tabular-nums text-ui-label">
+          {Math.round(clamped)}%
+        </span>
+      ) : null}
+
       {caption ? (
         <span className="text-[0.8125rem] leading-tight text-ui-label-2">{caption}</span>
       ) : null}

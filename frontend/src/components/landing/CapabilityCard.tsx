@@ -1,6 +1,6 @@
 import { Bell, LifeBuoy, Link2, MapPinned, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
 import type { Capability } from "@/content/landing";
-import { ACCENT_GRADIENT } from "@/components/landing/console/primitives";
+import { ACCENT_GRADIENT } from "@/lib/accents";
 import { cn } from "@/lib/cn";
 import alertsImage from "@/assets/capabilities/alerts.webp";
 import indicatorsImage from "@/assets/capabilities/indicators.webp";

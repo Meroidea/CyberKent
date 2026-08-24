@@ -250,7 +250,10 @@ export function ConsoleShowcase() {
           <div className="relative rounded-[2.1rem] bg-gradient-to-b from-slate-700 to-slate-950 p-2 shadow-2xl shadow-slate-900/30 sm:p-3">
             <div
               ref={screenRef}
-              className="relative overflow-hidden rounded-[1.5rem] bg-white dark:bg-[#0d0d0f]"
+              /* The screen's own ground, not the page's: the console is a
+                 grouped-list surface and the card colours only read as cards
+                 against it. */
+              className="relative overflow-hidden rounded-[1.5rem] bg-ui-grouped"
               style={{ aspectRatio: `${settings.consoleDesignWidth} / ${CONSOLE_DESIGN_HEIGHT}` }}
             >
               {/*
@@ -267,7 +270,7 @@ export function ConsoleShowcase() {
                   transformOrigin: "top left",
                 }}
               >
-                <ConsoleWindow />
+                <ConsoleWindow designWidth={settings.consoleDesignWidth} />
               </div>
             </div>
           </div>
