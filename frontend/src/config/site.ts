@@ -58,12 +58,16 @@ export interface NavResource extends NavLink {
 }
 
 /**
- * Top-level navigation links. These are in-page anchors on the landing page;
- * the `Documents` and `Services` dropdowns are rendered separately by the
- * header from `components/layout/navMenus`.
+ * Top-level navigation links.
+ *
+ * Mostly in-page anchors on the landing page; `Home` is the one route among
+ * them, and the header tells the two apart by the leading `#` so a route goes
+ * through the router rather than reloading the document. The `Documents` and
+ * `Services` dropdowns are rendered separately by the header from
+ * `components/layout/navMenus`.
  */
 export const PRIMARY_NAV: NavLink[] = [
-  { label: "Detect", href: `#${SECTION_IDS.detect}` },
+  { label: "Home", href: ROUTES.home },
   { label: "How it works", href: `#${SECTION_IDS.how}` },
   { label: "Alerts", href: `#${SECTION_IDS.alerts}` },
   { label: "Learn", href: `#${SECTION_IDS.learn}` },
