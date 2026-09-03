@@ -19,8 +19,8 @@
 | **Institution** | Kent Institute Australia |
 | **Deliverable** | D11 — Final SRS Report |
 | **Milestone** | M15 |
-| **Document version** | 1.0 |
-| **Date of issue** | 13 August 2026 |
+| **Document version** | 1.1 |
+| **Date of issue** | 20 August 2026 |
 | **Status** | Issued for supervisor, lecturer and stakeholder review |
 | **Supersedes** | Interim SRS Report v1.0 (16 July 2026); `SRS.md` working draft (13 August 2026) |
 | **Companion documents** | Interim Project Report v1.0 (1 August 2026); TechStack v1.0; System-Architecture v1.0; UI-Design v1.0; Rules v1.0; Avoid v1.0 |
@@ -46,6 +46,7 @@
 | 0.9 | 16 Jul 2026 | Interim SRS Report v1.0 issued | CyberKent |
 | 0.95 | 1 Aug 2026 | Interim Project Report v1.0 issued | CyberKent |
 | **1.0** | **13 Aug 2026** | **Final SRS Report.** Baseline restated with acceptance criteria and audited implementation status; enhanced FR73–FR92 presented separately for approval; full conformance check against the client brief including four specification defects and two coverage gaps; database ethics register audited against the migrated schema; use-case model, verification results, hardware and software recommendations, and open-issue resolutions added. | CyberKent |
+| **1.1** | **20 Aug 2026** | **Analysis and planning diagrams incorporated.** The five authored diagrams — use case, entity-relationship, level 1 data-flow, work breakdown structure and Gantt chart — added to the sections they govern, each reconciled against the specified model; user storyboard for UC-01 added; annual operating cost broken down by line; list of figures added as Appendix I. | CyberKent |
 
 ### Approval and sign-off
 
@@ -83,6 +84,8 @@ Project supervisor · Unit coordinator · CyberSafe Services manager · Hume Cit
 17. [Open issues and decisions required](#17-open-issues-and-decisions-required)
 18. [Conclusion](#18-conclusion)
 19. [Appendices](#19-appendices)
+
+**Figures.** A list of every diagram and figure in this document is at [Appendix I](#appendix-i--list-of-figures).
 
 ---
 
@@ -984,7 +987,93 @@ Candidates were derived from four sources rather than assembled for volume: (1) 
 | UC-18 | Generate statistics and export de-identified data | Administrator | FR70, FR71 | ⬜ |
 | UC-19 | Dispute an indicator | Visitor | FR92, ER-13 | ⬜ |
 
-## 7.3 UC-01 — Check a suspicious message
+## 7.3 Use-case diagram
+
+The diagram below is the use-case model as the team authored it during analysis. It is reproduced here rather than re-derived, so this specification carries the artefact the design was actually taken from. It shows two actors, the system boundary, the thirteen use cases the actors drive, and the four behaviours the system performs as an included step of another case.
+
+```
+       User                    CyberKent system boundary                Administrator
+    (end-user)   ┌──────────────────────────────────────────────────┐  (council staff)
+                 │                                                  │
+        O ───────┤  ( Register account )                            │        O
+       /|\       │                                                  │       /|\
+       / \ ──────┤  ( Login to system )                             │       / \
+        │        │      « standard authentication »                 │        │
+        │        │                                                  │        │
+        ├────────┤  ( Manage user profile )                         │        │
+        │        │                                                  │        │
+        ├────────┤  ( View community scam alerts )                  │        │
+        │        │      « awareness info, trend data »              │        │
+        │        │                                                  │        │
+        ├────────┤ (( Submit scam report ))                         │        │
+        │        │       ├──«include»──► ( Analyse scam content     │        │
+        │        │       │                  — text / URL )          │        │
+        │        │       └──«include»──► ( Upload evidence )        │        │
+        │        │                                                  │        │
+        ├────────┤  ( Track report status ) ────────────────────────├────────┤
+        │        │      « via reference number »                    │        │
+        │        │                                                  │        │
+        └────────┤  ( Subscribe to notifications )                  │        │
+                 │                                                  │        │
+                 │  ( Manage user accounts ) ───────────────────────├────────┤
+                 │       └──«include»──► ( View details /           │        │
+                 │                         assign permissions )     │        │
+                 │                                                  │        │
+                 │  ( Review submitted scam reports ) ──────────────├────────┤
+                 │       └──«include»──► ( Verify scam report )     │        │
+                 │                                                  │        │
+                 │  ( Manage community scam alerts ) ───────────────├────────┤
+                 │                                                  │        │
+                 │  ( Detect duplicate / related reports ) ─────────├────────┤
+                 │                                                  │        │
+                 │  ( Generate system reports ) ────────────────────├────────┤
+                 │      « trend analysis, metrics »                 │        │
+                 │                                                  │        │
+                 │  ( View audit logs ) ────────────────────────────├────────┘
+                 │                                                  │
+                 └──────────────────────────────────────────────────┘
+```
+
+**Reading the diagram.** A single pair of parentheses is a use case; the double pair marks the case the authored diagram draws heaviest, because it is the one every other reporting behaviour hangs from. A guillemet note under a case is the diagram's own annotation. `«include»` marks behaviour the system always performs as part of the parent case, never on its own. *Track report status* connects to both actors: a reporter follows their own report, an officer follows any.
+
+### 7.3.1 Included use cases
+
+| Parent case | Included behaviour | Note on the diagram |
+|---|---|---|
+| Submit scam report | Analyse scam content — text / URL | System automatic |
+| Submit scam report | Upload evidence | Optional but supported |
+| Review submitted scam reports | Verify scam report | Changes report status |
+| Manage user accounts | View details / assign permissions | — |
+
+### 7.3.2 Reconciliation with the specified model
+
+The diagram is the analysis-stage model; §7.1 and §7.2 are the specified model that refines it. They differ, and the differences are decisions rather than drift, so both are carried.
+
+| Diagram case | Specified as | What changed, and why |
+|---|---|---|
+| Register account | UC-02 | — |
+| Login to system | UC-03 | Sign-out separated, so FR5 has a case of its own |
+| Manage user profile | UC-05, UC-06 | Deletion requests split out; FR12 is a reviewable obligation, not a profile edit |
+| View community scam alerts | UC-12, UC-13, UC-14 | Split into alerts, map and awareness — three screens against three requirement ranges |
+| Submit scam report | UC-07 | — |
+| Track report status | UC-08 | Withdrawal folded in (FR30) |
+| Subscribe to notifications | UC-16 | — |
+| Manage user accounts | UC-17 | Category taxonomy folded in (FR69) |
+| Review submitted scam reports | UC-09 | — |
+| Manage community scam alerts | UC-11 | — |
+| Detect duplicate / related reports | UC-10 | — |
+| Generate system reports | UC-18 | De-identified export folded in (FR71) |
+| View audit logs | UC-18 | Audit reading is an administrator view of the same reporting capability (FR72) |
+| *Analyse scam content* — included | **UC-01 — promoted to a standalone case** | The single most consequential change between the two models. See below |
+| — | UC-04 | Password recovery had no case; FR6 requires one |
+| — | UC-15 | Recovery checklists had no case; FR58 and FR60 require one |
+| — | UC-19 | Added with FR92, to give a wrongly named third party a route |
+
+**Why analysis was promoted out of reporting.** On the authored diagram, analysing content is an included step inside *Submit scam report*: a person can only have a message checked by lodging a report about it. Carried into the build, that would have made an account and a report the price of asking a single question, and the people most exposed to scams are the least likely to pay it. FR85 therefore makes checking anonymous, and the case had to leave its parent for that to be possible. It is the one part of the service that is finished (§14.3), and it is finished precisely because nothing else has to exist first.
+
+**Actors.** The diagram names two actors. §7.1 names five, plus three supporting. The additional three — Visitor, Organisation user, Officer — are refinements of the diagram's *User* and *Administrator* rather than new parties: the Visitor is the unauthenticated User that FR85 made necessary, the Organisation user is the User class the client brief names separately, and the Officer is the Administrator without administrative rights, split out so reviewing a report does not require the power to manage accounts (FR10).
+
+## 7.4 UC-01 — Check a suspicious message
 
 | Field | Detail |
 |---|---|
@@ -1018,7 +1107,7 @@ Candidates were derived from four sources rather than assembled for volume: (1) 
 
 **Non-functional constraints** — result returned within the page-load budget (NFR-1); accessible announcement of the result (NFR-13, FR86); no scoring input derived from a prohibited attribute (ETH-3).
 
-## 7.4 UC-07 — Submit a scam report with evidence
+## 7.5 UC-07 — Submit a scam report with evidence
 
 | Field | Detail |
 |---|---|
@@ -1051,7 +1140,7 @@ Candidates were derived from four sources rather than assembled for volume: (1) 
 
 **Postcondition** — a `SUBMITTED` report exists with a reference, evidence is stored privately, and the reporter has been notified.
 
-## 7.5 UC-09 — Review and verify a report
+## 7.6 UC-09 — Review and verify a report
 
 | Field | Detail |
 |---|---|
@@ -1080,7 +1169,7 @@ Candidates were derived from four sources rather than assembled for volume: (1) 
 
 **Postcondition** — the report has a recorded decision, an audit entry, and a notified reporter.
 
-## 7.6 UC-11 — Publish a community alert
+## 7.7 UC-11 — Publish a community alert
 
 | Field | Detail |
 |---|---|
@@ -1129,6 +1218,60 @@ Candidates were derived from four sources rather than assembled for volume: (1) 
 | UI-12 | Language selector persisted across sessions | FR84 | ⬜ |
 
 **Delivered screens.** Landing page (hero, capabilities, how-it-works, console showcase, community alerts, awareness, trust and ethics, subscribe), the scam checker, a 404 page, and ten routed placeholder pages that each name the module and requirement range they will serve.
+
+### 8.1.1 User storyboard — UC-01
+
+The storyboard below is the journey the service is designed around: a person who has just received something frightening, has no account, and wants one question answered. It is the visual companion to UC-01 (§7.4), and the six frames are the six screen states that case passes through.
+
+```
+  1. Landing              2. Choose the channel   3. Paste or drop
+  +----------------------+   +----------------------+   +----------------------+
+  | CyberKent      =     |   | Check a message    X |   | Check a message    X |
+  |----------------------|   |----------------------|   |----------------------|
+  |  Is this a scam?     |   | How did it reach you?|   | +------------------+ |
+  |                      |   |                      |   | | LINKT: unpaid    | |
+  |  +----------------+  |   | +-----+ +-----+ +---+|   | | toll of $4.20.   | |
+  |  | Check a message|  |   | | SMS | |Email| |Cal||   | | Settle now:      | |
+  |  +----------------+  |   | +-----+ +-----+ +---+|   | | linkt-au.pay-... | |
+  |                      |   | +-----+ +-----+ +---+|   | +------------------+ |
+  |  Report   Alerts     |   | | Web | |Socil| |Oth||   | [ drop a screenshot ]|
+  |  Learn    Recover    |   | +-----+ +-----+ +---+|   |        +----------+  |
+  |                      |   |                      |   |        | Check it |  |
+  +----------------------+   +----------------------+   +----------------------+
+
+  4. The check runs       5. The verdict          6. What to do next
+  +----------------------+   +----------------------+   +----------------------+
+  | Analysing...       X |   | Result             X |   | What to do next    X |
+  |----------------------|   |----------------------|   |----------------------|
+  |        .--''--.      |   |   (  91  )  HIGH     |   | +------------------+ |
+  |      .'  ____  '.    |   |   Very likely a scam |   | | Report to Council| |
+  |     /   /    \   \   |   |----------------------|   | +------------------+ |
+  |    |   |      |   |  |   | ! Urgency  'within   |   | +------------------+ |
+  |     \   \____/   /   |   |             24 hours'|   | | Recovery guide   | |
+  |      '.  ____  .'    |   | ! Lookalike domain   |   | +------------------+ |
+  |        '--..--'      |   | - Payment requested  |   | +------------------+ |
+  |  Reading indicators  |   |----------------------|   | | Check another    | |
+  |  [====------]        |   | Advisory guidance    |   | +------------------+ |
+  +----------------------+   +----------------------+   +----------------------+
+```
+
+| Frame | Screen | What the person does | State |
+|---|---|---|---|
+| 1 | Landing | Arrives from a link a relative sent, and finds one obvious action | ✅ Built |
+| 2 | Checker — channel | Chooses how the message reached them (FR14) | ✅ Built |
+| 3 | Checker — input | Pastes the message, or drops a screenshot of it (FR13, FR81) | ✅ Built |
+| 4 | Scanning | Watches a bounded wait while artefacts are extracted and rules applied | ✅ Built |
+| 5 | Result | Reads the band, the score and every indicator that produced it (FR16–FR18) | ✅ Built |
+| 6 | Next | Reports it to Council, or opens the recovery checklist | 🟡 Screen built; both onward routes are placeholders |
+
+**What the storyboard commits the design to.** Four guarantees are visible in the frames rather than stated in a policy elsewhere, which is the point of drawing it:
+
+- **No account.** Nothing in frames 1 to 5 asks who the person is (FR85).
+- **Nothing retained against them.** The analysis runs on their own device; the message is not transmitted to Council or stored.
+- **The wait is bounded and explained.** Frame 4 names what is being read rather than showing an unlabelled spinner, because a person who has just been frightened is the last person who should be left guessing.
+- **The limit travels with the verdict.** Frame 5 carries the advisory notice inside the result panel, not on a page the reader would have to go and find (ETH-1, ETH-2, UI-11).
+
+**Why frame 6 matters most and is built least.** The first five frames answer the question. The sixth is the one that turns an answer into help — reporting the scam so Council sees it, or opening the checklist if money has already moved. Its two destinations are Modules 5 and 10, both specified and neither built (§14.3). Until they are, the journey ends by telling a frightened person what has happened to them without giving them anywhere to take it, and that is the single largest gap between what this service is specified to be and what it currently does.
 
 ## 8.2 Software interfaces — API
 
@@ -1463,6 +1606,162 @@ To be designed at M8, reviewed by the Council privacy officer, and applied **bef
 | Notification | `Notification`, `Subscription` | 11 |
 | Audit | `AuditLog` | 12 |
 
+### 11.2.1 Entity-relationship diagram
+
+The diagram below is the conceptual data model as the team authored it during analysis, in four clusters. It is the model the implemented schema was designed from; §11.2 above is what was built. They are not identical, and §11.2.2 accounts for every difference.
+
+```
+CLUSTER 1 — User management
+
+┌─────────────────────────────────┐   ┌─────────────────────────────────┐
+│ User                            │   │ UserAccount                     │
+├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK UserID                   int │   │ PK AccountID                int │
+│    FirstName            varchar │   │ FK UserID                 FK, U │
+│    LastName             varchar │   │ FK ProfileID              FK, U │
+│    Email             varchar, U │   │ FK RoleID                    FK │
+│    DateOfBirth             date │   └─┬───────────────────────────────┘
+└─┬───────────────────────────────┘
+  └───────────── 1 ──── 1 ──────────────┘
+                                        │ 1
+  ┌─────────────────────────────────────┼─────────────────────────────────────┐
+  │ 1                                   │ 1                                   │ *
+┌─▼───────────────────────────────┐   ┌─▼───────────────────────────────┐   ┌─▼───────────────────────────────┐
+│ Credentials                     │   │ Profile                         │   │ AccessRole                      │
+├─────────────────────────────────┤   ├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK CredentialID             int │   │ PK ProfileID                int │   │ PK RoleID                   int │
+│ FK AccountID              FK, U │   │    Username          varchar, U │   │    RoleName      'User','Admin' │
+│    PasswordHash         varchar │   │    AvatarURL            varchar │   └─┬───────────────────────────────┘
+│    Salt                 varchar │   └─────────────────────────────────┘
+└─────────────────────────────────┘
+                                                                              │ 1
+                                                                              │
+                                                                              │ *
+                                                                            ┌─▼───────────────────────────────┐
+                                                                            │ Permissions                     │
+                                                                            ├─────────────────────────────────┤
+                                                                            │ PK PermissionID             int │
+                                                                            │    PermissionName       varchar │
+                                                                            └─────────────────────────────────┘
+
+CLUSTER 2 — Scam reporting & analysis
+
+┌─────────────────────────────────┐   ┌─────────────────────────────────┐
+│ ScamReport                      │   │ AdminVerification               │
+├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK ReportID                 int │   │ PK VerificationID           int │
+│ FK AccountID                int │   │ FK ReportID               FK, U │
+│    SubmissionDate      datetime │   │ FK AdminAccountID            FK │
+│    ScamType             varchar │   │    VerifiedDate        datetime │
+│    RiskScore                int │   │    VerificationDecision varchar │
+│    RiskBand             varchar │   └─┬───────────────────────────────┘
+│    ReportStatus         varchar │
+└─┬───────────────────────────────┘
+  └───────────── 1 ──── 1 ──────────────┘
+  │ 1
+  ├─────────────────────────────────────┬─────────────────────────────────────┐
+  │ *                                   │ *                                   │ *
+┌─▼───────────────────────────────┐   ┌─▼───────────────────────────────┐   ┌─▼───────────────────────────────┐
+│ URLIndicator                    │   │ ContactIndicator                │   │ EvidenceFileMetadata            │
+├─────────────────────────────────┤   ├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK URLID                    int │   │ PK ContactID                int │   │ PK EvidenceID               int │
+│ FK ReportID                 int │   │ FK ReportID                 int │   │ FK ReportID                 int │
+│    URL                  varchar │   │    ContactInfo          varchar │   │    FileType             varchar │
+└─────────────────────────────────┘   └─────────────────────────────────┘   │    FileSize                 int │
+                                                                            │    CloudinaryURL        varchar │
+                                                                            └─────────────────────────────────┘
+
+ScamReport 1 ──── * DuplicateReportLink
+
+┌─────────────────────────────────┐
+│ DuplicateReportLink             │
+├─────────────────────────────────┤
+│ PK DuplicateLinkID          int │
+│ FK OriginalReportID          FK │
+│ FK DuplicateReportID         FK │
+└─────────────────────────────────┘
+
+CLUSTER 3 — Alerts & community
+
+┌─────────────────────────────────┐   ┌─────────────────────────────────┐
+│ ScamAlert                       │   │ Notification                    │
+├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK AlertID                  int │   │ PK NotificationID           int │
+│    Title                varchar │   │ FK AccountID                int │
+│    AlertSeverity        varchar │   │    Message              varchar │
+│    TargetRegion         varchar │   │    Timestamp           datetime │
+│ FK AdminAccountID           int │   │ FK LinkedReportID     int, null │
+└─┬───────────────────────────────┘   └─────────────────────────────────┘
+  │ 1
+  ├─────────────────────────────────────┐
+  │ *                                   │ *
+┌─▼───────────────────────────────┐   ┌─▼───────────────────────────────┐
+│ AwarenessContent                │   │ RecoveryStep                    │
+├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK AwarenessID              int │   │ PK RecoveryID               int │
+│    ContentTitle         varchar │   │    StepTitle            varchar │
+│    ContentText             text │   │    StepDescription         text │
+└─────────────────────────────────┘   └─────────────────────────────────┘
+
+CLUSTER 4 — Admin & audit
+
+┌─────────────────────────────────┐   ┌─────────────────────────────────┐
+│ SystemReport                    │   │ AuditLog                        │
+├─────────────────────────────────┤   ├─────────────────────────────────┤
+│ PK ReportInstanceID         int │   │ PK AuditLogID               int │
+│    ReportName           varchar │   │ FK AccountID                int │
+│    GeneratedDate       datetime │   │    ActionType           varchar │
+│ FK GeneratedByAdminID       int │   │    Timestamp           datetime │
+└─────────────────────────────────┘   │    OldValue             varchar │
+                                      │    NewValue             varchar │
+                                      └─────────────────────────────────┘
+
+UserAccount 1 ──── * ScamReport · Notification · AuditLog
+```
+
+**Relationships.** `U` marks a unique constraint; `PK` and `FK` mark primary and foreign keys.
+
+| Relationship | Cardinality |
+|---|---|
+| User — UserAccount | 1 — 1 |
+| UserAccount — Credentials · Profile | 1 — 1 each |
+| UserAccount — AccessRole | * — 1 |
+| AccessRole — Permissions | 1 — * |
+| UserAccount — ScamReport | 1 — * |
+| ScamReport — URLIndicator · ContactIndicator · EvidenceFileMetadata | 1 — * each |
+| ScamReport — AdminVerification | 1 — 1 |
+| ScamReport — DuplicateReportLink | 1 — * |
+| ScamAlert — AwarenessContent · RecoveryStep | 1 — * each |
+| UserAccount — Notification · AuditLog | 1 — * each |
+
+### 11.2.2 Reconciliation with the implemented schema
+
+The conceptual model has **18 entities**; the migrated schema has **25 tables** (§11.1). Every difference is a design decision taken between analysis and build, and each is recorded here rather than left for a reader to discover by comparing the two.
+
+| Conceptual entity | Implemented as | Decision |
+|---|---|---|
+| `User` + `UserAccount` + `Profile` | `User` | Three tables in a 1—1—1 chain carry no information a single row does not. Collapsed; `Profile.AvatarURL` dropped as data the service has no use for (ETH-6, data minimisation) |
+| `Credentials` | `User.passwordHash` | **`Salt` removed deliberately.** A bcrypt digest embeds its own salt in the string it returns. A separate `Salt` column would either duplicate it or, worse, invite an implementation that salts by hand — which is how salting gets done wrongly (NFR-8, R19) |
+| `AccessRole` + `Permissions` | `Role` enumerated type | Four fixed roles, decided at design time and enforced by the database. A permissions table is the right model once roles are user-definable; until they are, it is a join for a value that cannot change (FR10) |
+| — | `EmailVerificationToken`, `PasswordResetToken` | The conceptual model had no token storage, so FR2 and FR6 had nowhere to live. Both store a **hash** of the token, never the token |
+| — | `NotificationPreference`, `AccountDeletionRequest` | Required by FR11 and FR12; neither had an entity |
+| `ScamReport.RiskScore`, `.RiskBand` | `ScamCheck` + `ScamCheckIndicator` | **The most consequential change.** Analysis was an attribute of a report, so a message could only be scored by reporting it. FR85 makes checking anonymous, which requires analysis to be its own entity with a nullable owner. `ScamCheckIndicator` was added so the *reasons* behind a score persist, not just the number (FR18, ETH-8) |
+| `URLIndicator` + `ContactIndicator` | `Indicator` + `ReportIndicator` | Normalised. Both held one artefact per report, so a domain reported fifty times was fifty rows and "has this been seen before?" was a table scan. One row per artefact with a count makes FR24 and FR45–FR47 a lookup |
+| `EvidenceFileMetadata.CloudinaryURL` | `Evidence.storageKey` + `.sha256` | A column named for a vendor is a vendor written into the schema (R9 §10). The key is provider-neutral; the checksum lets a stored file be shown to be the one uploaded |
+| — | `EvidenceAccessLog` | FR35 and FR36 require every read of evidence to be restricted and recorded. The conceptual model logged administrative actions but not evidence access |
+| `AdminVerification` (1—1) | `ReportReview` (1—*) | A 1—1 verification keeps only the latest decision, so a reversal erases what it reversed. Stored as a sequence instead, the history of a decision survives the next one (R8 Rule 8.4) |
+| — | `InformationRequest` | FR41 had no entity |
+| `DuplicateReportLink` | `ReportRelation` | Gains `kind` (duplicate or related) and `similarity`, because FR43 and FR48 are different findings and a machine-suggested link must be distinguishable from an asserted one |
+| `ScamAlert` — `AwarenessContent`, `RecoveryStep` | `Alert`; `AwarenessResource`; `RecoveryChecklist` + `RecoveryStep` + `RecoveryProgress` | Awareness material and recovery checklists are not children of an alert — they exist whether or not an alert was ever published. Detaching them also gave FR60 somewhere to record progress |
+| — | `Suburb`, `ScamCategory` | Reference tables. FR65 and FR69 need both, and aggregating to suburb rather than to a finer location is what stops a report being traceable to a household (§11.7) |
+| `SystemReport` | *not implemented* | A generated report is a query result, not a stored entity. FR70 produces statistics on demand; storing each run persists de-identified aggregates for no stated retention purpose |
+| `AuditLog.OldValue`, `.NewValue` | `AuditLog.metadata` (JSON) | Two `varchar` columns cannot hold a multi-field change, and would hold whatever a caller put in them — including, eventually, a credential. Structured, with an explicit prohibition on secrets (R8 Rule 6.7) |
+| `AuditLog` FK to account | `AuditLog.userId` **nullable, `ON DELETE SET NULL`** | Not in the conceptual model, and load-bearing: with a cascading key, honouring an erasure request (FR12) would delete the evidence that administrative actions took place. The actor severs; the record stays |
+
+**Soft deletion.** `deletedAt` columns on `User`, `Report` and `Evidence` have no conceptual counterpart. They exist because FR30 makes withdrawal a state rather than a deletion, and because a record with audit weight has to remain explicable after it stops being active (R8 Rule 5.3).
+
+**Status of the model.** The conceptual diagram is stable and was signed off within the team. The implemented schema is ⚠️ **draft under review** — the migration was applied on 7 August 2026, ahead of the M8 privacy-officer gate, which is finding §4.6 and risk RK-09. Ten of the fifteen mitigations in the database ethics register are absent or implemented differently (§10.4, gap G11), and the corrective migration at §10.4.4 applies to the implemented schema, not to this diagram.
+
 ## 11.3 Enumerated types
 
 `Role` (RESIDENT, BUSINESS, OFFICER, ADMIN) · `Channel` (SMS, EMAIL, PHONE, WEBSITE, SOCIAL, POST, OTHER) · `RiskBand` (HIGH, MEDIUM, LOW, UNCLEAR) · `IndicatorWeight` (HIGH, MEDIUM, LOW) · `IndicatorType` (URL, DOMAIN, PHONE, EMAIL, BANK_ACCOUNT) · `ReportStatus` (DRAFT, SUBMITTED, UNDER_REVIEW, INFORMATION_REQUESTED, APPROVED, REJECTED, WITHDRAWN) · `Severity` (HIGH, MEDIUM, LOW) · `AlertStatus` (DRAFT, PENDING_APPROVAL, PUBLISHED, ARCHIVED) · `RelationKind` (DUPLICATE, RELATED) · `NotificationKind` (REPORT_SUBMITTED, REPORT_STATUS_CHANGED, INFORMATION_REQUESTED, ALERT_PUBLISHED) · `SubscriptionScope` (CATEGORY, SUBURB, ALL).
@@ -1583,7 +1882,82 @@ Cross-cutting: central error handler · response envelope · audit service ·
 
 **Why the layering is enforced rather than encouraged.** Bypassing a layer is how the soft-delete filter gets omitted at one call site, how a controller acquires a business rule that then exists in two places, and how an unvalidated field reaches a write. The rule (C4) is that no layer may be skipped, and the repository pattern exists specifically so that a condition like "exclude soft-deleted rows" lives in exactly one place.
 
-## 12.3 Request flow — a checked message with server-side persistence (FR77)
+## 12.3 Level 1 data-flow diagram
+
+The layered view above says how the system is built. The data-flow diagram says what moves through it. This is the level 1 model as authored during analysis: two external entities, four processes, four data stores, and the fifteen flows between them.
+
+```
+   External entities              Processes                      Data stores
+
+  ┌──────────────┐        ┌────────────────────────┐        ╔════════════════════╗
+  │              │──f1───▶│ 1.0  User account      │──f1───▶║ D1  User data      ║
+  │              │◀──f2───│      management        │        ║     store          ║
+  │              │        │  registration ·        │◀──f8───╚════════════════════╝
+  │              │        │  credentials · profiles│
+  │              │        └────────────────────────┘             ▲
+  │              │                    ▲                          │
+  │  E1  User    │                    │ f8  privilege check      │
+  │  (end-user)  │                    │                          │
+  │              │──f3───▶┌────────────────────────┐──f6───▶╔════════════════════╗
+  │              │◀──f4───│ 2.0  Scam report       │        ║ D2  Scam reports   ║
+  │              │        │      submission &      │◀──f7───║     data store     ║
+  │              │        │      analysis          │        ╚════════════════════╝
+  │              │        │  details · URLs ·      │              ▲   ▲
+  │              │        │  text · evidence ·     │──f9───▶╔═════╪═══╪══════════╗
+  │              │        │  risk scores           │        ║ D3  Evidence file  ║
+  │              │        └────────────────────────┘        ║     store          ║
+  │              │                                          ╚════════════════════╝
+  │              │◀──f5───┌────────────────────────┐              │   │
+  │              │        │ 3.0  Community scam    │──f10─────────┘   │
+  └──────────────┘        │      alerts            │                  │
+                          │  alerts · awareness ·  │                  │
+                          │  trend data            │                  │
+                          └────────────────────────┘                  │
+  ┌──────────────┐                                                    │
+  │              │──f11──▶┌────────────────────────┐──f13─────────────┘
+  │  E2  Admini- │        │ 4.0  Admin report      │
+  │      strator │◀──f12──│      review & audit    │◀──f14────────────┐
+  │              │        │  verify · system       │                  │
+  └──────────────┘        │  reports · log activity│──f15──▶╔═════════╪══════════╗
+                          └────────────────────────┘        ║ D4  Audit logs     ║
+                                                            ╚════════════════════╝
+```
+
+**The flows.**
+
+| # | Flow | From | To |
+|---|---|---|---|
+| f1 | Registration details, credentials | E1 User | 1.0 → D1 |
+| f2 | Account confirmation, access token | 1.0 | E1 User |
+| f3 | Scam report details, URLs, text, evidence | E1 User | 2.0 |
+| f4 | Report reference number, status | 2.0 | E1 User |
+| f5 | Scam alerts, awareness information | 3.0 | E1 User |
+| f6 | Store report data, analysis scores | 2.0 | D2 |
+| f7 | Retrieve reports for duplicate check | D2 | 2.0 |
+| f8 | Check user privileges | D1 | 1.0, 2.0 |
+| f9 | Upload evidence file | 2.0 | D3 |
+| f10 | Fetch recent scam trends | D2 | 3.0 |
+| f11 | Verification decision, administrative request | E2 Administrator | 4.0 |
+| f12 | Verified status, system reports, audit data | 4.0 | E2 Administrator |
+| f13 | Update report status | 4.0 | D2 |
+| f14 | Fetch reports | D2 | 4.0 |
+| f15 | Log administrative activity, query logs | 4.0 | D4 |
+
+**How the processes map to the twelve modules.** The data-flow diagram groups behaviour by how information moves; §5 groups it by requirement. The two decompositions are not the same shape, and this is the correspondence between them.
+
+| DFD process | Modules | Requirements | Status |
+|---|---|---|---|
+| 1.0 User account management | 1, 2 | FR1–FR12 | 🟡 Partial — 7 of 12 |
+| 2.0 Scam report submission & analysis | 3, 4, 5, 6, 8 | FR13–FR36, FR43–FR48 | 🟡 Analysis complete; reporting and evidence specified only |
+| 3.0 Community scam alerts | 9, 10, 11 | FR49–FR66 | ⬜ Specified |
+| 4.0 Admin report review & audit | 7, 12 | FR37–FR42, FR67–FR72 | ⬜ Specified |
+
+**Two divergences between the diagram and the built system**, both consequences of decisions recorded elsewhere in this document:
+
+- **Analysis has left process 2.0.** On the diagram, scoring happens inside report submission. In the delivered system it runs in the browser, before and without any report, and no flow reaches a data store at all — the message is neither transmitted nor retained (FR85, UC-01). Flow f6 as drawn is therefore not yet live for the analysis half of process 2.0, and becomes live only when FR77 introduces server-side checking. That is also why FR24, which needs an artefact registry to match against, cannot complete until FR77 does (§14.3).
+- **No flow reaches D4 except from process 4.0.** The diagram audits administrative activity only. FR72 requires user activity logging as well, and the ethics register (§10.4) requires evidence access logging under FR36. Both are implemented in the schema as `AuditLog` and `EvidenceAccessLog`, which means the built system has audit flows the diagram does not show.
+
+## 12.4 Request flow — a checked message with server-side persistence (FR77)
 
 ```
 Browser ──► Edge (CSP, headers) ──► Rate limiter ──► CORS ──► Body cap
@@ -1600,7 +1974,7 @@ Browser ──► Edge (CSP, headers) ──► Rate limiter ──► CORS ─�
         (any throw ──► central error handler ──► generic response + server log)
 ```
 
-## 12.4 Security architecture
+## 12.5 Security architecture
 
 Defence is layered so that no single control is load-bearing:
 
@@ -1616,7 +1990,7 @@ Defence is layered so that no single control is load-bearing:
 | Storage | bcrypt cost 12; tokens hashed; evidence private with signed URLs; encryption at rest |
 | Observability | Append-only audit log; access logging on C4 data; no credentials or content in logs |
 
-## 12.5 Scalability roadmap
+## 12.6 Scalability roadmap
 
 | Phase | Topology | Trigger |
 |---|---|---|
@@ -1959,6 +2333,21 @@ Risks are scored likelihood × impact on a 5×5 scale. Each carries a **trigger*
 
 The economic case is robust because the break-even threshold is so low. **The service does not need to be highly effective to be worth doing — it needs to prevent a small handful of significant losses per year.**
 
+**Annual operating cost, by line.** The $28,400 above is two lines, and only one of them is cash.
+
+| Line | Component | Basis | Annual |
+|---|---|---|---|
+| Infrastructure | CDN static hosting | Paid tier, required before public promotion | — |
+| Infrastructure | Managed PostgreSQL | `ap-southeast-2`, point-in-time recovery (NFR-5, NFR-6) | — |
+| Infrastructure | Object storage | Private, encrypted at rest — evidence (FR31–FR36) | — |
+| Infrastructure | Transactional email | SPF, DKIM and DMARC aligned (FR2, FR6, FR61–FR66) | — |
+| Infrastructure | Monitoring and uptime | Probe against `/api/health/ready` plus alerting (NFR-26, G5) | — |
+| | **Infrastructure subtotal** | | **~$4,400** |
+| Maintenance | Council effort at 0.2 FTE | Rule-set review, moderation support, dependency upkeep | ~$24,000 |
+| | **Total annual operating cost** | | **~$28,400** |
+
+Individual infrastructure lines are not costed separately because each sits inside a provider's bundled tier at this scale; the subtotal is the figure that has been estimated and is the one to hold. **The paid tier must be approved before public promotion, not discovered after it** — feasibility condition 1 and risk RK-01. Every component in the table above except CDN hosting and the database is currently unprovisioned, which is why gaps G1 and G5 remain open.
+
 ## 16.4 Feasibility position
 
 | Dimension | Assessment | Condition |
@@ -1971,6 +2360,124 @@ The economic case is robust because the break-even threshold is so low. **The se
 | Ethical | **Feasible — conditional** | Corrective migration at §10.4.4 applied before Module 5 |
 
 **Overall recommendation: GO**, subject to the six conditions above.
+
+## 16.5 Work breakdown structure
+
+The WBS decomposes the project into deliverable work packages. Level 1 is the project, level 2 the five work packages, level 3 the tasks each contains, and level 4 the development activities that map onto the data-flow processes and the requirement modules.
+
+```
+1.0  CyberKent project
+ │
+ ├── 1.1  Project management
+ │     ├── 1.1.1  Planning & scoping
+ │     ├── 1.1.2  Status reporting
+ │     └── 1.1.3  Risk management
+ │
+ ├── 1.2  System design & architecture
+ │     ├── 1.2.1  Architecture design
+ │     ├── 1.2.2  Database schema — PostgreSQL, Prisma, Neon
+ │     └── 1.2.3  Security — WAF, JWT
+ │
+ ├── 1.3  Core development
+ │     ├── 1.3.1  User account management            DFD 1.0 · Must
+ │     │      └── 1.3.1.1  Registration & authentication      · §5.1
+ │     │
+ │     ├── 1.3.2  Scam report submission & analysis   DFD 2.0 · Must
+ │     │      ├── 1.3.2.1  Scam report management             · §5.5
+ │     │      ├── 1.3.2.2  Evidence management                · §5.6
+ │     │      ├── 1.3.2.3  Text content analysis              · §5.3
+ │     │      └── 1.3.2.4  URL & contact analysis             · §5.4
+ │     │
+ │     ├── 1.3.3  Community scam alerts               DFD 3.0 · Should
+ │     │      ├── 1.3.3.1  Community scam alerts              · §5.9
+ │     │      ├── 1.3.3.2  Scam awareness & recovery          · §5.10
+ │     │      └── 1.3.3.3  Notification & subscription        · §5.11
+ │     │
+ │     └── 1.3.4  Admin report review & audit         DFD 4.0 · Must
+ │
+ ├── 1.4  Quality & testing
+ │     ├── 1.4.1  Unit & integration tests
+ │     ├── 1.4.2  System end-to-end tests
+ │     └── 1.4.3  User acceptance testing — stakeholder approval
+ │
+ └── 1.5  Deployment
+       ├── 1.5.1  Production environment setup — cloud-hosted
+       └── 1.5.2  Post-deployment review & maintenance
+```
+
+Derived from the stakeholder-approved requirements baseline and the level 1 data-flow diagram (§12.3). Each level 4 activity carries the MoSCoW priority of the module it implements, so a package can be reduced in scope without a separate negotiation about what may be dropped.
+
+| Package | Delivers | Requirements | Position at this issue |
+|---|---|---|---|
+| 1.1 Project management | Plan, status reporting, risk register | — | 🟡 Continuous; M0–M6 delivered on plan |
+| 1.2 System design & architecture | Architecture, schema, security design | NFR-7–NFR-11, NFR-18–NFR-20 | 🟡 Complete but ⚠️ schema unsigned (§4.6) |
+| 1.3 Core development | The twelve functional modules | FR1–FR72 | 🟡 Modules 3–4 complete; 1–2 partial; 5–12 specified |
+| 1.4 Quality & testing | Test evidence at every level | AC-1 to AC-13 | 🟡 Static in place; no framework installed (G3) |
+| 1.5 Deployment | Production environment, handover | NFR-25, NFR-26 | ⬜ Planned |
+
+**Where the WBS and this specification disagree.** The WBS was authored against the four data-flow processes and carries five packages; §14.5 sequences delivery against the twelve requirement modules and seven phases. They decompose the same work along different axes — the WBS by deliverable, the delivery sequence by dependency — and both are retained because they answer different questions. Package 1.3.4 has no level 4 breakdown in the authored WBS; Modules 7 and 12 (FR37–FR42, FR67–FR72) supply it, and are treated as its children for planning purposes.
+
+## 16.6 Schedule and Gantt chart
+
+```
+                                  |2026 Q3 |    Q4      | 2027 Q1    |    Q2
+                                  |Aug Sep Oct Nov Dec Jan Feb Mar Apr May Jun
+----------------------------------+--------------------------------------------
+1.1   Project management          |........................................
+1.2   System design & architecture|////////////////////
+1.2.3   Security - WAF, JWT       |//////
+SPRINT 1-2  CORE PLATFORM         |========
+1.3.1   User accounts (DFD 1.0)   |########
+1.3.4.3 Audit log management      |        ####
+SPRINT 3-4  SCAM REPORTING        |        ========
+1.3.2.1 Report mgmt (DFD 2.0)     |        ######
+1.3.2.2 Evidence management       |            ######
+1.3.2.3 Text content analysis     |              ######
+1.3.2.4 URL & contact analysis    |                  ####
+SPRINT 5-6  ADMIN PORTAL          |                ========
+1.3.4.1 Review & verify (DFD 4.0) |                  ######
+1.3.4.2 Admin reporting/analytics |                    ######
+1.3.2.5 Duplicate detection       |                      ////
+SPRINT 7-8  COMMUNITY             |                        ========
+1.3.3.1 Community alerts (DFD 3.0)|                        //////
+1.3.3.2 Awareness & recovery      |                          //////
+1.3.3.3 Notify & subscribe        |                            //////
+1.4.1   Unit & integration tests  |....................
+1.4.2   System end-to-end tests   |                              ....
+1.4.3   User acceptance testing   |                                ......
+1.5.1   Production environment    |                                    ####
+1.5.2   Post-deployment review    |                                      ######
+----------------------------------+--------------------------------------------
+milestones                        | <M1     <M2  <M3     <M4     <M5         <M6
+
+Legend   # Must    / Should    . Continuous / QA    = Sprint window
+```
+
+| Milestone | Marks | Sprint scope |
+|---|---|---|
+| M1 | Stakeholder approval — interim SRS | — |
+| M2 | Sprint 1–2 go-live | Core platform: accounts, audit logging |
+| M3 | Sprint 3–4 release | Scam reporting: reports, evidence, text and URL analysis |
+| M4 | Sprint 5–6 release | Admin portal: review, verification, analytics, duplicates |
+| M5 | Sprint 7–8 release | Community: alerts, awareness, notifications |
+| M6 | Project go-live | Production deployment and post-deployment review |
+
+**Two schedules, and which one governs.** The chart above is the authored delivery schedule: eleven months on a sprint cadence, six sprint-release milestones, running to a go-live in June 2027. The schedule this project is being assessed and delivered against is the twenty-two week academic timetable at §14.4, which runs 30 June to 27 November 2026 with sixteen milestone gates.
+
+**§14.4 governs.** The capstone unit fixes the end date, and no sprint plan can move it. The authored chart is retained for two reasons. It is the operational schedule Council would run the build on if the service were resourced beyond the capstone — the sprint boundaries, not the academic gates, are what a delivery team would work to. And it records the sequencing decision that both schedules share: accounts before reporting, reporting before review, review before community alerts, because each depends on the one before it. That dependency order is the part of the plan that survived contact with the work, and §14.5 restates it in phases.
+
+The correspondence between the two is as follows.
+
+| Authored sprint | Academic milestone | Modules | Position |
+|---|---|---|---|
+| Sprint 1–2 — core platform | M9 | 1, 2 | 🟡 In progress — 7 of 12 FRs |
+| Sprint 3–4 — scam reporting | M10, M11 | 3, 4, 5, 6 | 🟡 Modules 3–4 ✅ **delivered early**; 5–6 planned |
+| Sprint 5–6 — admin portal | M12 | 7, 8, 12 | ⬜ Planned |
+| Sprint 7–8 — community | M13 | 9, 10, 11 | ⬜ Planned |
+| Testing and UAT | M14 | — | ⬜ Planned |
+| Deployment | M16 | — | ⬜ Planned |
+
+**Float.** Approximately 2.5 weeks of float is distributed across the iterations rather than held as a block at the end, so that a slip in one module is absorbed where it happens instead of accumulating against the final gate. That float is what has absorbed the M7 and M8 approval delays so far; it is not unlimited, and §17 records both as blocking.
 
 ---
 
@@ -2205,7 +2712,7 @@ CyberKent/
 | Avoid.md | Prohibited practices [R9] | 1.0 | 12 Jul 2026 | Adopted |
 | Interim SRS Report | D1 | 1.0 | 16 Jul 2026 | Superseded by this document |
 | Interim Project Report | D6 | 1.0 | 1 Aug 2026 | Issued for review |
-| **Final SRS Report** | **D11** | **1.0** | **13 Aug 2026** | **Issued for review** |
+| **Final SRS Report** | **D11** | **1.1** | **20 Aug 2026** | **Issued for review** |
 
 **Forum submission record.** The assessment requires links to all versions of iteration plans and reports to be posted to the unit discussion forum, evidencing individual and group work.
 
@@ -2220,6 +2727,7 @@ CyberKent/
 | 7 | Iteration 3 Plan v1.0 | 28 Jul 2026 | 28 Jul 2026 | *[insert]* |
 | 8 | Interim Project Report v1.0 | 1 Aug 2026 | 1 Aug 2026 | *[insert]* |
 | 9 | **Final SRS Report v1.0** | **13 Aug 2026** | | *[insert]* |
+| 10 | **Final SRS Report v1.1** — analysis and planning diagrams incorporated | **20 Aug 2026** | | *[insert]* |
 
 > **To be completed before submission:** insert the forum URL for each posted item, and complete the individual contribution table below.
 
@@ -2266,11 +2774,31 @@ CyberKent/
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 13 Aug 2026 | First issue of the Final SRS Report. Consolidates the Interim SRS baseline; adds the conformance check against the client brief (§4) identifying four specification defects, two module/requirement coverage gaps, nine untestable requirements, five unapproved NFR additions and one bypassed governance control; adds the enhanced requirement set FR73–FR92 for approval (§6); adds the use-case model (§7); adds the audited database ethics register (§10.4); adds hardware and software recommendations (§13); adds the audited implementation status and eleven known gaps (§14); adds verification results for the detection engine (§15.2); adds eleven open issues (§17). |
+| 1.1 | 20 Aug 2026 | Incorporates the project's analysis and planning diagrams, which existed as separate artefacts and were not carried by version 1.0. Adds the use-case diagram and its reconciliation against the specified use-case model (§7.3); the six-frame user storyboard for UC-01 (§8.1.1); the conceptual entity-relationship diagram and a table accounting for every difference between it and the migrated schema (§11.2.1, §11.2.2); the level 1 data-flow diagram, its fifteen flows, its mapping to the twelve modules and two divergences from the built system (§12.3); the work breakdown structure (§16.5); the Gantt chart schedule, with a statement of which of the two schedules governs (§16.6); the annual operating cost broken down by line (§16.3); and a list of figures (Appendix I). Sections 12.3 to 12.5 renumbered to 12.4 to 12.6, and 7.3 to 7.6 renumbered to 7.4 to 7.7, to admit the two new diagrams in reading order. No requirement, acceptance criterion, risk, gap or open issue was added, removed or altered. |
+
+## Appendix I — List of figures
+
+| Figure | Title | Section | Source |
+|---|---|---|---|
+| 1 | Use-case diagram | §7.3 | Authored during analysis |
+| 2 | User storyboard — UC-01, six frames | §8.1.1 | Authored from the delivered interface |
+| 3 | Conceptual entity-relationship diagram, four clusters | §11.2.1 | Authored during analysis |
+| 4 | Report lifecycle | §11.5 | Derived from the implemented schema |
+| 5 | Alert lifecycle | §11.6 | Derived from the implemented schema |
+| 6 | Layered architecture | §12.2 | Derived from the implementation |
+| 7 | Level 1 data-flow diagram | §12.3 | Authored during analysis |
+| 8 | Request flow — a checked message with server-side persistence | §12.4 | Design for FR77 |
+| 9 | Work breakdown structure | §16.5 | Authored during planning |
+| 10 | Gantt chart schedule | §16.6 | Authored during planning |
+
+**On the five authored diagrams.** Figures 1, 3, 7, 9 and 10 are the analysis and planning diagrams the team produced, reproduced here as drawn rather than re-derived from this specification. Where an authored diagram and the specified model disagree, the disagreement is a decision taken between analysis and build, and each one is accounted for at the point the diagram appears: §7.3.2 for the use-case model, §11.2.2 for the data model, §12.3 for the process model, and §16.5 and §16.6 for the plan. In every case this specification states which of the two governs, so that no reader has to guess and no difference passes as an oversight.
+
+**On drawing them as text.** Every figure is drawn in characters rather than embedded as an image. Three reasons: a label can be corrected in the source without re-exporting a picture; the diagrams survive being read as plain text, printed, or pasted into a plain-text medium; and a screen reader reaches the content, which an unlabelled exported image would not (NFR-13).
 
 ---
 
-*Prepared by Group CyberKent for Hume City Council CyberSafe Services, CPRO306 Capstone Project, Kent Institute Australia — 13 August 2026.*
+*Prepared by Group CyberKent for Hume City Council CyberSafe Services, CPRO306 Capstone Project, Kent Institute Australia — first issued 13 August 2026; version 1.1 issued 20 August 2026.*
 
 *This document describes an advisory scam-detection service. Consistent with the ethical requirements it specifies, the system it describes does not constitute professional cybersecurity certification, does not guarantee protection from cyberattacks, and is not a substitute for qualified professional assistance or the relevant authorities.*
 
-*End of Final SRS Report, version 1.0.*
+*End of Final SRS Report, version 1.1.*

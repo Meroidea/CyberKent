@@ -30,8 +30,8 @@ export const DECK_META = {
   title: "CyberKent",
   subtitle: "Online Scam Detection and Reporting System",
   reference: "D11 · Milestone M15",
-  version: "1.0",
-  issued: "13 August 2026",
+  version: "1.1",
+  issued: "20 August 2026",
 } as const;
 
 /* ── 1. Cover ─────────────────────────────────────────────────────────────── */
