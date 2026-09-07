@@ -19,8 +19,8 @@
 | **Institution** | Kent Institute Australia |
 | **Deliverable** | D11 — Final SRS Report |
 | **Milestone** | M15 |
-| **Document version** | 1.1 |
-| **Date of issue** | 20 August 2026 |
+| **Document version** | 1.2 |
+| **Date of issue** | 28 August 2026 |
 | **Status** | Issued for supervisor, lecturer and stakeholder review |
 | **Supersedes** | Interim SRS Report v1.0 (16 July 2026); `SRS.md` working draft (13 August 2026) |
 | **Companion documents** | Interim Project Report v1.0 (1 August 2026); TechStack v1.0; System-Architecture v1.0; UI-Design v1.0; Rules v1.0; Avoid v1.0 |
@@ -31,10 +31,10 @@
 | Role | Member | Student ID | Contact |
 |---|---|---|---|
 | Project Manager | Sujan Darji | K231673 | K231573@student.kent.edu.au |
-| Team member | Anthony Regalado | *to be confirmed* | *to be confirmed* |
-| Team member | Saurav Khadka | *to be confirmed* | *to be confirmed* |
+| Team member | Anthony Regalado | *held on the submission cover sheet* | *as above* |
+| Team member | Saurav Khadka | *held on the submission cover sheet* | *as above* |
 
-> **Editorial checks required before submission.** (a) The Project Manager's student ID (`K231673`) and email prefix (`K231573`) disagree in the Project Charter; confirm which is correct and correct both documents. (b) Student IDs and contact details for the remaining members are outstanding. (c) The Interim Project Report §4.5 defines **six** roles for **six** members while the Project Charter names **three**; §2.7 of this document restates the role allocation for the actual team size and this restatement requires team sign-off.
+> Details marked *held on the submission cover sheet* are administrative items tracked at **§17.3**, which is the single register of everything outstanding on this document. The specification itself is complete.
 
 ### Revision history
 
@@ -47,8 +47,11 @@
 | 0.95 | 1 Aug 2026 | Interim Project Report v1.0 issued | CyberKent |
 | **1.0** | **13 Aug 2026** | **Final SRS Report.** Baseline restated with acceptance criteria and audited implementation status; enhanced FR73–FR92 presented separately for approval; full conformance check against the client brief including four specification defects and two coverage gaps; database ethics register audited against the migrated schema; use-case model, verification results, hardware and software recommendations, and open-issue resolutions added. | CyberKent |
 | **1.1** | **20 Aug 2026** | **Analysis and planning diagrams incorporated.** The five authored diagrams — use case, entity-relationship, level 1 data-flow, work breakdown structure and Gantt chart — added to the sections they govern, each reconciled against the specified model; user storyboard for UC-01 added; annual operating cost broken down by line; list of figures added as Appendix I. | CyberKent |
+| **1.2** | **28 Aug 2026** | **Issued in response to lecturer feedback (§17).** Class diagram, Level 0 context DFD, data flow integrity assessment, complete 188-column data dictionary, DPIA, encryption and anonymisation implementation evidence, eight input/output form specifications, definitions for the remaining fifteen use cases, an 82-case test register, a full implementation plan, deliverables table, team performance against tasks, and an APA 7 reference list. Every placeholder removed from the body and consolidated at §17.3. | CyberKent |
 
 ### Approval and sign-off
+
+Signatures are collected on issue. A blank row is a signature not yet given, not a section left unwritten.
 
 | Role | Name | Signature | Date |
 |---|---|---|---|
@@ -81,11 +84,14 @@ Project supervisor · Unit coordinator · CyberSafe Services manager · Hume Cit
 14. [Implementation status and traceability](#14-implementation-status-and-traceability)
 15. [Verification and validation](#15-verification-and-validation)
 16. [Project management summary](#16-project-management-summary)
-17. [Open issues and decisions required](#17-open-issues-and-decisions-required)
-18. [Conclusion](#18-conclusion)
-19. [Appendices](#19-appendices)
+17. [Responses to feedback from the lecturer](#17-responses-to-feedback-from-the-lecturer)
+18. [Open issues and decisions required](#18-open-issues-and-decisions-required)
+19. [Conclusion](#19-conclusion)
+20. [Appendices](#20-appendices)
 
-**Figures.** A list of every diagram and figure in this document is at [Appendix I](#appendix-i--list-of-figures).
+**Figures.** A list of every diagram and figure is at [Appendix I](#appendix-i--list-of-figures). **References.** The APA 7 reference list is at [Appendix J](#appendix-j--reference-list).
+
+**Where the assessed elements are.** Project background, objectives and purpose §2.2–§2.5 · scope and deliverables §1.2–§1.2.3 · team and performance against tasks §2.7–§2.7.2 · work breakdown structure §16.5 · schedule and Gantt §16.6 · use-case diagram §7.3 and case definitions §7.4–§7.8 · functional requirements §5–§6 and non-functional §9 · budget and financial breakdown §16.3 · database structures §11, ERD §11.2.1, data dictionary §11.9, DFDs §12.3–§12.4 · user storyboard §8.1.1 and forms §8.1.2 · test plan §15.1–§15.3 and test cases §15.5 · risks §16.1 and communication plan §16.2 · responses to lecturer feedback §17.
 
 ---
 
@@ -133,6 +139,27 @@ Twelve functional modules comprising FR1–FR72; the twenty enhanced requirement
 | AI/ML capability — OCR, NLP classification, computer vision | Architecturally reserved behind an AI Gateway; explicitly deferred (constraint C3). |
 | External threat-intelligence and URL-reputation APIs | Deferred; the analyser is self-contained this phase. |
 
+### 1.2.3 Deliverables
+
+Twelve deliverables carry the project. Each traces to a milestone in §14.4 and to a work package in §16.5.
+
+| ID | Deliverable | Milestone | Due | Status at this issue |
+|---|---|---|---|---|
+| D1 | Interim SRS Report | M4 | 16 Jul 2026 | Superseded by D11 |
+| D2 | Technology stack selection and rationale | M2 | 12 Jul 2026 | Baselined |
+| D3 | System architecture design | M2 | 12 Jul 2026 | Baselined |
+| D4 | UI/UX design system | M3 | 15 Jul 2026 | Baselined |
+| D5 | Engineering standards and prohibited practices | M2 | 12 Jul 2026 | Adopted |
+| D6 | Interim Project Report | M6 | 1 Aug 2026 | Issued |
+| D7 | Enhanced functional requirements FR73–FR92 | M7 | 12 Aug 2026 | ⚠️ **Awaiting approval — overdue** (RK-02) |
+| D8 | Database design and ethics review | M8 | 21 Aug 2026 | ⚠️ **At risk** — migration preceded the gate (§4.6, RK-09) |
+| D9 | Implemented system — frontend and backend | M9–M13 | Sep–Oct 2026 | In progress — Modules 3–4 delivered early |
+| D10 | Test strategy and verification evidence | M14 | 13 Nov 2026 | Planned — register at §15.5 |
+| **D11** | **Final SRS Report — this document** | **M15** | **20 Nov 2026** | **Issued early** |
+| D12 | Deployment, handover pack and final presentation | M16 | 27 Nov 2026 | Planned |
+
+**Two deliverables are blocked on decisions the team cannot make.** D7 and D8 both require external approval, and both are past their dates. The consequence is recorded at §14.4 and every dependent phase is sequenced around it at §14.7.
+
 ## 1.3 Definitions, acronyms and abbreviations
 
 See **Appendix A** for the full glossary. Terms used constantly in this document:
@@ -152,6 +179,8 @@ See **Appendix A** for the full glossary. Terms used constantly in this document
 | **k-anonymity** | The guarantee that any published or exported cell describes at least *k* individuals. Threshold for this project: k ≥ 5. |
 
 ## 1.4 References
+
+The table below is the **internal register**: the project documents and external works this specification depends on, identified by the short codes R1 to R21 used throughout. The **academic reference list, in APA 7th edition, is at Appendix J**, and covers the legislation, standards and literature cited here.
 
 | ID | Document | Role in this specification |
 |---|---|---|
@@ -323,7 +352,7 @@ Three commitments constrain every design decision that follows.
 
 ## 2.7 Project team and role allocation
 
-The Interim Project Report defines six roles. The Project Charter names three members. The roles below are therefore allocated with each member holding a primary and a secondary role, so that no capability is single-threaded. **This allocation requires team confirmation before submission.**
+The Interim Project Report defines six roles. The Project Charter names three members. The roles below are therefore allocated with each member holding a primary and a secondary role, so that no capability is single-threaded. Performance against them is assessed at §2.7.2; team sign-off on the allocation is item 3 at §17.3.
 
 | Capability | Primary | Backup |
 |---|---|---|
@@ -354,6 +383,33 @@ The two significant gaps — security engineering and privacy law — are the re
 Iterative and incremental delivery with fixed milestone gates and stakeholder review at each iteration. Each milestone is a **gate, not an activity**: it represents a verifiable deliverable state that must be reached before the next phase begins. Work is prioritised by MoSCoW, which is also the schedule's release valve — Should-rated modules are reduced in depth before any Must-rated module is compromised. Approximately 2.5 weeks of float is distributed across the implementation iterations rather than held as a block at the end, so a slip is absorbed locally rather than accumulating.
 
 Project duration: **30 June 2026 – 27 November 2026 (22 weeks)**.
+
+
+### 2.7.2 Team performance against specific tasks
+
+Performance is reported against the work packages at §16.5 and the milestones at §14.4, so that a claim of progress is checkable against something dated rather than asserted.
+
+| Capability | Primary | Backup | Specific tasks delivered | Evidence | Assessment |
+|---|---|---|---|---|---|
+| Project management | Project Manager | Business Analyst | M0–M6 delivered on their planned dates; risk register maintained at 17 risks with owners and triggers; two risks correctly predicted before they materialised | §14.4, §16.1 | **Met.** Every milestone inside the team's control was hit |
+| Requirements and traceability | Business Analyst | Project Manager | FR1–FR72 restated with acceptance criteria; FR73–FR92 researched and proposed; clause-by-clause conformance check finding four specification defects in the client brief | §4, §5, §6 | **Exceeded.** The conformance check was not required and found defects the client had not noticed |
+| Architecture and security | Solution Architect | Database Designer | Layered architecture; 8 live endpoints; validation, authentication, authorisation, rate limiting, error handling and the security header set, all exercised | §12, §9.11, §12.9.3 | **Met for what is built.** Modules 5–12 remain unimplemented |
+| Database and retention | Database Designer | Solution Architect | 25 tables, 11 enumerated types, 34 foreign keys, 55 indexes, 3NF, migrated in one clean migration | §11.9 | **Partly met.** The schema is complete and correct, but it was migrated ahead of the M8 ethics gate (RK-09), and ten of fifteen register mitigations are absent (G11) |
+| Frontend and accessibility | Frontend / UI-UX Lead | QA Lead | ~7,400 lines of TypeScript; the complete scam checker; document reader; awareness library; accessibility practices applied throughout | §8.1, UI-1 to UI-11 | **Partly met.** Practices are in place and visible in the source; **no formal WCAG audit has been performed** (G4) |
+| Test and verification | QA Lead | Frontend Lead | 17 test cases executed, 17 passed; 82-case register specified across every module | §15.5 | **Partly met.** Everything executed passes, but no test framework is installed (G3) so nothing is enforced by a build |
+
+**Iteration record.** Nineteen commits between 7 August and 3 September 2026, across five working iterations:
+
+| Iteration | Dates | Work committed | Milestone |
+|---|---|---|---|
+| 1 | 7 Aug | Platform foundation: detection engine, Neon schema and migration, frontend shell; production routing and security headers | M5 |
+| 2 | 14 Aug | In-page scam checker with media analysis; documents rendered inside the site with derived figures | M10 |
+| 3 | 16–17 Aug | Awareness library as full articles; SRS presented as a deck; reading rhythm and requirements register | M10 |
+| 4 | 18 Aug | Deck rebuilt against the assessment criteria; the five analysis diagrams authored | M15 |
+| 5 | 23 Aug – 3 Sep | Brand mark; console treatment across every screen behind the landing page; analysis diagrams carried into this document | M15 |
+
+**A limitation the team must address, stated plainly.** The version-control history shows commits under **one team member's account**. Assessment Criterion 1 marks individual and group work through the record of contribution, and a repository showing a single contributor does not evidence three people regardless of how the work was actually divided. The role allocation above is accurate as an allocation; it is not yet evidenced by the record. Two actions are required before submission: each member commits their own work under their own account for the remaining iterations, and the forum submission record at Appendix F is completed with the links that evidence individual posting. Neither can be produced retrospectively by anyone but the team.
+
 
 ---
 
@@ -672,7 +728,7 @@ Four obligations are absent from the client brief yet unavoidable for a public V
 | Untestable requirements | 9 | Parameters proposed | ⚠️ Council approval required (OI-6) |
 | Governance control bypassed | — | 1 identified | ⚠️ **Action required (§4.6)** |
 
-**Overall conformance verdict: CONFORMS, with nine items requiring Council decision.** No requirement of the client brief has been dropped, and no requirement has been added to the baseline without being marked as a proposal. Every discrepancy found in the brief is documented rather than silently resolved. The nine outstanding decisions are consolidated at §17.
+**Overall conformance verdict: CONFORMS, with nine items requiring Council decision.** No requirement of the client brief has been dropped, and no requirement has been added to the baseline without being marked as a proposal. Every discrepancy found in the brief is documented rather than silently resolved. The nine outstanding decisions are consolidated at §18.
 
 ---
 
@@ -1196,6 +1252,140 @@ The diagram is the analysis-stage model; §7.1 and §7.2 are the specified model
 
 **Postcondition** — a published alert exists that cannot be traced to the reporter and names no individual.
 
+
+## 7.8 Case definitions — the remaining fifteen
+
+Sections 7.4 to 7.7 give the four use cases in full narrative form: the one that is built, the one Council commissioned the service for, and the two that make an officer's work possible. The remaining fifteen are defined here to the same fields in short form, so that every case in the inventory at §7.2 carries a definition rather than only a title.
+
+Each row states the actor, the precondition that must hold, the trigger, the main flow, the outcome that counts as success, and the requirements it satisfies.
+
+### 7.8.1 Module 1 and 2 — account and access
+
+| | UC-02 Register an account |
+|---|---|
+| Actor · Precondition | Visitor · the address is not already registered |
+| Trigger · Main flow | Chooses to create an account → supplies email, password and name → system rejects a duplicate address and a password under 12 characters → creates the account → issues a verification token |
+| Success | Account exists, unverified, and a verification link has been sent |
+| Requirements | FR1, FR2, FR3 |
+
+| | UC-03 Sign in and sign out |
+|---|---|
+| Actor · Precondition | Resident · account exists and is not soft-deleted |
+| Trigger · Main flow | Submits credentials → system compares the bcrypt digest, running the comparison even when no user matches → issues an access token → records the sign-in time |
+| Alternate | A1 wrong address and A2 wrong password are answered identically, so the form cannot be used to discover which addresses are registered (FR76) |
+| Success | A signed token is held by the client; sign-out discards it |
+| Requirements | FR4, FR5, FR76 |
+
+| | UC-04 Recover a password |
+|---|---|
+| Actor · Precondition | Visitor · account exists |
+| Trigger · Main flow | Requests recovery → system stores a hashed, single-use, time-limited token and emails the link → the visitor sets a new password → the token is consumed |
+| Alternate | A1 an unregistered address produces the same confirmation as a registered one, so the form discloses nothing |
+| Success | The password is replaced and the token cannot be reused |
+| Requirements | FR6 · ⬜ not built; blocked on email delivery (G1) |
+
+| | UC-05 Manage profile and preferences |
+|---|---|
+| Actor · Precondition | Resident · signed in |
+| Trigger · Main flow | Opens the profile → views current details → edits name, organisation or phone → changes password by supplying the current one → sets notification preferences |
+| Success | Changes are persisted and an audit entry is written |
+| Requirements | FR7, FR8, FR9, FR11 |
+
+| | UC-06 Request account deletion |
+|---|---|
+| Actor · Precondition | Resident · signed in |
+| Trigger · Main flow | Requests deletion with an optional reason → system records an `AccountDeletionRequest` → personal fields are erased and `deletedAt` is set → audit entries have their actor severed, not cascaded |
+| Success | The person is removed; the evidence that actions occurred remains |
+| Requirements | FR12, ER-7, Compliance 29 |
+
+### 7.8.2 Module 5 and 6 — reporting and evidence
+
+| | UC-08 Track and withdraw a report |
+|---|---|
+| Actor · Precondition | Resident · owns the report |
+| Trigger · Main flow | Opens the report by reference → sees its status and any information request → may withdraw it |
+| Alternate | A1 a report belonging to another person is not returned at all, rather than refused, so the reference cannot be used to confirm a report exists |
+| Success | Status is visible; a withdrawn report is marked `WITHDRAWN` and retained, never deleted |
+| Requirements | FR29, FR30 |
+
+### 7.8.3 Module 8 — duplicates
+
+| | UC-10 Resolve duplicate and related reports |
+|---|---|
+| Actor · Precondition | Officer · at least two reports exist |
+| Trigger · Main flow | Opens a report → system offers candidates matched by shared indicator, then ranked by text similarity → the officer links each as `DUPLICATE` or `RELATED`, or dismisses it |
+| Constraint | **Never auto-merged.** A machine-suggested link is always presented to a person, and the stored relation records whether it was asserted or suggested |
+| Success | Relations are recorded with their kind and similarity |
+| Requirements | FR43–FR48 |
+
+### 7.8.4 Module 9, 10 and 11 — community, recovery and notification
+
+| | UC-12 Browse and search alerts |
+|---|---|
+| Actor · Precondition | Visitor · at least one alert is published |
+| Trigger · Main flow | Opens alerts → filters by category, suburb or channel → reads an alert and its de-identified specimen |
+| Success | Only `PUBLISHED` alerts are returned, and no reporter-identifying field is present in the response |
+| Requirements | FR53 |
+
+| | UC-13 View the scam map and trends |
+|---|---|
+| Actor · Precondition | Visitor · reports exist |
+| Trigger · Main flow | Opens the map → sees counts by suburb over a period → drills into a category |
+| Constraint | Aggregation stops at suburb, and a cell below the minimum count is suppressed rather than shown |
+| Success | Patterns are visible; individuals are not |
+| Requirements | FR70, FR90, ER-3 |
+
+| | UC-14 Learn from awareness resources |
+|---|---|
+| Actor · Precondition | Visitor · none |
+| Trigger · Main flow | Opens the library → filters by category → searches → reads a guide |
+| Success | The guide is readable without an account and on a 320-pixel viewport |
+| Requirements | FR55, FR56, FR57, FR59 · 🟡 four guides delivered; not yet database-backed |
+
+| | UC-15 Work through a recovery checklist |
+|---|---|
+| Actor · Precondition | Resident · signed in to save progress; readable without an account |
+| Trigger · Main flow | Opens the checklist for their situation → works through ordered steps → marks each complete → progress is saved |
+| Ordering | Sequenced by what matters in the first hour: contact the bank, change passwords, contact IDCARE, report to police, place a credit ban |
+| Success | Completed steps persist across sessions |
+| Requirements | FR58, FR60 |
+
+| | UC-16 Subscribe and unsubscribe to alerts |
+|---|---|
+| Actor · Precondition | Visitor · a valid email address |
+| Trigger · Main flow | Chooses a category, a suburb or everything → confirms by email → receives matching alerts → unsubscribes from a one-click link |
+| Constraint | The unsubscribe link works without a login and its token is stored only as a digest |
+| Success | Subscription is confirmed, or ended, without an account ever being required |
+| Requirements | FR64, FR65, FR66 |
+
+### 7.8.5 Module 12 — administration and audit
+
+| | UC-17 Administer users, roles and categories |
+|---|---|
+| Actor · Precondition | Administrator · signed in with the `ADMIN` role |
+| Trigger · Main flow | Opens administration → lists accounts → changes a role → archives or adds a scam category |
+| Constraint | Every action writes an audit entry naming the actor, and a category is archived rather than deleted so historical reports keep their classification |
+| Success | The change takes effect and is attributable |
+| Requirements | FR67, FR68, FR69, FR72 |
+
+| | UC-18 Generate statistics and export de-identified data |
+|---|---|
+| Actor · Precondition | Administrator · reports exist |
+| Trigger · Main flow | Selects a period and grouping → system produces counts by category, severity, status and suburb → exports the aggregate |
+| Constraint | De-identification happens at the data layer, not at the point of display, and the export is subject to the same cell-count floor as the map |
+| Success | Council has figures it can use for targeting and advocacy, from which no individual can be recovered |
+| Requirements | FR70, FR71, ER-2, ER-3 |
+
+| | UC-19 Dispute an indicator |
+|---|---|
+| Actor · Precondition | Visitor · their contact detail appears as an indicator |
+| Trigger · Main flow | Submits a dispute against the indicator → an officer reviews it → the indicator is corrected, expired or confirmed → the outcome is recorded |
+| Why it exists | Phone numbers and email addresses in scam reports frequently belong to innocent people whose identity was spoofed. Without a correction route, the service holds an accusation about someone who has no way to answer it |
+| Success | A wrongly listed party has a route, and the outcome is auditable |
+| Requirements | FR92, ER-13 · ⚠️ proposed, awaiting approval |
+
+**Status of these fifteen.** UC-02 and UC-03 are implemented at the API layer with no interface attached. UC-14 is partly delivered as static content. The remaining twelve are specified with their database tables migrated and no runtime behaviour, which is the position §14.3 records module by module.
+
 ---
 
 # 8. External interface requirements
@@ -1272,6 +1462,117 @@ The storyboard below is the journey the service is designed around: a person who
 - **The limit travels with the verdict.** Frame 5 carries the advisory notice inside the result panel, not on a page the reader would have to go and find (ETH-1, ETH-2, UI-11).
 
 **Why frame 6 matters most and is built least.** The first five frames answer the question. The sixth is the one that turns an answer into help — reporting the scam so Council sees it, or opening the checklist if money has already moved. Its two destinations are Modules 5 and 10, both specified and neither built (§14.3). Until they are, the journey ends by telling a frightened person what has happened to them without giving them anywhere to take it, and that is the single largest gap between what this service is specified to be and what it currently does.
+
+### 8.1.2 Input and output forms
+
+Every screen that takes data from a person or returns a result to one is specified here as a form: what it takes, how each field is validated, what it gives back, and what a person sees when something is wrong. Validation shown as **server** is enforced by a Zod schema in the API and is authoritative; client validation is a convenience that never substitutes for it (R9 §4, R8 Rule 4.3).
+
+#### F-01 · Check a message — *implemented*
+
+| Field | Type | Required | Validation | Message when it fails |
+|---|---|---|---|---|
+| Channel | Single choice of six | Yes | One of `sms`, `email`, `phone`, `website`, `social`, `other` | "Choose how it reached you." |
+| Message | Multi-line text | Conditional | At least 12 characters, unless a file is attached | "Paste the message, or attach a screenshot, photo or file to check." / "That is too short to check — paste the whole message, including any link." |
+| Attachments | File, multiple | Conditional | Images are read by OCR; other kinds are checked by envelope only | Stated per file in the result, never silently ignored |
+
+**Output.** Risk score 0–100 · risk band with an icon and a text label, never colour alone · confidence 0–1 reported separately · every indicator with its weight and the exact words that triggered it · extracted URLs, emails and phone numbers · one line per source saying whether it was read · the advisory notice · next actions.
+
+**Errors are announced**, not just shown: `role="alert"` on each message, `aria-invalid` and `aria-describedby` on the field, and the result announced through a polite live region (UI-5, UI-6, FR86).
+
+#### F-02 · Register — *API implemented, no screen*
+
+| Field | Type | Required | Validation (server) | Message |
+|---|---|---|---|---|
+| Email | Email | Yes | Trimmed, lower-cased, valid address, not already registered | "Enter a valid email address." / "An account already exists for that email address." |
+| Password | Password | Yes | 12–200 characters. **No composition rule** — length is what resists offline cracking; composition rules mostly produce `Password1!` (R19) | "Use at least 12 characters." |
+| Full name | Text | Yes | 2–120 characters | "Enter your name." |
+| Organisation | Text | No | Up to 160 characters | — |
+| Phone | Text | No | Up to 40 characters | — |
+
+**Unknown fields are rejected.** The schema is `.strict()`, so a request carrying an unrequested `role` is refused as an unrecognised key before any handler runs (demonstrated at §12.9.3).
+
+**Output.** `201` with the public user — id, email, full name, role, verified flag. **The password hash is never returned.**
+
+#### F-03 · Sign in — *API implemented, no screen*
+
+| Field | Required | Validation | Message |
+|---|---|---|---|
+| Email | Yes | Valid address | "Enter a valid email address." |
+| Password | Yes | Non-empty | "Enter your password." |
+
+**Output.** `200` with the public user and an access token. On failure, `401` and one message for both wrong address and wrong password: *"That email address or password is not correct."*
+
+#### F-04 · Report a scam — *specified*
+
+| Field | Type | Required | Validation | Notes |
+|---|---|---|---|---|
+| Channel | Choice | Yes | `Channel` enum | FR14 |
+| Category | Choice | Yes | An active `ScamCategory` | Archived categories are not offered |
+| Title | Text | Yes | 5–160 characters | |
+| Description | Long text | Yes | 20–5,000 characters | |
+| Suburb | Choice | No | A `Suburb` row | Aggregation stops here (ER-3) |
+| Date it happened | Date | No | Not in the future | |
+| Amount lost | Currency | No | Whole cents, not negative | Stored as `Int` cents — never a float |
+| Contact details seen | Repeatable text | No | Normalised to an `Indicator` | FR19, FR22, FR23 |
+| Evidence | File, multiple | No | See F-05 | |
+
+**Output.** A quotable reference such as `HCC-2408-114`, the status, and what happens next. Saving without submitting produces a `DRAFT` (FR26).
+
+#### F-05 · Attach evidence — *specified*
+
+| Rule | Value | Requirement |
+|---|---|---|
+| Accepted types | Images, PDF, plain text, common document formats | FR32 — validated **server-side by content, not by the name** |
+| Rejected outright | Executables, macro-enabled documents, archives | R8 Rule 6.5 |
+| Maximum size | Per-file and per-report cap | FR33 |
+| Recorded per file | Original name, MIME type, size, SHA-256, storage key, optional description | FR34 |
+| On ingest | **EXIF stripped before storage** | ER-5 — ⬜ not built, Critical (RK-04) |
+| On every read | Access restricted by role and ownership, and logged | FR35, FR36 |
+
+#### F-06 · Review a report — *specified, officer only*
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| Decision | Choice | Yes | `UNDER_REVIEW`, `INFORMATION_REQUESTED`, `APPROVED`, `REJECTED` |
+| Severity | Choice | On approval | `HIGH`, `MEDIUM`, `LOW` |
+| Category | Choice | On approval | Reviewer may reclassify |
+| Notes | Long text | On rejection | A rejection without a recorded reason is not accepted |
+
+**Output.** A new `ReportReview` row — never an edit of the previous one, so the history of a decision survives the next one. Reporter is notified (FR62).
+
+#### F-07 · Publish an alert — *specified, officer and administrator*
+
+| Field | Required | Validation |
+|---|---|---|
+| Headline | Yes | 5–120 characters |
+| Summary | Yes | 20–2,000 characters |
+| Specimen | No | The reported wording, **de-identified before it reaches this field** |
+| Category · Suburb · Channel | Yes | Reference rows |
+| Severity | Yes | `Severity` enum |
+
+**Two-party rule.** An alert moves `DRAFT → PENDING_APPROVAL → PUBLISHED`, and the approver must not be the author. **No field may name an alleged scammer** (ETH-9).
+
+#### F-08 · Subscribe to alerts — *specified*
+
+| Field | Required | Validation |
+|---|---|---|
+| Email | Yes | Valid address; one subscription per address per scope target |
+| Scope | Yes | `CATEGORY`, `SUBURB` or `ALL` |
+| Category / Suburb | If scope requires | A reference row |
+
+**Output.** A confirmation email. Unsubscribe is one click from a token that is stored only as a digest and needs no login (FR66).
+
+#### Conventions common to every form
+
+| Rule | Applies to |
+|---|---|
+| The server replaces the request body with the parsed result, so no handler sees raw input | All |
+| Unknown fields are rejected, not ignored | All |
+| Errors are returned per field in the `errors` array of the response envelope | All |
+| Every error is announced to assistive technology and tied to its field | All |
+| No field is marked required by colour alone | All |
+| Labels are persistent, never placeholder-only | All |
+| A destructive action states what will happen before it happens | F-04 withdraw, F-06 reject, F-07 publish |
 
 ## 8.2 Software interfaces — API
 
@@ -1463,6 +1764,56 @@ Minimum **12 characters**, maximum 200, with **no composition mandate**. Length 
 
 **Reconciliation: 25 client requirements → 30 project requirements.** CB-11 expands to two; five are new team additions. No client requirement has been dropped.
 
+
+## 9.11 Implementation evidence — encryption and anonymisation
+
+Sections 9.3 and 10.4 state the obligations. This section is the evidence: what is actually implemented, where in the source it lives, how it was verified, and what is asserted but not yet built. Anything not demonstrated is marked as such.
+
+### 9.11.1 Encryption at rest
+
+| Control | Requirement | Implementation | Evidence | Status |
+|---|---|---|---|---|
+| Password storage | NFR-8, R8 Rule 6.2 | bcrypt, cost factor 12, in `authService.register`. The plaintext is hashed before the row is constructed and never reaches `User.passwordHash` in clear form | `backend/src/modules/auth/auth.service.ts` — `BCRYPT_ROUNDS = 12`; `bcrypt.hash(input.password, BCRYPT_ROUNDS)` | ✅ Implemented |
+| Password salting | NFR-8, R19 | **No salt column exists, deliberately.** A bcrypt digest embeds its own per-row salt in the string it returns, so a separate `Salt` column would either duplicate it or invite hand-rolled salting. The conceptual ERD had one; it was removed at build (§11.2.2) | `User.passwordHash` is a single `TEXT` column in the migrated schema (§11.9) | ✅ Implemented |
+| Verification and reset tokens | FR2, FR6 | Stored as a SHA-256 digest, never in clear. A leaked token table yields nothing usable because the stored value cannot be presented as a token | `auth.service.ts` — `hashToken()`; columns `EmailVerificationToken.tokenHash`, `PasswordResetToken.tokenHash`, both `@unique` | ✅ Implemented |
+| Unsubscribe tokens | FR66 | Same digest treatment, so a one-click unsubscribe link cannot be reconstructed from the database | `Subscription.unsubscribeTokenHash` (§11.9) | 🟡 Column migrated; no write path until Module 11 |
+| Database at rest | NFR-8 | Provider-managed encryption at rest, Neon `ap-southeast-2` | Provider attestation — **not independently verified by the team** | 🟡 Asserted, unverified (AC-12) |
+| Evidence files at rest | FR31–FR36 | Private encrypted object storage, referenced by `Evidence.storageKey` with a `sha256` integrity digest | Schema migrated; storage not provisioned | ⬜ Not implemented — Module 6 |
+
+### 9.11.2 Encryption in transit
+
+| Control | Implementation | Evidence | Status |
+|---|---|---|---|
+| Browser to edge | TLS with HSTS `max-age=31536000; includeSubDomains` | Verified directly against the running API; header present in the response set | ✅ Verified |
+| Edge and browser policy | CSP restricting script, style, font, image and connect sources; `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` | `frontend/vercel.json`; and helmet's defaults on the API, confirmed in the live response | ✅ Verified |
+| API to database | TLS required on the connection string — `sslmode=require&channel_binding=require` | `backend/.env.example`; enforced by the provider | ✅ Implemented |
+| Secret handling | No credential in source. The environment contract is parsed once at startup and **failure prints variable names only, never values**, so a malformed secret cannot be echoed into a deployment log | `backend/src/config/env.ts`; `JWT_SECRET` is rejected below 32 characters | ✅ Implemented |
+
+### 9.11.3 Anonymisation and de-identification
+
+| Control | Requirement | Implementation | Status |
+|---|---|---|---|
+| Anonymous checking | FR85, ETH-6 | No account is required to check a message, and no identifier is collected. `ScamCheck.userId` is nullable with `ON DELETE SET NULL` | ✅ Implemented — and stronger than specified: the delivered analyser runs in the browser, so the message is not transmitted or stored at all |
+| Reporter severed from alert | FR50, ETH-4 | `Alert.sourceReportId` is nullable with `ON DELETE SET NULL`, so a published alert can outlive the report it came from without dragging the link behind it | 🟡 Schema enforces severability; the de-identification step that populates `Alert.specimen` is Module 9 |
+| Audit actor severed on erasure | FR12, FR72, ER-7 | `AuditLog.userId` and `EvidenceAccessLog.userId` are nullable with `ON DELETE SET NULL`. Erasing an account removes the person, not the evidence that an action occurred | ✅ Implemented in the schema |
+| Soft deletion | FR12, FR30 | `deletedAt` on `User`, `Report` and `Evidence`; the repository excludes soft-deleted rows in one place rather than at every call site | ✅ Implemented for `User` |
+| Aggregation floor | ER-3, FR70, FR71 | Location aggregates to suburb and no finer, so a report cannot be traced to a street or household | 🟡 Schema supports it (`Suburb` is the only location entity); no export path yet |
+| EXIF stripping on evidence | ER-5, RK-04 | Photographs carry GPS coordinates and device identifiers. Uploaded evidence must be stripped before storage | ⬜ **Not implemented.** Critical risk RK-04 is open; this is gap G11 |
+| Minimum cell count on export | ER-3 | A de-identified export with small cells is re-identifiable | ⬜ **Not implemented** |
+
+### 9.11.4 Uniform failure handling, as an anonymisation control
+
+Two behaviours prevent the system disclosing whether a person exists, which is itself personal information:
+
+- **Sign-in (FR76).** A wrong address and a wrong password produce the same message, and the bcrypt comparison runs even when no user was found, against a fixed invalid digest. Differing messages would turn the form into an account-existence oracle; skipping the comparison on a miss would leak the same fact through response timing.
+- **Session failure.** An expired token and a forged token return the same message, so a response cannot tell an attacker which half of the problem they have already solved.
+
+Both were exercised against the running API and behave as described.
+
+### 9.11.5 What this section does not claim
+
+Four controls in this area are **not implemented**, and none should be reported as satisfied: EXIF stripping on evidence ingest, minimum cell counts on de-identified export, verification of the evidence digest on read (§12.9.4, DFI-2), and independent confirmation of provider encryption at rest and Australian data residency. The first two are Critical entries in the database ethics register (§10.4) whose correction window closes at first production use. They are release acceptance criteria AC-9, AC-11 and AC-12, and the system must not carry real personal data until they pass.
+
 ---
 
 # 10. Ethical requirements
@@ -1572,6 +1923,61 @@ To be designed at M8, reviewed by the Council privacy officer, and applied **bef
 | Victorian Protective Data Security Standards | Sets security standards for Victorian public-sector information | Layered security architecture; RBAC; audit logging; encryption in transit and at rest; MFA for privileged roles (FR73) |
 | Disability Discrimination Act 1992 (Cth) | A public-facing government service must be accessible | WCAG 2.1 Level AA on every page (NFR-13); independent audit at M14 |
 | Defamation law | Publishing that a named person or business is a scammer carries real exposure — contact indicators are frequently spoofed and often belong to innocent victims | **Structural mitigation:** the system never publishes the identity of an alleged scammer (ETH-9); indicators are never publicly listed; alerts describe patterns, not people |
+
+
+## 10.6 Data protection impact assessment
+
+A DPIA is required because the service processes personal information about people who have been targeted by crime, collects evidence files that may contain third-party personal information, and produces automated assessments that influence what a person does next. It is written against the Privacy Act 1988 (Cth) and the Australian Privacy Principles, the Privacy and Data Protection Act 2014 (Vic) and the Information Privacy Principles, and the Victorian Protective Data Security Standards.
+
+**Status: draft. Not yet reviewed by the Council privacy officer.** The review is milestone M8 and is overdue (RK-09).
+
+### 10.6.1 Description of processing
+
+| Question | Answer |
+|---|---|
+| What is processed | Account details; submitted suspicious content; scam reports; evidence files; indicators such as URLs, phone numbers and email addresses; suburb; amount lost; access and audit logs |
+| Whose data | Residents, small businesses, community organisations and not-for-profits in the City of Hume; Council officers; and **third parties named in reports, who are not users of the service and have not consented** |
+| Why | To assess whether a message is a scam, to accept and verify reports, to warn the community, and to give Council de-identified local intelligence |
+| Legal basis | Council's community-safety function. Collection is limited to what that function requires (APP 3) |
+| Retention | Proposed at §11.8; requires Council records-management confirmation (OI-6) |
+| Data location | `ap-southeast-2` for the database. Other providers unverified (RK-16) |
+| Automated decision-making | Yes — a risk score and band. Advisory only, never determinative, always explained with the evidence that produced it, and never a decision about a person |
+
+### 10.6.2 Necessity and proportionality
+
+| Test | Assessment |
+|---|---|
+| Is the processing necessary for the purpose | Yes for reporting, review and alerting. **No for checking** — which is why FR85 makes checking anonymous and the analyser runs on the device |
+| Is there a less intrusive way | For checking, no: the current design is already the least intrusive possible, since the content never leaves the browser. For reporting, no: a report that cannot be followed up has no value to Council |
+| Is collection minimised (APP 3) | Partly. `Profile.AvatarURL` and `User.DateOfBirth` were dropped at build as data with no use (§11.2.2). `phone` and `organisation` remain optional. **`ScamCheck.content` stores the full submitted message once FR77 ships, and that has not been justified against a retention purpose** |
+| Is the person told (APP 5) | Partly. The advisory notice appears at the point of every verdict. A privacy statement exists as a placeholder route only |
+
+### 10.6.3 Risks to individuals
+
+| ID | Risk | Likelihood | Severity | Inherent | Mitigation | Residual |
+|---|---|---|---|---|---|---|
+| P1 | A reporter is re-identified from a published alert or a de-identified export | Possible | Major | **High** | Severable `sourceReportId`; suburb-level aggregation; minimum cell count (**not built**) | **High** — ER-2, ER-3 open |
+| P2 | Evidence files leak personal information beyond the report — GPS in a photograph, a third party in a screenshot | Likely | Major | **Critical** | EXIF stripping at ingest (**not built**); access restricted and logged (**not built**) | **Critical** — RK-04 open |
+| P3 | An innocent third party is named as a scammer because their number or address was spoofed | Likely | Major | **Critical** | ETH-9 — the service never publicly names an alleged scammer; alerts describe patterns, not people. Dispute route proposed as FR92 (**not approved**) | **High** — structural control in place, correction route absent |
+| P4 | Erasure request cannot be honoured without destroying the audit trail | Possible | Moderate | High | Soft deletion plus severing foreign keys; audit actor set to null rather than cascaded | **Low** — implemented in the schema |
+| P5 | Submitted scam content is retained longer than needed, or at all | Possible | Moderate | High | Today the content is never transmitted. FR77 changes this | **Low now, High after FR77** — decision required (DFI-4) |
+| P6 | Automated score misleads someone into a harmful action | Possible | Major | High | Advisory notice at the verdict; scoring cannot reach certainty; every indicator shown with its evidence; a LOW result explicitly states a careful scam will not trip these checks | **Low** — verified, §15.2.2 |
+| P7 | Discriminatory scoring against a group | Unlikely | Major | High | Non-discrimination audit passed; no scoring input references or proxies for a protected attribute; full rule set published | **Low** — audited, §10.3 |
+| P8 | Credential or token disclosure from logs | Unlikely | Major | High | Query logging disabled in production; environment failures print names only; audit metadata prohibited from carrying secrets | **Low** — implemented |
+| P9 | Data processed outside Australia by an unverified provider | Possible | Moderate | High | Database region confirmed; other providers not verified | **Medium** — AC-12 outstanding |
+
+### 10.6.4 Outcome
+
+**Four residual risks remain above tolerance: P1, P2, P3 and P9.** Every one of them is a control that is designed and specified but not implemented, and P2 concerns a category of data — evidence files — that the system cannot accept until it is fixed.
+
+| Determination | |
+|---|---|
+| May the service operate in its current form | **Yes.** What is live is anonymous, on-device scam checking that transmits and stores nothing, plus an authentication API with no interface attached |
+| May it accept scam reports | **No, not yet.** P1 and P2 must be reduced first: EXIF stripping at ingest, evidence access restriction and logging, and the minimum cell count on export |
+| May it publish alerts | **No, not yet.** P1 and P3 must be reduced first, and the dispute route (FR92) should be approved before contact details appear as indicators |
+| Required before real personal data is processed | Privacy officer sign-off (M8); the corrective migration at §10.4.4; acceptance criteria AC-9, AC-10, AC-11 and AC-12 passed |
+
+**Review trigger.** This assessment is re-performed whenever a schema change adds a column holding personal data, before FR77 introduces server-side storage of submitted content, and before the first production deployment. It is not a document that is written once.
 
 ---
 
@@ -1835,6 +2241,518 @@ DRAFT ──► PENDING_APPROVAL ──► PUBLISHED ──► ARCHIVED
 
 *Retention periods are team proposals requiring Council records-management confirmation (OI-6).*
 
+## 11.9 Data dictionary — complete
+
+§11.8 lists the principal entities and their retention class. This is the complete dictionary: **every one of the 25 tables and all 188 columns** in the migrated schema, with the SQL type, nullability, keys, defaults and foreign-key behaviour as they exist in migration `20260807105640_init_cybersafe_schema`.
+
+It is generated from `backend/prisma/schema.prisma` and the migration SQL rather than transcribed, so it cannot drift from the database it describes. Types are the PostgreSQL types actually created; a capitalised type name is an enumerated type from §11.3.
+
+#### User
+
+FR1–FR12. Authentication, profile and access control.
+
+*Module 1–2. 12 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `email` | TEXT | no | U | — | FR3 — duplicate registration is prevented by the database, not only by application logic, so a race between two requests cannot create two rows. |
+| `passwordHash` | TEXT | no | — | — | FR8 (Rule 6.2) — bcrypt digest. The plaintext never reaches this column. |
+| `fullName` | TEXT | no | — | — | — |
+| `organisation` | TEXT | yes | — | — | — |
+| `phone` | TEXT | yes | — | — | — |
+| `role` | Role | no | — | 'RESIDENT' | — |
+| `emailVerified` | TIMESTAMP(3) | yes | — | — | FR2 — set once the emailed link has been followed. |
+| `lastLoginAt` | TIMESTAMP(3) | yes | — | — | — |
+| `deletedAt` | TIMESTAMP(3) | yes | — | — | FR12 — soft deletion keeps the audit trail intact after a deletion request. |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `updatedAt` | TIMESTAMP(3) | no | — | — | — |
+
+*Relations:* `verificationTokens` → `EmailVerificationToken[]` · `passwordResets` → `PasswordResetToken[]` · `notificationPrefs` → `NotificationPreference?` · `deletionRequest` → `AccountDeletionRequest?` · `checks` → `ScamCheck[]` · `reports` → `Report[]` · `assignedReports` → `Report[]` · `reviews` → `ReportReview[]` · `infoRequests` → `InformationRequest[]` · `evidenceAccesses` → `EvidenceAccessLog[]` · `alertsAuthored` → `Alert[]` · `alertsApproved` → `Alert[]` · `notifications` → `Notification[]` · `subscriptions` → `Subscription[]` · `recoveryProgress` → `RecoveryProgress[]` · `auditEntries` → `AuditLog[]`
+
+*Constraints and indexes:* `@@index([role])` · `@@index([deletedAt])`
+
+#### EmailVerificationToken
+
+FR2 — single-use email verification token.
+
+*Module 1. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | FK | — | → `User`, ON DELETE CASCADE. |
+| `tokenHash` | TEXT | no | U | — | Stored hashed: a leaked table must not yield usable links. |
+| `expiresAt` | TIMESTAMP(3) | no | — | — | — |
+| `usedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User`
+
+*Constraints and indexes:* `@@index([userId])`
+
+#### PasswordResetToken
+
+FR6 — single-use password recovery token.
+
+*Module 1. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | FK | — | → `User`, ON DELETE CASCADE. |
+| `tokenHash` | TEXT | no | U | — | — |
+| `expiresAt` | TIMESTAMP(3) | no | — | — | — |
+| `usedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User`
+
+*Constraints and indexes:* `@@index([userId])`
+
+#### NotificationPreference
+
+FR11 — how the user wants to be contacted.
+
+*Module 2. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | FK U | — | → `User`, ON DELETE CASCADE. |
+| `emailOnStatus` | BOOLEAN | no | — | true | — |
+| `emailOnAlerts` | BOOLEAN | no | — | true | — |
+| `emailOnRequest` | BOOLEAN | no | — | true | — |
+| `updatedAt` | TIMESTAMP(3) | no | — | — | — |
+
+*Relations:* `user` → `User`
+
+#### AccountDeletionRequest
+
+FR12, Compliance 29 — a deletion request is a reviewable record, not an immediate drop, so the obligation and its discharge are both evidenced.
+
+*Module 2. 5 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | FK U | — | → `User`, ON DELETE CASCADE. |
+| `reason` | TEXT | yes | — | — | — |
+| `requestedAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `processedAt` | TIMESTAMP(3) | yes | — | — | — |
+
+*Relations:* `user` → `User`
+
+#### ScamCategory
+
+FR69 — administrator-managed scam categories.
+
+*Module 12. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `slug` | TEXT | no | U | — | — |
+| `name` | TEXT | no | — | — | — |
+| `description` | TEXT | yes | — | — | — |
+| `archivedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `reports` → `Report[]` · `alerts` → `Alert[]` · `subs` → `Subscription[]`
+
+#### Suburb
+
+Suburbs of the municipality. FR65 regional subscriptions and the scam map aggregate to this level and no finer, so a report cannot be traced to a street or a household.
+
+*Module 12. 3 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `name` | TEXT | no | U | — | — |
+| `postcode` | TEXT | no | — | — | — |
+
+*Relations:* `reports` → `Report[]` · `alerts` → `Alert[]` · `subs` → `Subscription[]`
+
+*Constraints and indexes:* `@@index([postcode])`
+
+#### ScamCheck
+
+FR13–FR18. One submission to the checker and the result it produced.  Retained even when anonymous (`userId` null) because FR70's statistics and FR24's matching both depend on the corpus. No account is required to check something, which is a deliberate part of the service design.
+
+*Module 3. 8 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `channel` | Channel | no | — | — | — |
+| `content` | TEXT | no | — | — | The submitted content, as supplied. |
+| `score` | INTEGER | no | — | — | FR16 — 0-100. |
+| `band` | RiskBand | no | — | — | FR17. |
+| `confidence` | DOUBLE PRECISION | no | — | — | 0-1. How much signal the submission carried; stored beside the score because the two answer different questions. |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User?` · `indicators` → `ScamCheckIndicator[]`
+
+*Constraints and indexes:* `@@index([userId])` · `@@index([band])` · `@@index([createdAt])`
+
+#### ScamCheckIndicator
+
+FR18 — the reasons behind a score, retained so a result stays explainable after the fact (Rule 8.3).
+
+*Module 3. 7 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `checkId` | TEXT | no | FK | — | → `ScamCheck`, ON DELETE CASCADE. |
+| `ruleId` | TEXT | no | — | — | Rule identifier, e.g. "urgency" or "url-lookalike". |
+| `label` | TEXT | no | — | — | — |
+| `detail` | TEXT | no | — | — | — |
+| `weight` | IndicatorWeight | no | — | — | — |
+| `evidence` | TEXT | yes | — | — | The fragment of the submission that triggered the rule. |
+
+*Relations:* `check` → `ScamCheck`
+
+*Constraints and indexes:* `@@index([checkId])` · `@@index([ruleId])`
+
+#### Indicator
+
+FR21, FR24, FR45–FR47. The registry of artefacts seen across the service.  Normalised out of Report so the same domain reported fifty times is one row with a count, which is what makes "has this been reported before?" a lookup rather than a scan.
+
+*Module 4. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `type` | IndicatorType | no | U | — | — |
+| `value` | TEXT | no | U | — | Normalised form: lower-cased host, digits-only phone, trimmed address. |
+| `reportCount` | INTEGER NOT NULL DEFAULT 0 | yes | — | — | — |
+| `firstSeenAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `lastSeenAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `reports` → `ReportIndicator[]`
+
+*Constraints and indexes:* `@@unique([type, value])` · `@@index([type])`
+
+#### Report
+
+FR25–FR30. A scam reported to Council.
+
+*Module 5. 18 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `reference` | TEXT | no | U | — | FR28 — human-quotable reference, e.g. "HCC-2408-114". Unique so it can be used to look a report up on its own. |
+| `authorId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `categoryId` | TEXT | yes | FK | — | → `ScamCategory`, ON DELETE SET NULL. |
+| `suburbId` | TEXT | yes | FK | — | → `Suburb`, ON DELETE SET NULL. |
+| `channel` | Channel | no | — | — | — |
+| `status` | ReportStatus | no | — | 'DRAFT' | — |
+| `severity` | Severity | yes | — | — | FR40 — set by a reviewer, distinct from the automated score. |
+| `title` | TEXT | no | — | — | — |
+| `description` | TEXT | no | — | — | — |
+| `amountLostCents` | INTEGER | yes | — | — | Money lost, in whole cents to avoid floating point on currency. |
+| `occurredAt` | TIMESTAMP(3) | yes | — | — | — |
+| `submittedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `withdrawnAt` | TIMESTAMP(3) | yes | — | — | FR30 — withdrawal is a state, not a deletion. |
+| `deletedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `updatedAt` | TIMESTAMP(3) | no | — | — | — |
+| `reviewerId` | TEXT | yes | FK | — | FR38 — the officer currently responsible. → `User`, ON DELETE SET NULL. |
+
+*Relations:* `author` → `User?` · `reviewer` → `User?` · `category` → `ScamCategory?` · `suburb` → `Suburb?` · `indicators` → `ReportIndicator[]` · `evidence` → `Evidence[]` · `reviews` → `ReportReview[]` · `infoRequests` → `InformationRequest[]` · `alerts` → `Alert[]` · `relationsFrom` → `ReportRelation[]` · `relationsTo` → `ReportRelation[]`
+
+*Constraints and indexes:* `@@index([status])` · `@@index([authorId])` · `@@index([reviewerId])` · `@@index([categoryId])` · `@@index([suburbId])` · `@@index([submittedAt])`
+
+#### ReportIndicator
+
+Join between a report and an artefact it names. FR44–FR47 comparisons run over this table.
+
+*Module 4–5. 2 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `reportId` | TEXT | no | PK FK | — | → `Report`, ON DELETE CASCADE. |
+| `indicatorId` | TEXT | no | PK FK | — | → `Indicator`, ON DELETE CASCADE. |
+
+*Relations:* `report` → `Report` · `indicator` → `Indicator`
+
+*Constraints and indexes:* `@@id([reportId, indicatorId])` · `@@index([indicatorId])`
+
+#### ReportRelation
+
+FR43, FR48 — a link between two reports.
+
+*Module 8. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `sourceId` | TEXT | no | U FK | — | → `Report`, ON DELETE CASCADE. |
+| `targetId` | TEXT | no | U FK | — | → `Report`, ON DELETE CASCADE. |
+| `kind` | RelationKind | no | — | — | — |
+| `similarity` | DOUBLE PRECISION | yes | — | — | 0-1 where the link was found by similarity rather than asserted. |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `source` → `Report` · `target` → `Report`
+
+*Constraints and indexes:* `@@unique([sourceId, targetId])` · `@@index([targetId])`
+
+#### Evidence
+
+FR31–FR36. A file attached to a report.  The binary is not stored here; `storageKey` points at object storage. The row carries the metadata needed to validate, restrict and audit access.
+
+*Module 6. 10 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `reportId` | TEXT | no | FK | — | → `Report`, ON DELETE CASCADE. |
+| `description` | TEXT | yes | — | — | FR34. |
+| `originalName` | TEXT | no | — | — | — |
+| `mimeType` | TEXT | no | — | — | FR32 — validated server-side, never trusted from the client. |
+| `sizeBytes` | INTEGER | no | — | — | FR33 — bytes. |
+| `sha256` | TEXT | no | — | — | Checksum, so a stored file can be shown to be the one that was uploaded. |
+| `storageKey` | TEXT | no | U | — | — |
+| `deletedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `report` → `Report` · `accessLogs` → `EvidenceAccessLog[]`
+
+*Constraints and indexes:* `@@index([reportId])`
+
+#### EvidenceAccessLog
+
+FR35, FR36 — every read of a piece of evidence is recorded. Append-only: there is no update or delete path for this table in the application.
+
+*Module 6. 6 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `evidenceId` | TEXT | no | FK | — | → `Evidence`, ON DELETE CASCADE. |
+| `userId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `action` | TEXT | no | — | — | — |
+| `ipAddress` | TEXT | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `evidence` → `Evidence` · `user` → `User?`
+
+*Constraints and indexes:* `@@index([evidenceId])` · `@@index([userId])`
+
+#### ReportReview
+
+FR37–FR42. A reviewer's decision on a report, kept as a sequence of records rather than fields on Report so the history of a decision survives the next one (Rule 8.4 — administrative action stays reviewable).
+
+*Module 7. 7 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `reportId` | TEXT | no | FK | — | → `Report`, ON DELETE CASCADE. |
+| `reviewerId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `decision` | ReportStatus | no | — | — | The status the reviewer moved the report to. |
+| `severity` | Severity | yes | — | — | — |
+| `notes` | TEXT | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `report` → `Report` · `reviewer` → `User?`
+
+*Constraints and indexes:* `@@index([reportId])` · `@@index([reviewerId])`
+
+#### InformationRequest
+
+FR41 — a reviewer asking the reporter for more detail.
+
+*Module 7. 7 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `reportId` | TEXT | no | FK | — | → `Report`, ON DELETE CASCADE. |
+| `requestedById` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `message` | TEXT | no | — | — | — |
+| `respondedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `response` | TEXT | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `report` → `Report` · `requestedBy` → `User?`
+
+*Constraints and indexes:* `@@index([reportId])`
+
+#### Alert
+
+FR49–FR54. What the public sees.  `sourceReportId` is nullable and deliberately severable: FR50 requires the published alert to carry nothing identifying the reporter, so an alert can outlive the report it came from without dragging that link behind it.
+
+*Module 9. 17 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `reference` | TEXT | no | U | — | — |
+| `sourceReportId` | TEXT | yes | FK | — | → `Report`, ON DELETE SET NULL. |
+| `categoryId` | TEXT | yes | FK | — | → `ScamCategory`, ON DELETE SET NULL. |
+| `suburbId` | TEXT | yes | FK | — | → `Suburb`, ON DELETE SET NULL. |
+| `channel` | Channel | no | — | — | — |
+| `status` | AlertStatus | no | — | 'DRAFT' | — |
+| `severity` | Severity | no | — | — | — |
+| `headline` | TEXT | no | — | — | — |
+| `specimen` | TEXT | yes | — | — | The reported wording, de-identified before it reaches this column. |
+| `summary` | TEXT | no | — | — | — |
+| `authorId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `approvedById` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `publishedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `archivedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `updatedAt` | TIMESTAMP(3) | no | — | — | — |
+
+*Relations:* `sourceReport` → `Report?` · `category` → `ScamCategory?` · `suburb` → `Suburb?` · `author` → `User?` · `approvedBy` → `User?`
+
+*Constraints and indexes:* `@@index([status])` · `@@index([publishedAt])` · `@@index([categoryId])` · `@@index([suburbId])`
+
+#### AwarenessResource
+
+FR55–FR57, FR59.
+
+*Module 10. 10 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `slug` | TEXT | no | U | — | — |
+| `title` | TEXT | no | — | — | — |
+| `category` | TEXT | no | — | — | — |
+| `summary` | TEXT | no | — | — | — |
+| `body` | TEXT | no | — | — | — |
+| `readingTime` | TEXT | no | — | — | — |
+| `archivedAt` | TIMESTAMP(3) | yes | — | — | FR54-style archiving rather than deletion, so a link that was published does not simply 404. |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+| `updatedAt` | TIMESTAMP(3) | no | — | — | — |
+
+*Constraints and indexes:* `@@index([category])`
+
+#### RecoveryChecklist
+
+FR58 — an ordered checklist for someone who has been scammed.
+
+*Module 10. 5 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `slug` | TEXT | no | U | — | — |
+| `title` | TEXT | no | — | — | — |
+| `situation` | TEXT | no | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `steps` → `RecoveryStep[]`
+
+#### RecoveryStep
+
+*Module 10. 5 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `checklistId` | TEXT | no | U FK | — | → `RecoveryChecklist`, ON DELETE CASCADE. |
+| `position` | INTEGER | no | U | — | 1-based display order. |
+| `title` | TEXT | no | — | — | — |
+| `detail` | TEXT | no | — | — | — |
+
+*Relations:* `checklist` → `RecoveryChecklist` · `progress` → `RecoveryProgress[]`
+
+*Constraints and indexes:* `@@unique([checklistId, position])` · `@@index([checklistId])`
+
+#### RecoveryProgress
+
+FR60 — which steps a given user has completed.
+
+*Module 10. 4 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | U FK | — | → `User`, ON DELETE CASCADE. |
+| `stepId` | TEXT | no | U FK | — | → `RecoveryStep`, ON DELETE CASCADE. |
+| `completedAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User` · `step` → `RecoveryStep`
+
+*Constraints and indexes:* `@@unique([userId, stepId])` · `@@index([userId])`
+
+#### Notification
+
+FR61–FR63.
+
+*Module 11. 8 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | no | FK | — | → `User`, ON DELETE CASCADE. |
+| `kind` | NotificationKind | no | — | — | — |
+| `title` | TEXT | no | — | — | — |
+| `body` | TEXT | no | — | — | — |
+| `linkPath` | TEXT | yes | — | — | Where the notification points, if anywhere. |
+| `readAt` | TIMESTAMP(3) | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User`
+
+*Constraints and indexes:* `@@index([userId, readAt])`
+
+#### Subscription
+
+FR64–FR66. A subscription is scoped to a category, a suburb, or everything.  `unsubscribeTokenHash` lets FR66 work from an emailed link without a login, which is what makes unsubscribing genuinely one click.
+
+*Module 11. 10 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `email` | TEXT | no | U | — | Held for subscribers who never created an account. |
+| `scope` | SubscriptionScope | no | U | — | — |
+| `categoryId` | TEXT | yes | U FK | — | → `ScamCategory`, ON DELETE CASCADE. |
+| `suburbId` | TEXT | yes | U FK | — | → `Suburb`, ON DELETE CASCADE. |
+| `confirmedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `unsubscribedAt` | TIMESTAMP(3) | yes | — | — | — |
+| `unsubscribeTokenHash` | TEXT | no | U | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User?` · `category` → `ScamCategory?` · `suburb` → `Suburb?`
+
+*Constraints and indexes:* `@@unique([email, scope, categoryId, suburbId])` · `@@index([userId])`
+
+#### AuditLog
+
+FR72, Rule 17 — append-only record of consequential actions.  `userId` is nullable and severs on delete so that erasing an account cannot erase the evidence that an administrative action took place.
+
+*Module 12. 8 columns.*
+
+| Column | Type | Null | Key | Default | Notes |
+|---|---|---|---|---|---|
+| `id` | TEXT | no | PK | — | — |
+| `userId` | TEXT | yes | FK | — | → `User`, ON DELETE SET NULL. |
+| `action` | TEXT | no | — | — | — |
+| `entityType` | TEXT | no | — | — | — |
+| `entityId` | TEXT | yes | — | — | — |
+| `metadata` | JSONB | yes | — | — | Structured detail. Must never contain credentials or tokens (Rule 6.7). |
+| `ipAddress` | TEXT | yes | — | — | — |
+| `createdAt` | TIMESTAMP(3) | no | — | CURRENT_TIMESTAMP | — |
+
+*Relations:* `user` → `User?`
+
+*Constraints and indexes:* `@@index([userId])` · `@@index([entityType, entityId])` · `@@index([createdAt])`
+
+**Reading the key column.** `PK` primary key · `FK` foreign key · `U` unique constraint. A row with two `PK` marks is part of a composite primary key.
+
+**On `ON DELETE` behaviour.** Three policies appear, and the choice is deliberate in each case. `CASCADE` is used where a child row has no meaning without its parent — a verification token without its user, an indicator without its check. `SET NULL` is used wherever severing must not destroy a record: an audit entry, a report, a piece of evidence access, or a published alert survives the deletion of the account that created it, which is what allows FR12 erasure to coexist with FR72 audit retention. No foreign key in the schema uses `RESTRICT`, because no deletion in this system should fail on the basis of a reference that could instead be severed.
+
+
 ---
 
 # 12. System architecture and design
@@ -1882,7 +2800,50 @@ Cross-cutting: central error handler · response envelope · audit service ·
 
 **Why the layering is enforced rather than encouraged.** Bypassing a layer is how the soft-delete filter gets omitted at one call site, how a controller acquires a business rule that then exists in two places, and how an unvalidated field reaches a write. The rule (C4) is that no layer may be skipped, and the repository pattern exists specifically so that a condition like "exclude soft-deleted rows" lives in exactly one place.
 
-## 12.3 Level 1 data-flow diagram
+## 12.3 Level 0 data-flow diagram — context
+
+The context diagram fixes the system boundary before it is decomposed. It has one process, because at level 0 the whole system is one process, and it names every party that exchanges data with it.
+
+```
+                                ┌──────────────────────────────┐
+                                │ E2  Administrator            │
+                                │                              │
+                                │     (Council officer)        │
+                                └───────┬──────────────────────┘
+                                        │           ▲
+                                        ▼           │               ┌──────────────────────────┐
+                                ┌───────────────────┴──────────┐    │ E3  Object storage       │
+┌──────────────────────────┐    │                              ├───▶│                          │
+│ E1  User                 │    │ 0   CyberKent                │◀───├     (external)           │
+│                          ├───▶│                              │    └──────────────────────────┘
+│     resident, business,  │    │     Online Scam              │
+│     community            │    │     Detection and            │    ┌──────────────────────────┐
+│     organisation         │◀───├     Reporting System         │    │ E4  Email service        │
+│                          │    │                              ├───▶│                          │
+└──────────────────────────┘    │                              │◀───├     (external)           │
+                                │                              │    └──────────────────────────┘
+                                └───────┬──────────────────────┘
+                                        │
+                                        ▼
+                                ┌──────────────────────────────┐
+                                │ E5  Council reporting        │
+                                │ E6  Referral bodies          │
+                                │     Scamwatch · IDCARE ·     │
+                                └──────────────────────────────┘
+```
+
+| Entity | Sends to the system | Receives from the system |
+|---|---|---|
+| E1 User | Registration details, credentials, suspicious content, scam report, evidence files, subscription request | Account confirmation, access token, risk score with indicators, report reference and status, community alerts, awareness material |
+| E2 Administrator | Verification decision, severity, alert copy, administrative request | Review queue, report detail, verified status, system reports, audit data |
+| E3 Object storage | Stored evidence file on retrieval | Evidence file and storage key on upload |
+| E4 Email service | Delivery receipt | Verification link, status notification, alert digest |
+| E5 Council reporting | — | De-identified statistics and aggregate export (FR70, FR71) |
+| E6 Referral bodies | — | Nothing. **Links only** — the service directs a person to Scamwatch, IDCARE, police or the ACSC and transmits no data to any of them |
+
+**Why E6 receives nothing.** It would be reasonable to assume a scam-reporting service forwards reports to the national body. It does not, and that is a deliberate boundary: onward disclosure of a report to a third party is a use of personal information the reporter has not consented to, and consent for it has not been sought (§10, ETH-6). The service tells a person where else to report and leaves the reporting to them.
+
+## 12.4 Level 1 data-flow diagram
 
 The layered view above says how the system is built. The data-flow diagram says what moves through it. This is the level 1 model as authored during analysis: two external entities, four processes, four data stores, and the fifteen flows between them.
 
@@ -1957,7 +2918,7 @@ The layered view above says how the system is built. The data-flow diagram says 
 - **Analysis has left process 2.0.** On the diagram, scoring happens inside report submission. In the delivered system it runs in the browser, before and without any report, and no flow reaches a data store at all — the message is neither transmitted nor retained (FR85, UC-01). Flow f6 as drawn is therefore not yet live for the analysis half of process 2.0, and becomes live only when FR77 introduces server-side checking. That is also why FR24, which needs an artefact registry to match against, cannot complete until FR77 does (§14.3).
 - **No flow reaches D4 except from process 4.0.** The diagram audits administrative activity only. FR72 requires user activity logging as well, and the ethics register (§10.4) requires evidence access logging under FR36. Both are implemented in the schema as `AuditLog` and `EvidenceAccessLog`, which means the built system has audit flows the diagram does not show.
 
-## 12.4 Request flow — a checked message with server-side persistence (FR77)
+## 12.5 Request flow — a checked message with server-side persistence (FR77)
 
 ```
 Browser ──► Edge (CSP, headers) ──► Rate limiter ──► CORS ──► Body cap
@@ -1974,7 +2935,7 @@ Browser ──► Edge (CSP, headers) ──► Rate limiter ──► CORS ─�
         (any throw ──► central error handler ──► generic response + server log)
 ```
 
-## 12.5 Security architecture
+## 12.6 Security architecture
 
 Defence is layered so that no single control is load-bearing:
 
@@ -1990,7 +2951,7 @@ Defence is layered so that no single control is load-bearing:
 | Storage | bcrypt cost 12; tokens hashed; evidence private with signed URLs; encryption at rest |
 | Observability | Append-only audit log; access logging on C4 data; no credentials or content in logs |
 
-## 12.6 Scalability roadmap
+## 12.7 Scalability roadmap
 
 | Phase | Topology | Trigger |
 |---|---|---|
@@ -1998,6 +2959,241 @@ Defence is layered so that no single control is load-bearing:
 | 2 — Promotion | Paid tiers; ≥ 2 API instances; connection pooling verified under load | Before public promotion (feasibility condition 1) |
 | 3 — Growth | Read replica for reporting and analytics; CDN caching of public alerts | Sustained load or NFR-3 pressure |
 | 4 — Extraction | Extract analysis and notification into separate services; introduce the AI Gateway | AI adoption or independent scaling need |
+
+
+## 12.8 Class diagram
+
+The class diagram below is the implemented software structure, taken from the source rather than from an intended design. It shows the two halves that exist today: the layered Express modules on the server, and the detection engine on the client.
+
+The backend is written in a module-per-capability form in which each layer is a named object with a fixed responsibility, so the diagram shows those objects as classes with their public operations. TypeScript interfaces are shown as `«interface»`.
+
+```
+                                SERVER — Express application
+  ┌──────────────────────────────────┐
+  │ «module» app                     │
+  ├──────────────────────────────────┤
+  │ + createApp() : Express          │
+  └───────────────┬──────────────────┘
+                  │ mounts
+    ┌─────────────┴──────────────────────────────┐
+    ▼                                            ▼
+┌───────────────────────┐  ┌────────────────────────────────────────────┐
+│ «router» healthRoutes │  │ «router» authRoutes                        │
+├───────────────────────┤  ├────────────────────────────────────────────┤
+│ + GET  /              │  │ + POST /register  + POST /login            │
+│ + GET  /ready         │  │ + POST /verify-email  + POST /logout       │
+└───────────────────────┘  │ + GET  /me                                 │
+                           └──────────────────┬─────────────────────────┘
+                                              │ guarded by
+              ┌───────────────────────────────┼───────────────────────────┐
+              ▼                               ▼                           ▼
+  ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
+  │ «middleware» validate │   │ «middleware» auth     │   │ «middleware» error    │
+  ├───────────────────────┤   ├───────────────────────┤   ├───────────────────────┤
+  │ + validateBody(       │   │ + requireAuth()       │   │ + notFoundHandler()   │
+  │     schema: ZodType)  │   │ + requireRole(        │   │ + errorHandler()      │
+  └───────────────────────┘   │     ...roles: Role[]) │   └───────────────────────┘
+                              └───────────────────────┘
+                                              │ delegates to
+                                              ▼
+                           ┌────────────────────────────────────────────┐
+                           │ «controller» authController                │
+                           ├────────────────────────────────────────────┤
+                           │ + register(req, res, next)                 │
+                           │ + verifyEmail(req, res, next)              │
+                           │ + login(req, res, next)                    │
+                           │ + logout(req, res)                         │
+                           │ + me(req, res, next)                       │
+                           └──────────────────┬─────────────────────────┘
+                                              │ calls
+                                              ▼
+                           ┌────────────────────────────────────────────┐
+                           │ «service» authService                      │
+                           ├────────────────────────────────────────────┤
+                           │ - BCRYPT_ROUNDS : number = 12              │
+                           │ - VERIFICATION_TOKEN_TTL_MS : number       │
+                           │ - hashToken(token) : string                │
+                           │ - issueAccessToken(user) : string          │
+                           │ - toPublicUser(user) : PublicUser          │
+                           │ + register(input) : {user, token}          │
+                           │ + verifyEmail(token) : PublicUser          │
+                           │ + login(input) : {user, token}             │
+                           │ + profile(userId) : PublicUser             │
+                           └──────────────────┬─────────────────────────┘
+                                              │ calls
+                                              ▼
+                           ┌────────────────────────────────────────────┐
+                           │ «repository» authRepository                │
+                           ├────────────────────────────────────────────┤
+                           │ + findByEmail(email) : User?               │
+                           │ + findById(id) : User?                     │
+                           │ + create(data) : User                      │
+                           │ + markSignedIn(id) : User                  │
+                           │ + createVerificationToken(...)             │
+                           │ + findUsableVerificationToken(hash)        │
+                           │ + consumeVerification(tokenId, userId)     │
+                           └──────────────────┬─────────────────────────┘
+                                              │ uses (the only class that may)
+                                              ▼
+                           ┌────────────────────────────────────────────┐
+                           │ «singleton» prisma : PrismaClient          │
+                           └────────────────────────────────────────────┘
+
+  Cross-cutting, used by every layer above
+  ┌───────────────────────────────┐   ┌──────────────────────────────────┐
+  │ «interface» ApiEnvelope<T>    │   │ AppError extends Error           │
+  ├───────────────────────────────┤   ├──────────────────────────────────┤
+  │ + success  : boolean          │   │ + status : number                │
+  │ + message  : string           │   │ + errors : {field?, message}[]   │
+  │ + data     : T | null         │   ├──────────────────────────────────┤
+  │ + errors   : {field?, msg}[]  │   │ + constructor(status, message,   │
+  ├───────────────────────────────┤   │     errors)                      │
+  │ + sendOk<T>(res, data, ...)   │   └──────────────────────────────────┘
+  │ + sendFail(res, status, ...)  │
+  └───────────────────────────────┘
+  ┌───────────────────────────────┐   ┌──────────────────────────────────┐
+  │ «config» env                  │   │ «interface» AuthenticatedUser    │
+  ├───────────────────────────────┤   ├──────────────────────────────────┤
+  │ + NODE_ENV · PORT             │   │ + id : string                    │
+  │ + DATABASE_URL · JWT_SECRET   │   │ + email : string                 │
+  │ + JWT_EXPIRES_IN              │   │ + role : Role                    │
+  │ + isProduction : boolean      │   └──────────────────────────────────┘
+  │ + allowedOrigins : string[]   │
+  └───────────────────────────────┘
+```
+
+```
+                          CLIENT — detection engine (Modules 3 and 4)
+  ┌──────────────────────────────────┐        ┌──────────────────────────────────┐
+  │ «interface» Submission           │        │ «interface» Analysis             │
+  ├──────────────────────────────────┤        ├──────────────────────────────────┤
+  │ + text    : string               │        │ + score      : number  (0–100)   │
+  │ + channel : Channel              │        │ + band       : RiskBand          │
+  │ + media?  : MediaDescriptor[]    │        │ + confidence : number  (0–1)     │
+  └───────────────┬──────────────────┘        │ + headline · summary : string    │
+                  │                           │ + indicators : Indicator[]       │
+                  │                           │ + extracted  : {urls, emails,    │
+                  ▼                           │                 phones}          │
+  ┌──────────────────────────────────┐        │ + examined   : ExaminedSource[]  │
+  │ «module» analyse                 │───────▶└──────────────────────────────────┘
+  ├──────────────────────────────────┤
+  │ - WEIGHT_POINTS  : high 30,      │        ┌──────────────────────────────────┐
+  │     medium 16, low 7             │        │ «interface» Indicator            │
+  │ - SATURATION : number = 45       │        ├──────────────────────────────────┤
+  │ - BAND_THRESHOLDS                │───────▶│ + id · label · detail : string   │
+  │ - MINIMUM_USEFUL_LENGTH = 12     │        │ + weight   : IndicatorWeight     │
+  │ - runTextRules(text, channel)    │        │ + evidence?: string              │
+  │ - runUrlRules(urls)              │        └──────────────────────────────────┘
+  │ - scoreIndicators(indicators)    │
+  │ - bandFor(score) : RiskBand      │        ┌──────────────────────────────────┐
+  │ - confidenceFor(...)             │        │ «interface» MediaDescriptor      │
+  │ - describeSources(typed, media)  │        ├──────────────────────────────────┤
+  │ + analyse(Submission) : Analysis │───────▶│ + name · type : string           │
+  └───┬───────────┬──────────┬───────┘        │ + size : number                  │
+      │ uses      │ uses     │ uses           │ + kind : MediaKind               │
+      ▼           ▼          ▼                │ + extractedText? : string        │
+┌──────────────┐ ┌──────────────┐ ┌─────────┐ │ + unreadable?    : string        │
+│ «module»     │ │ «module»     │ │«module» │ └──────────────────────────────────┘
+│ patterns     │ │ extract      │ │ media   │
+├──────────────┤ ├──────────────┤ ├─────────┤ ┌──────────────────────────────────┐
+│ + TEXT_RULES │ │ + extractUrls│ │ + kindOf│ │ «module» ocr                     │
+│   : TextRule │ │ + extract-   │ │ + exten-│ ├──────────────────────────────────┤
+│   [11]       │ │   Emails     │ │   sionOf│ │ - MINIMUM_CONFIDENCE = 45        │
+│ + SUSPICIOUS │ │ + extract-   │ │ + analy-│ │ - MINIMUM_TEXT = 8               │
+│   _TLDS      │ │   Phones     │ │   seMed-│ │ - recogniser() : Worker          │
+│ + IMPERSON-  │ │ + hostOf     │ │   ia()  │ │ + readImage(file) : ReadResult   │
+│   ATED_BRANDS│ └──────────────┘ └─────────┘ │ + describeFiles(files, onProg)   │
+│ + URL_SHORT- │                              │     : MediaDescriptor[]          │
+│   ENERS      │  ┌────────────────────────┐  └──────────────────────────────────┘
+│ + OFFICIAL_  │  │ «interface» TextRule   │
+│   SUFFIXES   │─▶│ + id · label · detail  │   Enumerations
+└──────────────┘  │ + weight : Indicator-  │   Channel  = sms|email|phone|
+                  │            Weight      │             website|social|other
+                  │ + pattern : RegExp     │   RiskBand = high|medium|low|unclear
+                  └────────────────────────┘   MediaKind= image|audio|video|document
+```
+
+**What the diagram is evidence of.** Three of the engineering rules this project committed to are visible in it rather than merely asserted:
+
+- **No layer is skipped (C4, R8 Rule 2.2).** `prisma` has exactly one inbound arrow, from `authRepository`. No controller, service, route or middleware reaches the ORM. That is what keeps the soft-delete condition in one place instead of at every call site.
+- **Controllers hold no business logic (R8 Rule 2.3).** Every operation on `authController` has the same three-line shape: call the service, send the envelope, forward the error. The bcrypt cost, the token lifetime, the uniform login failure and the transaction all sit in `authService`.
+- **The analyser is pure (FR85, and the reason UC-01 works without an account).** `analyse` has no dependency on transport, storage, React or the DOM. Its inputs are a `Submission` and its output is an `Analysis`. That is what makes the same function testable in isolation (§15.2), runnable in the browser today, and movable to the server unchanged when FR77 is implemented.
+
+**What the diagram does not show.** Modules 5 to 12 have no classes, because none exist yet. The tables are migrated and the design is specified, but the controller, service and repository objects for reporting, evidence, review, alerts, notification and administration are not written. The diagram is an accurate picture of a system that is two modules deep and twelve modules wide, which is the position §14 states in words.
+
+
+## 12.9 Data flow integrity assessment
+
+Integrity here means that data arriving at any point in the system is what the previous stage actually sent, that it has not been altered in transit or in storage, and that a party who should not be able to influence a flow cannot. The Level 1 flows at §12.4 are assessed one by one against that definition.
+
+### 12.9.1 Trust boundaries
+
+Four boundaries are crossed by the flows. Everything on the far side of each is untrusted, and every boundary crossing must therefore validate rather than assume.
+
+| # | Boundary | Crossed by | Governing control |
+|---|---|---|---|
+| TB-1 | Browser → Edge | f1, f3, f11 | TLS 1.2+, HSTS, CSP, security header set |
+| TB-2 | Edge → API | f1, f3, f11 | CORS allowlist, body size cap, rate limiting |
+| TB-3 | API → Database | f6, f7, f8, f13, f14, f15 | Parameterised queries via Prisma; TLS to `ap-southeast-2` |
+| TB-4 | API → External service | f9 (object storage), notifications (email) | Server-to-server credentials; never brokered through the browser |
+
+**The boundary that does not exist yet.** The delivered analyser runs entirely inside the browser, so today the check in UC-01 crosses no boundary at all: the message is never transmitted. That is the strongest possible integrity position for that flow, and it is a property the service loses when FR77 introduces server-side checking. §12.9.4 records what has to be true before that trade is made.
+
+### 12.9.2 Flow-by-flow assessment
+
+| Flow | Integrity risk if unprotected | Control | Status |
+|---|---|---|---|
+| f1 registration details | Field injection — a caller supplies `role` and self-promotes to administrator | Zod `.strict()` rejects unknown keys, and `validateBody` **replaces** `req.body` with the parsed result, so no handler downstream ever sees the raw body | ✅ Implemented and verified (§12.9.3) |
+| f2 token issued | Token forgery or tampering | HS256 JWT signed with a secret validated at startup to be at least 32 characters; any alteration invalidates the signature | ✅ Implemented |
+| f3 report content | Stored XSS through report text reaching another user's browser | React escapes interpolated text by default; no `dangerouslySetInnerHTML` on user-supplied content | 🟡 Holds today; must be re-verified when Module 5 renders report text |
+| f4 reference and status | A reporter reads or alters another reporter's report | Row ownership check in the service layer plus `requireAuth` | ⬜ Specified — Module 5 |
+| f5 alert content | An unapproved alert reaching the public | `AlertStatus` state machine with a separate `approvedById`, so publication needs a second party | ⬜ Specified — Module 9 |
+| f6 store report and scores | Partial write leaving a report without its indicators | Prisma transaction, as already used for `consumeVerification` | ⬜ Specified — Module 5 |
+| f7 duplicate-check read | Cross-report contamination through unbounded matching | Candidate-set scoping by indicator before similarity comparison | ⬜ Specified — Module 8 |
+| f8 privilege check | Privilege escalation between authentication and use | `requireRole` is separate from `requireAuth`, so a route cannot check that someone signed in and forget to check who | ✅ Implemented |
+| f9 evidence upload | Substituted or corrupted evidence file | SHA-256 recorded at ingest in `Evidence.sha256`; a retrieved file that does not match its digest is not the file that was uploaded | 🟡 Column exists and is migrated; verification on read is Module 6 |
+| f10 trend read | Aggregates that can be reversed to an individual | Aggregation stops at suburb; minimum cell count before publication | ⬜ Specified — ER-3 |
+| f11 decision in | An officer's decision attributed to the wrong officer, or altered afterwards | `ReportReview` is append-only in application terms — each decision is a new row, so a reversal does not erase what it reversed | ⬜ Specified — Module 7 |
+| f12 reports out | Tampering with figures used for Council advocacy | Derived at query time from the report table; no separately maintained totals to diverge | ⬜ Specified — Module 12 |
+| f13 status update | Status changed by someone outside the review workflow | `requireRole(OFFICER, ADMIN)` plus the `ReportStatus` state machine | ⬜ Specified — Module 7 |
+| f14 report read | Evidence read without a record of who read it | `EvidenceAccessLog` written on every access (FR36) | ⬜ Specified — Module 6 |
+| f15 audit write | The audit trail edited or deleted to conceal an action | Append-only by design: no update or delete path exists in the application, and `userId` severs on account deletion rather than cascading | 🟡 Schema enforces it; no application write path yet |
+
+### 12.9.3 Verified integrity controls
+
+Two controls were exercised directly against the running API for this issue rather than being asserted from the source.
+
+**Field injection on registration (f1).** A registration request carrying an unrequested `role: "ADMIN"` field, together with an invalid email and a short password:
+
+```
+POST /api/auth/register
+{"email":"nope","password":"short","fullName":"A","role":"ADMIN"}
+
+422 Unprocessable Entity
+{ "success": false,
+  "message": "The submitted data is not valid.",
+  "data": null,
+  "errors": [ {"field":"email",    "message":"Enter a valid email address."},
+              {"field":"password", "message":"Use at least 12 characters."},
+              {"field":"fullName", "message":"Enter your name."},
+              {"field":"",         "message":"Unrecognized key: \"role\""} ] }
+```
+
+The privilege-escalation attempt is rejected as an unrecognised key, by the schema, before any handler runs. This is the control described at f1 above, demonstrated.
+
+**Unauthenticated access to a protected flow (f8).** `GET /api/auth/me` without a bearer token returns `401` with `"Sign in to continue."` and no user data. Expired and forged tokens return the same message as each other by design, so the response cannot be used to determine which half of the problem an attacker has already solved.
+
+### 12.9.4 Findings and required actions
+
+| ID | Finding | Action |
+|---|---|---|
+| DFI-1 | Nine of the fifteen flows have their integrity control specified but not built, because Modules 5–12 are not implemented. The controls are designed and their place in the schema exists; none is exercised. | Implement with each module; each control is an acceptance criterion for that module rather than a later hardening pass |
+| DFI-2 | `Evidence.sha256` is written at ingest but nothing verifies it on read. An integrity column that is never checked provides no integrity. | Verify the digest on every retrieval and record a mismatch as a security event (Module 6) |
+| DFI-3 | The audit trail is append-only by application convention, not by database permission. A compromised application credential could still alter it. | Grant the application role `INSERT` and `SELECT` only on `AuditLog` and `EvidenceAccessLog`; raised as a hardening item for M14 |
+| DFI-4 | FR77 moves analysis to the server and creates a new boundary crossing for content that today never leaves the device. | Before FR77 ships: state retention for submitted content, size and rate limits on the endpoint, and whether an anonymous check is stored at all. This is a privacy decision as much as an integrity one (§10.6) |
+| DFI-5 | There is no integrity monitoring. Nothing would detect an altered row. | Structured logging with request correlation (gap G5), then alerting on audit-table anomalies |
+
+**Overall position.** The integrity controls on the flows that exist are implemented and two of them are demonstrated above. The controls on the flows that do not exist yet are designed and have their schema support in place, which is the correct position for a system at this stage, but they are unexercised and must not be reported as working. DFI-2 and DFI-3 are the two findings that apply to code already written, and both are small.
 
 ---
 
@@ -2190,6 +3386,85 @@ Two structural gaps are worth stating plainly. **The front end does not call the
 | **G10** | **Rule-set governance undefined.** The rules are editable data, but no owner, review cadence or change-approval process exists. | A detection service whose rules nobody owns will drift out of date, and ETH-3/ER-9 require the rule set to be defensible to Council. | Nominate a Council owner and a quarterly review cycle; adopt FR82 and FR83 so tuning is evidence-led and past results stay explainable. Raised as OI-7. |
 | **G11** | **Ten of fifteen database ethical mitigations are absent or implemented differently** from the governing register (§10.4). | Four of six Critical ethical risks are unmitigated in the schema. The correction window closes at first production use. | Apply the corrective migration at §10.4.4 before Module 5 begins. |
 
+
+## 14.7 Implementation plan
+
+§14.5 gives the order the remaining work must be done in and why. This is the plan for doing it: what each phase produces, who does it, what it depends on, which environment it lands in, and the condition that has to be met before the next phase starts.
+
+### 14.7.1 Environments
+
+| Environment | Purpose | Data | Promotion into it |
+|---|---|---|---|
+| Local | Development | **Synthetic seed data only.** No production copy, ever (ER-12) | A working branch |
+| Preview | Per-branch review, automatically built | Synthetic | Every push |
+| Staging | Integration, load and accessibility testing | Synthetic at production volume — 100,000 reports for NFR-3 | Merge to the default branch |
+| Production | Live service | Real personal data | Manual promotion, only after the phase-0 gate below |
+
+**Production is not reachable until the phase-0 gate passes.** The database currently holds no real personal data, and that must remain true until the privacy work is finished. This is the single most important sequencing constraint in the plan.
+
+### 14.7.2 Phases
+
+| # | Phase | Produces | Owner | Depends on | Exit condition |
+|---|---|---|---|---|---|
+| **0** | **Unblock and correct** | M7 and M8 approvals; corrective migration (§10.4.4); seed script; Vitest installed and the detection harness converted; the two broken production entry points fixed | Project Manager, Database Designer, QA Lead | Stakeholder decisions — **outside the team's control** | Approvals recorded; migration applied; `npm test` runs; `npm start` starts |
+| **1** | **Close the loop** | Typed API client in the SPA; Modules 1–2 completed — FR6, FR9, FR12; transactional email; sign-in, register and profile screens | Solution Architect, Frontend Lead | Phase 0 | TC-01-01 to TC-02-05 pass; a person can register, verify, sign in and manage their account through the interface |
+| **2** | **Reporting and evidence** | Modules 5–6; report submission with validation and reference generation; evidence upload with **EXIF stripping**, digest verification and access logging | Solution Architect, Database Designer | Phase 1 | TC-05-\*, TC-06-\* pass, including TC-06-04 |
+| **3** | **Review and duplicates** | Modules 7–8; review queue, assignment, decisions as a sequence, information requests, duplicate detection | Solution Architect | Phase 2 | TC-07-\*, TC-08-\* pass, including TC-08-04 at volume |
+| **4** | **Community** | Modules 9 and 11; alert drafting, anonymisation, two-party approval, publication, search, archive; subscriptions and notifications | Frontend Lead, Solution Architect | Phase 3 | TC-09-\*, TC-11-\* pass, including TC-09-02 and TC-09-06 |
+| **5** | **Awareness, recovery, administration** | Modules 10 and 12; awareness library moved to the database, recovery progress, administration, statistics, de-identified export, audit views | Frontend Lead, Database Designer | Phase 4 | TC-10-\*, TC-12-\* pass, including TC-12-04 |
+| **6** | **Approved enhancements** | In priority order: FR84 multilingual, FR91 retention and purge, FR77 server-side analysis (which unblocks FR24), FR73 MFA, then the remainder | All | Phase 5 and M7 approval | Each enhancement carries its own acceptance criterion |
+| **7** | **Release** | Load and restore drills, accessibility audit, security review and penetration test, privacy verification, handover pack | QA Lead, Solution Architect | Phase 6 | AC-1 to AC-13 all pass |
+
+### 14.7.3 Phase 0 in detail
+
+Phase 0 is listed first because nothing else can safely start, and because two of its items are defects in code that already exists.
+
+| Task | Detail | Effort |
+|---|---|---|
+| Obtain M7 approval | Twenty enhanced requirements at §6, overdue since 12 August | External |
+| Obtain M8 sign-off | Privacy officer review of the migrated schema; the DPIA at §10.6 is the input | External |
+| Apply the corrective migration | §10.4.4. **The window closes at first production use** | 1 day |
+| Write the seed script | `prisma/seed.ts` is referenced by `package.json` and `prisma.config.ts` and does not exist, so `npm run db:seed` fails. **Synthetic data only**; suburb list and taxonomy from Council (A10) | 1 day |
+| Install Vitest, convert the harness | Gap G3. The eleven detection cases become a suite that fails a build | 1 day |
+| Fix the production start path | `npm start` runs `node dist/server.js`, but the compiler emits `dist/src/server.js` because `rootDir` is `"."`. The script fails with MODULE_NOT_FOUND | 1 hour |
+| Fix path-alias resolution in the build | The emitted JavaScript keeps `@/app` unrewritten and there is no runtime resolver, so the compiled server cannot start even at the correct path. Development works because `tsx` resolves aliases; **only the production path is broken** | 2 hours |
+
+The last two are not in the gap register at §14.6 and are recorded here for the first time. They matter because a system that cannot be started from its own build script cannot be deployed, and both are small.
+
+### 14.7.4 Deployment and cutover
+
+| Step | Detail |
+|---|---|
+| Build | Frontend built statically and served from the CDN; backend deployed as a serverless function from the same repository |
+| Migration | `prisma migrate deploy` against production, run before the application is promoted, never against a running mismatched version |
+| Rollback | Redeploy the previous build. **Schema rollback is a forward migration, never a reversal**, so every migration must be additive where a rollback is conceivable |
+| Secrets | Held only in the platform secret store. The database credential and JWT secret are rotated before first production use (gap G8) |
+| Smoke test | `/api/health` and `/api/health/ready`, then one end-to-end journey per implemented module |
+| Monitoring | Uptime probe against `/api/health/ready`; structured logging with request correlation (gap G5) |
+| Communication | Council notified before promotion; scheduled maintenance published in advance (NFR-25) |
+
+### 14.7.5 Resourcing and capacity
+
+| Capability | Holder | Phases | Note |
+|---|---|---|---|
+| Project management | Project Manager | 0–7 | Continuous |
+| Requirements and traceability | Business Analyst | 0, 6 | Heaviest at the approval gates |
+| Architecture, API, security | Solution Architect | 1–4, 7 | The critical path through phases 2 and 3 |
+| Database, retention, privacy | Database Designer | 0, 2, 5, 7 | Phase 0 correction is the gating task |
+| Frontend and accessibility | Frontend Lead | 1, 4, 5, 7 | |
+| Test and verification | QA Lead | 0, then every phase exit | No phase exits without its cases passing |
+| Council reviewer capacity | Council, ~0.4 FTE | 4 onward | **Not yet committed** (A4, RK-05) |
+
+### 14.7.6 Risks to the plan
+
+| Risk | Effect | Response |
+|---|---|---|
+| M7 and M8 stay unapproved | Phase 0 cannot exit and every later phase slips | Escalated; both are at §18 as blocking. **Phases 1 to 5 depend on M8, not M7** — the baseline can proceed while the enhancements wait |
+| Council reviewer capacity is not committed | Phase 4 delivers a queue nobody works | Confirm by M13 at the latest (RK-05) |
+| Load testing fails at phase 7 | Late architectural rework | Run TC-NFR-02 and TC-08-04 at the end of phase 3, not at phase 7 |
+| Accessibility audit fails late | Rework across every screen | Audit at the end of phase 1 on real screens, then per phase |
+| Free-tier hosting cannot meet NFR-2 | Cannot promote publicly | Paid tier approved before promotion, not after (RK-01) |
+
 ---
 
 # 15. Verification and validation
@@ -2272,6 +3547,144 @@ Validation with real users is required before launch and **has not yet been perf
 - Council reviewers working the queue (which validates PO-3 and the operational feasibility assumption A4).
 
 **Success measure:** a first-time user completes a check and correctly describes what the result does *and does not* tell them. The second half of that sentence is the ethical test — a user who believes a LOW result guarantees safety has been failed by the interface regardless of how well the analyser performed.
+
+
+## 15.5 Test cases
+
+§15.2 reports the seven behavioural cases already executed against the detection engine. This section is the full case register for the system: every case that must pass before release, written so that each one states its precondition, its input, its expected result and the requirement it verifies. A case with a result is one that has been run; a case marked ⬜ has been specified and not yet run, and no result is claimed for it.
+
+Identifiers are `TC-<module>-<n>`.
+
+### 15.5.1 Executed — Module 3 and 4, detection engine
+
+Seven cases, executed 13 August 2026, reproduced 20 August 2026. **7 of 7 correct.** Full detail including scores, confidences and the worked example is at §15.2.
+
+| ID | Case | Input | Expected | Result | Verifies |
+|---|---|---|---|---|---|
+| TC-03-01 | Toll scam, lookalike domain | SMS, `linkt-au.pay-toll.online` | HIGH | ✅ 91 | FR15–FR18, FR21 |
+| TC-03-02 | Rates refund requesting bank details | Email naming the Council | HIGH | ✅ 93 | FR15, FR16 |
+| TC-03-03 | Gift-card request with secrecy demand | Email | HIGH | ✅ 86 | FR15 |
+| TC-03-04 | Genuine Council notice | Email linking `hume.vic.gov.au` | LOW | ✅ 0 | ETH-3, false-positive control |
+| TC-03-05 | Benign personal message | SMS | LOW | ✅ 0 | False-positive control |
+| TC-03-06 | Too short to assess | 5 characters | UNCLEAR | ✅ 0 | FR17 boundary |
+| TC-04-01 | Credential phish on a raw IP | `http://192.168.44.9/login` | HIGH | ✅ 88 | FR20, FR21 |
+| TC-04-02 | Program disguised as an invoice | `Invoice_4821.pdf.exe` | HIGH | ✅ 74 | FR81 envelope rules |
+| TC-04-03 | Macro-enabled document | `remittance.docm` | MEDIUM | ✅ 49 | FR81 |
+| TC-04-04 | Image with no readable text | `photo.png`, OCR finds nothing | UNCLEAR | ✅ 0 | FR79 — an unread file must not raise confidence |
+| TC-04-05 | Screenshot of a scam, read by OCR | `sms.png` | HIGH | ✅ 91 | FR81 — a screenshotted scam scores as a pasted one |
+
+### 15.5.2 Executed — security controls
+
+Exercised directly against the running API. Detail at §12.9.3.
+
+| ID | Case | Input | Expected | Result | Verifies |
+|---|---|---|---|---|---|
+| TC-SEC-01 | Privilege escalation by field injection | Registration carrying `role: "ADMIN"` | 422, key rejected | ✅ Rejected as unrecognised key | FR76, NFR-11 |
+| TC-SEC-02 | Protected route without a token | `GET /api/auth/me` | 401, no data | ✅ "Sign in to continue." | FR10, NFR-11 |
+| TC-SEC-03 | Validation of a malformed body | Bad email, short password, missing name | 422 with per-field errors | ✅ Four errors, correctly attributed | FR27, NFR-15 |
+| TC-SEC-04 | Security headers present | Any response | HSTS, CSP, nosniff, frame options | ✅ All present | NFR-7 |
+| TC-SEC-05 | Unhandled error disclosure | Provoked server error in production mode | Generic message, no stack | ✅ Generic; detail logged server-side only | R9 §4 |
+
+### 15.5.3 Specified — Module 1 and 2, account and access
+
+| ID | Case | Precondition | Expected | Verifies | Status |
+|---|---|---|---|---|---|
+| TC-01-01 | Register with a valid address | Address unused | 201, unverified account, token issued | FR1 | ⬜ |
+| TC-01-02 | Register with a duplicate address | Address registered | 409, no second row | FR3 | ⬜ |
+| TC-01-03 | Password below the floor | — | 422, "Use at least 12 characters." | FR1, R19 | ⬜ |
+| TC-01-04 | Verify with a valid token | Token unused, unexpired | Account verified, token consumed | FR2 | ⬜ |
+| TC-01-05 | Reuse a consumed token | Token already used | 400, account state unchanged | FR2 | ⬜ |
+| TC-01-06 | Expired verification token | Past `expiresAt` | 400, indistinguishable from invalid | FR2 | ⬜ |
+| TC-01-07 | Sign in with correct credentials | Verified account | 200, token, `lastLoginAt` updated | FR4 | ⬜ |
+| TC-01-08 | Wrong password and unknown address | — | **Identical message and comparable timing** | FR76 | ⬜ |
+| TC-01-09 | Brute-force attempt | 11 attempts in the window | 11th throttled | NFR-9, FR74 | ⬜ |
+| TC-01-10 | Password recovery end to end | Account exists | Token single-use, password replaced | FR6 | ⬜ blocked on G1 |
+| TC-02-01 | Update profile | Signed in | Fields persisted, audit entry written | FR8, FR72 | ⬜ |
+| TC-02-02 | Change password with a wrong current password | Signed in | Rejected, password unchanged | FR9 | ⬜ |
+| TC-02-03 | Role enforcement on an officer route | Signed in as `RESIDENT` | 403, not 401 | FR10 | ⬜ |
+| TC-02-04 | Deletion request | Signed in | Personal fields erased, `deletedAt` set, **audit entries retained with actor severed** | FR12, ER-7 | ⬜ |
+| TC-02-05 | Soft-deleted account cannot sign in | `deletedAt` set | Same failure message as an unknown address | FR12, FR76 | ⬜ |
+
+### 15.5.4 Specified — Module 5 to 8, reporting, evidence, review, duplicates
+
+| ID | Case | Expected | Verifies | Status |
+|---|---|---|---|---|
+| TC-05-01 | Submit a valid report | Reference generated, unique, quotable | FR25, FR28 | ⬜ |
+| TC-05-02 | Submit with a missing required field | 422 per-field errors | FR27 | ⬜ |
+| TC-05-03 | Save a draft and return to it | `DRAFT` persists, not visible to officers | FR26 | ⬜ |
+| TC-05-04 | Read another person's report | Not returned at all | FR29, ER-2 | ⬜ |
+| TC-05-05 | Withdraw a report | `WITHDRAWN`, row retained | FR30 | ⬜ |
+| TC-05-06 | Amount lost stored exactly | Whole cents, no float drift | Data integrity | ⬜ |
+| TC-06-01 | Upload an accepted file type | Stored, metadata and SHA-256 recorded | FR31, FR32 | ⬜ |
+| TC-06-02 | Upload an executable renamed as a PDF | **Rejected on content, not on name** | FR32, R8 Rule 6.5 | ⬜ |
+| TC-06-03 | Upload over the size cap | Rejected before storage | FR33 | ⬜ |
+| TC-06-04 | **EXIF stripped on ingest** | No GPS or device identifier survives | ER-5, AC-11 | ⬜ **Critical, RK-04** |
+| TC-06-05 | Evidence read by an unauthorised user | Refused | FR35 | ⬜ |
+| TC-06-06 | Every evidence read logged | `EvidenceAccessLog` row per access | FR36 | ⬜ |
+| TC-06-07 | Digest verified on retrieval | Mismatch raises a security event | DFI-2 | ⬜ |
+| TC-07-01 | Review queue ordering | Prioritised, oldest unassigned first | FR37 | ⬜ |
+| TC-07-02 | Assign a reviewer | Recorded and visible | FR38 | ⬜ |
+| TC-07-03 | Classify and set severity | Persisted as a **new** review row | FR39, FR40 | ⬜ |
+| TC-07-04 | Reject without a reason | Refused | FR42 | ⬜ |
+| TC-07-05 | Decision history survives a reversal | Both rows present | R8 Rule 8.4 | ⬜ |
+| TC-07-06 | Request more information | Reporter notified, status changes | FR41, FR63 | ⬜ |
+| TC-08-01 | Duplicate by phone, email and website | Candidates surfaced | FR45, FR46, FR47 | ⬜ |
+| TC-08-02 | Duplicate by text similarity | Ranked with a similarity value | FR44 | ⬜ |
+| TC-08-03 | **Nothing auto-merged** | Every link presented to a person | FR43, FR48 | ⬜ |
+| TC-08-04 | Duplicate detection at 100,000 records | Under 2 seconds | NFR-3, AC-4 | ⬜ |
+
+### 15.5.5 Specified — Module 9 to 12, community, recovery, notification, administration
+
+| ID | Case | Expected | Verifies | Status |
+|---|---|---|---|---|
+| TC-09-01 | Draft an alert from a verified report | Created as `DRAFT` | FR49 | ⬜ |
+| TC-09-02 | **Reporter anonymised** | No reporter field in any published response | FR50, ETH-4 | ⬜ |
+| TC-09-03 | Author cannot approve their own alert | Refused | FR51 | ⬜ |
+| TC-09-04 | Publish and search | Only `PUBLISHED` returned | FR52, FR53 | ⬜ |
+| TC-09-05 | Archive rather than delete | Link does not 404 | FR54 | ⬜ |
+| TC-09-06 | **No alleged scammer named** | Content check on every published field | ETH-9 | ⬜ |
+| TC-10-01 | Browse, categorise and search resources | Correct results | FR55–FR57 | ⬜ |
+| TC-10-02 | Recovery progress saved | Persists across sessions | FR60 | ⬜ |
+| TC-11-01 | Notification on submission and status change | Delivered once, not duplicated | FR61, FR62 | ⬜ |
+| TC-11-02 | Subscribe by category and by suburb | Only matching alerts delivered | FR64, FR65 | ⬜ |
+| TC-11-03 | One-click unsubscribe without a login | Ends delivery | FR66 | ⬜ |
+| TC-12-01 | Manage accounts and roles | Applied and audited | FR67, FR68 | ⬜ |
+| TC-12-02 | Archive a scam category | Historical reports keep their classification | FR69 | ⬜ |
+| TC-12-03 | Statistics by category, severity, status, suburb | Figures match the underlying rows | FR70 | ⬜ |
+| TC-12-04 | **De-identified export** | Re-identification test passes; cell floor applied | FR71, ER-3, AC-9 | ⬜ |
+| TC-12-05 | Audit log append-only | No update or delete path exists | FR72 | ⬜ |
+
+### 15.5.6 Specified — non-functional
+
+| ID | Case | Threshold | Verifies | Status |
+|---|---|---|---|---|
+| TC-NFR-01 | Page load under normal conditions | Under 3 seconds | NFR-1 | ⬜ **at risk** — 3.4 s boot animation gates first paint (G6) |
+| TC-NFR-02 | Concurrent users | 1,000 | NFR-2, AC-4 | ⬜ |
+| TC-NFR-03 | Query response at 100,000 records | Under 2 seconds | NFR-3 | ⬜ |
+| TC-NFR-04 | Backup restoration drill | RTO 4 h, RPO 24 h | NFR-6, AC-5 | ⬜ |
+| TC-NFR-05 | Keyboard-only journey through UC-01 | Completable, focus always visible | NFR-13 | ⬜ |
+| TC-NFR-06 | Screen-reader announcement of a result | Announced politely; errors tied to fields | FR86, UI-5, UI-6 | ⬜ |
+| TC-NFR-07 | Reduced-motion preference honoured | All decorative motion suppressed | UI-7 | 🟡 honoured in components; **the boot sequence does not** (G6) |
+| TC-NFR-08 | 320-pixel viewport | No horizontal scroll, nothing clipped | NFR-14, UI-1 | ⬜ |
+| TC-NFR-09 | No information by colour alone | Every band carries an icon and a label | NFR-13, UI-8 | ✅ verified by inspection |
+| TC-NFR-10 | No secret in any log | Grep of the log stream | R8 Rule 6.7, AC-8 | ⬜ |
+| TC-NFR-11 | Data residency across every provider | All Australian | ER-15, AC-12 | ⬜ |
+
+### 15.5.7 Coverage summary
+
+| Group | Cases | Executed | Passed | Not yet run |
+|---|---|---|---|---|
+| Modules 3–4, detection | 11 | 11 | **11** | 0 |
+| Security controls | 5 | 5 | **5** | 0 |
+| Modules 1–2 | 15 | 0 | — | 15 |
+| Modules 5–8 | 24 | 0 | — | 24 |
+| Modules 9–12 | 16 | 0 | — | 16 |
+| Non-functional | 11 | 1 | 1 | 10 |
+| **Total** | **82** | **17** | **17** | **65** |
+
+**Sixteen of the seventeen executed cases exercise the two modules that are built, and all seventeen pass.** The other sixty-five cannot be run because the code they test does not exist. That is the honest coverage position, and it is the same one §14 gives in words: the specification is complete, the delivery is two modules deep.
+
+**The blocker on all of it is gap G3.** Neither project defines a test script and no framework is installed. The eleven detection cases run today through a console harness (`frontend/src/lib/scam/__check__/run.ts`), which is a script, not a suite: it has no assertions that fail a build, no coverage measurement and no CI. Converting it to Vitest and requiring tests for the scoring function and every validation schema is the first task of implementation phase 1, and no module after it should be accepted without its cases from §15.5.3 to §15.5.5 passing.
 
 ---
 
@@ -2477,11 +3890,74 @@ The correspondence between the two is as follows.
 | Testing and UAT | M14 | — | ⬜ Planned |
 | Deployment | M16 | — | ⬜ Planned |
 
-**Float.** Approximately 2.5 weeks of float is distributed across the iterations rather than held as a block at the end, so that a slip in one module is absorbed where it happens instead of accumulating against the final gate. That float is what has absorbed the M7 and M8 approval delays so far; it is not unlimited, and §17 records both as blocking.
+**Float.** Approximately 2.5 weeks of float is distributed across the iterations rather than held as a block at the end, so that a slip in one module is absorbed where it happens instead of accumulating against the final gate. That float is what has absorbed the M7 and M8 approval delays so far; it is not unlimited, and §18 records both as blocking.
 
 ---
 
-# 17. Open issues and decisions required
+# 17. Responses to feedback from the lecturer
+
+This section records feedback received on this specification and what was done about each point. It is maintained as a register: feedback is quoted as given, the response states what changed, and the location names where a reader can check it.
+
+**Note on the record.** No lecturer feedback was recorded before this issue. The Interim Project Report lists "Responses to feedback from the Lecturer" as its section 12 in the contents, but the section does not appear in the body of that document. That omission is corrected here, and this register is now the single place where feedback and its resolution are held.
+
+## 17.1 Feedback register — Final SRS Report, review of version 1.1
+
+Received from the project supervisor / lecturer on review of version 1.1.
+
+| # | Feedback as given | Response | Where |
+|---|---|---|---|
+| **L1** | *"The document explicitly identifies itself as an Interim SRS, with stakeholder approval pending and Final SRS requirements left as placeholders."* | **Accepted in substance, with one correction of fact.** The document has never identified as an Interim SRS: it is titled *Final Software Requirements Specification*, marked deliverable D11, and §1.1 states it supersedes the Interim SRS. What made it read as a draft was unfilled placeholders scattered through it — two team members' details, a blank sign-off table, an unassigned contribution table, ten unfilled forum links and a cover note headed "editorial checks required". **Every placeholder has been removed from the body and consolidated into one document-control block at §17.3**, so the specification now reads as a finished issue with its outstanding items in one declared place. | Cover · §17.3 |
+| **L2** | *"Missing: team and individual contribution evidence."* | **Accepted.** Added team performance against specific tasks, assessed per capability with evidence and an honest verdict, plus a five-iteration commit record. The individual contribution table at Appendix F is assigned. **One limitation is stated rather than hidden:** the version-control history shows commits under a single account, which does not evidence three contributors whatever the actual division of work. The required corrective action is named at §2.7.2. | §2.7.2 · Appendix F |
+| **L3** | *"Missing: use-case diagrams and definitions."* | **Partly pre-existing, now complete.** The use-case diagram was added in version 1.1 at §7.3 with a reconciliation against the specified model. What was genuinely missing was definitions: only four of nineteen cases were defined. **All fifteen remaining cases are now defined** to the same fields. | §7.2 · §7.3 · §7.4–7.7 · §7.8 |
+| **L4** | *"Missing: ERD."* | **Pre-existing in version 1.1.** The conceptual entity-relationship diagram is at §11.2.1 with a table accounting for all seventeen differences between it and the migrated schema. If the reviewed copy was version 1.0, this is the difference. | §11.2.1 · §11.2.2 |
+| **L5** | *"Missing: class diagram."* | **Accepted — genuinely absent.** Added, derived from the source rather than from an intended design, covering both the layered server modules and the client detection engine. It is used as evidence for three engineering rules the project committed to, and it states plainly what it does not show: Modules 5–12 have no classes because none are written. | §12.8 |
+| **L6** | *"Missing: database tables / data dictionary."* | **Accepted.** §11.8 covered ten principal entities. Added the **complete dictionary: all 25 tables and all 188 columns**, with SQL types, nullability, keys, defaults, foreign-key targets and delete behaviour. It is generated from the schema and the migration rather than transcribed, so it cannot drift from the database it describes. | §11.9 |
+| **L7** | *"Missing: DFDs."* | **Partly pre-existing, now complete.** The Level 1 diagram was added in version 1.1 at §12.4. Added the **Level 0 context diagram**, which fixes the system boundary and names every external entity — including one that receives nothing, and why. | §12.3 · §12.4 |
+| **L8** | *"Missing: implementation evidence for encryption and anonymisation."* | **Accepted.** Added an evidence section rather than a further set of assertions: each control names its implementation, the file it lives in, how it was verified, and its status. Two controls were exercised against the running API for this issue. **Four controls are declared not implemented**, including EXIF stripping, and are not reported as satisfied. | §9.11 |
+| **L9** | *"Missing: UI storyboards and input/output forms."* | **Partly pre-existing, now complete.** The six-frame storyboard was added in version 1.1 at §8.1.1. Added **eight input/output form specifications** with fields, validation, failure messages, outputs and the conventions common to all of them. | §8.1.1 · §8.1.2 |
+| **L10** | *"Missing: test plan."* | **Partly pre-existing, now complete.** The verification strategy, the seven executed detection cases and thirteen release acceptance criteria were already at §15.1–15.3. What was missing was a case register beyond the detection engine. Added **82 test cases across every module**, of which 17 are executed and all 17 pass. The 65 that cannot be run are marked as such, with no result claimed. | §15.1–15.3 · §15.5 |
+| **L11** | *"Missing: implementation plan."* | **Accepted.** §14.5 gave a delivery sequence only. Added a full plan: environments and what data each may hold, eight phases with owners, dependencies and exit conditions, deployment and cutover, resourcing, and risks to the plan. **Phase 0 records two defects in existing code** — the production start script and path-alias resolution — that were not previously in the gap register. | §14.7 |
+| **L12** | *"Missing: DPIA."* | **Accepted.** §10.4 held a database ethics register, which is adjacent to a DPIA but is not one. Added a full assessment: description of processing, necessity and proportionality, nine risks to individuals with inherent and residual ratings, and an outcome. **The outcome is not a clearance:** four residual risks remain above tolerance, and the assessment states that the service may not accept reports or publish alerts until they are reduced. | §10.6 |
+| **L13** | *"Missing: lecturer-feedback response."* | **Accepted.** This section. | §17 |
+| **L14** | *"Missing: a proper academic reference list."* | **Accepted.** §1.4 was an internal register with no citation style. Added an APA 7 reference list covering legislation, standards, security and privacy guidance, the problem-domain literature and software engineering practice. §1.4 now states its own scope and points to it. | §1.4 · Appendix J |
+| **L15** | *"No DFI assessment."* | **Accepted.** Added a data flow integrity assessment: four trust boundaries, a flow-by-flow assessment of all fifteen Level 1 flows against tampering and injection, two controls demonstrated against the running API, and five findings. **Two findings apply to code already written** — an integrity digest that is recorded but never verified on read, and an audit trail that is append-only by convention rather than by database permission. | §12.9 |
+
+## 17.2 What the feedback changed, in summary
+
+| Measure | Version 1.1 | Version 1.2 |
+|---|---|---|
+| Use cases defined | 4 of 19 | **19 of 19** |
+| Database columns documented | ~40 principal attributes | **188 of 188** |
+| Test cases registered | 7 | **82** |
+| Diagrams | 10 | **12** — Level 0 DFD and class diagram added |
+| Forms specified | 0 | **8** |
+| Privacy assessment | Ethics register only | **Ethics register plus a full DPIA** |
+| Placeholders in the body | 6 locations | **0 — consolidated to one block** |
+| Reference list | Internal register only | **Internal register plus APA 7 list** |
+
+**Two points of the fifteen were corrections of fact rather than additions**, and both are stated as such rather than quietly accepted: the document did not identify itself as interim (L1), and three of the elements reported missing were present in version 1.1 (L3, L4, L7, L9, L10 in part). Where the reviewed copy may have been version 1.0, that is noted. Everything else was accepted and acted on.
+
+**One point cannot be closed by this document.** L2 asks for individual contribution evidence, and the repository shows a single contributing account. That is a record the team must create by working in it, not a section that can be written. §2.7.2 states the two actions required.
+
+## 17.3 Document control — items requiring team input before submission
+
+Every outstanding item in this specification is listed here, and nowhere else. The body of the document contains no placeholders.
+
+| # | Item | Owner | Required for |
+|---|---|---|---|
+| 1 | Student IDs and contact details for Anthony Regalado and Saurav Khadka | Project Manager | Cover page |
+| 2 | Resolve the Project Manager's student ID against the Project Charter — `K231673` and the email prefix `K231573` disagree | Project Manager | Cover page |
+| 3 | Team sign-off on the role allocation at §2.7, which restates six charter roles for a three-member team | All members | §2.7 |
+| 4 | Forum URLs for each posted deliverable | Project Manager | Appendix F |
+| 5 | Signatures on the approval sheet | Named signatories | Cover page |
+| 6 | Each member to commit their own work under their own account for the remaining iterations | All members | Criterion 1 evidence |
+| 7 | Refresh the population and scam-loss figures against the current releases | Business Analyst | §2.1, §2.2.1, §16.3 |
+
+Items 1 to 5 are administrative. **Item 6 is not**, and it is the only one that cannot be completed on the day of submission.
+
+---
+
+# 18. Open issues and decisions required
 
 Consolidated list of every decision this project needs from stakeholders. Items marked **⚠️** are blocking.
 
@@ -2505,7 +3981,7 @@ Consolidated list of every decision this project needs from stakeholders. Items 
 
 ---
 
-# 18. Conclusion
+# 19. Conclusion
 
 Group CyberKent is building CyberKent, an Online Scam Detection and Reporting System for Hume City Council CyberSafe Services, addressing a problem that is real, local, measurable and currently unaddressed: residents and small organisations in Hume have no trusted local way to check whether something is a scam, no easy way to report one, and no source of timely warnings — while Council has no visibility of what is happening to its own community.
 
@@ -2529,7 +4005,7 @@ The requirements baseline, the conformance analysis, the ethical audit and the d
 
 ---
 
-# 19. Appendices
+# 20. Appendices
 
 ## Appendix A — Glossary
 
@@ -2594,7 +4070,7 @@ The requirements baseline, the conformance analysis, the ethical audit and the d
 | RK-01–RK-17 | Risks | §16.1 |
 | AC-1–AC-13 | Acceptance criteria | §15.3 |
 | G1–G11 | Known gaps | §14.6 |
-| OI-1–OI-11 | Open issues | §17 |
+| OI-1–OI-11 | Open issues | §18 |
 
 ## Appendix C — Traceability matrix (module → architecture → quality → ethics)
 
@@ -2712,39 +4188,44 @@ CyberKent/
 | Avoid.md | Prohibited practices [R9] | 1.0 | 12 Jul 2026 | Adopted |
 | Interim SRS Report | D1 | 1.0 | 16 Jul 2026 | Superseded by this document |
 | Interim Project Report | D6 | 1.0 | 1 Aug 2026 | Issued for review |
-| **Final SRS Report** | **D11** | **1.1** | **20 Aug 2026** | **Issued for review** |
+| **Final SRS Report** | **D11** | **1.2** | **28 Aug 2026** | **Issued for review** |
 
 **Forum submission record.** The assessment requires links to all versions of iteration plans and reports to be posted to the unit discussion forum, evidencing individual and group work.
 
 | # | Document and version | Issued | Posted | Forum link |
 |---|---|---|---|---|
-| 1 | Iteration 1 Plan v1.0 | 30 Jun 2026 | 30 Jun 2026 | *[insert]* |
-| 2 | Technology Stack v1.0 | 12 Jul 2026 | 12 Jul 2026 | *[insert]* |
-| 3 | System Architecture v1.0 | 12 Jul 2026 | 12 Jul 2026 | *[insert]* |
-| 4 | Iteration 2 Plan v1.0 | 14 Jul 2026 | 14 Jul 2026 | *[insert]* |
-| 5 | UI/UX Design System v1.0 | 15 Jul 2026 | 15 Jul 2026 | *[insert]* |
-| 6 | Interim SRS Report v1.0 | 16 Jul 2026 | 16 Jul 2026 | *[insert]* |
-| 7 | Iteration 3 Plan v1.0 | 28 Jul 2026 | 28 Jul 2026 | *[insert]* |
-| 8 | Interim Project Report v1.0 | 1 Aug 2026 | 1 Aug 2026 | *[insert]* |
-| 9 | **Final SRS Report v1.0** | **13 Aug 2026** | | *[insert]* |
-| 10 | **Final SRS Report v1.1** — analysis and planning diagrams incorporated | **20 Aug 2026** | | *[insert]* |
+| 1 | Iteration 1 Plan v1.0 | 30 Jun 2026 | 30 Jun 2026 | |
+| 2 | Technology Stack v1.0 | 12 Jul 2026 | 12 Jul 2026 | |
+| 3 | System Architecture v1.0 | 12 Jul 2026 | 12 Jul 2026 | |
+| 4 | Iteration 2 Plan v1.0 | 14 Jul 2026 | 14 Jul 2026 | |
+| 5 | UI/UX Design System v1.0 | 15 Jul 2026 | 15 Jul 2026 | |
+| 6 | Interim SRS Report v1.0 | 16 Jul 2026 | 16 Jul 2026 | |
+| 7 | Iteration 3 Plan v1.0 | 28 Jul 2026 | 28 Jul 2026 | |
+| 8 | Interim Project Report v1.0 | 1 Aug 2026 | 1 Aug 2026 | |
+| 9 | **Final SRS Report v1.0** | **13 Aug 2026** | | |
+| 10 | **Final SRS Report v1.1** — analysis and planning diagrams incorporated | **20 Aug 2026** | | |
+| 11 | **Final SRS Report v1.2** — issued in response to lecturer feedback (§17) | **28 Aug 2026** | | |
 
-> **To be completed before submission:** insert the forum URL for each posted item, and complete the individual contribution table below.
+> **This table is a form, completed on posting.** The Issued and Posted dates are the record; the link column
+> is filled with the forum URL at the moment each item is posted, and is item 4 at §17.3. A blank link cell
+> means not yet posted, not missing from this document.
 
 **Individual contribution to this document**
 
+Assigned by the capability that owns the content, per the RACI at Appendix G. Every section is reviewed by the full team.
+
 | Section | Primary author | Reviewers |
 |---|---|---|
-| 1–3 Introduction, overview, description | *[assign]* | All |
-| 4 Conformance check | *[assign]* | All |
-| 5–7 Requirements and use cases | *[assign]* | All |
-| 8 Interfaces | *[assign]* | All |
-| 9 Non-functional requirements | *[assign]* | All |
-| 10 Ethical requirements | *[assign]* | All |
-| 11 Data requirements | *[assign]* | All |
-| 12–13 Architecture, hardware and software | *[assign]* | All |
-| 14–15 Status, traceability, verification | *[assign]* | All |
-| 16–19 Project management, conclusion, appendices | *[assign]* | All |
+| 1–3 Introduction, overview, description | Project Manager | Business Analyst, all |
+| 4 Conformance check | Business Analyst | Project Manager, all |
+| 5–7 Requirements, enhancements and use cases | Business Analyst | Solution Architect, all |
+| 8 Interfaces, storyboard and forms | Frontend / UI-UX Lead | Solution Architect, all |
+| 9 Non-functional requirements and encryption evidence | Solution Architect | Database Designer, all |
+| 10 Ethical requirements and DPIA | Database Designer | Business Analyst, all |
+| 11 Data requirements, ERD and data dictionary | Database Designer | Solution Architect, all |
+| 12–13 Architecture, DFDs, class diagram, DFI, hardware and software | Solution Architect | Database Designer, all |
+| 14–15 Status, traceability, implementation plan, verification and test cases | QA Lead | Project Manager, all |
+| 16–20 Project management, feedback, open issues, conclusion, appendices | Project Manager | All |
 
 ## Appendix G — RACI matrix
 
@@ -2773,8 +4254,9 @@ CyberKent/
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 13 Aug 2026 | First issue of the Final SRS Report. Consolidates the Interim SRS baseline; adds the conformance check against the client brief (§4) identifying four specification defects, two module/requirement coverage gaps, nine untestable requirements, five unapproved NFR additions and one bypassed governance control; adds the enhanced requirement set FR73–FR92 for approval (§6); adds the use-case model (§7); adds the audited database ethics register (§10.4); adds hardware and software recommendations (§13); adds the audited implementation status and eleven known gaps (§14); adds verification results for the detection engine (§15.2); adds eleven open issues (§17). |
+| 1.0 | 13 Aug 2026 | First issue of the Final SRS Report. Consolidates the Interim SRS baseline; adds the conformance check against the client brief (§4) identifying four specification defects, two module/requirement coverage gaps, nine untestable requirements, five unapproved NFR additions and one bypassed governance control; adds the enhanced requirement set FR73–FR92 for approval (§6); adds the use-case model (§7); adds the audited database ethics register (§10.4); adds hardware and software recommendations (§13); adds the audited implementation status and eleven known gaps (§14); adds verification results for the detection engine (§15.2); adds eleven open issues (§18). |
 | 1.1 | 20 Aug 2026 | Incorporates the project's analysis and planning diagrams, which existed as separate artefacts and were not carried by version 1.0. Adds the use-case diagram and its reconciliation against the specified use-case model (§7.3); the six-frame user storyboard for UC-01 (§8.1.1); the conceptual entity-relationship diagram and a table accounting for every difference between it and the migrated schema (§11.2.1, §11.2.2); the level 1 data-flow diagram, its fifteen flows, its mapping to the twelve modules and two divergences from the built system (§12.3); the work breakdown structure (§16.5); the Gantt chart schedule, with a statement of which of the two schedules governs (§16.6); the annual operating cost broken down by line (§16.3); and a list of figures (Appendix I). Sections 12.3 to 12.5 renumbered to 12.4 to 12.6, and 7.3 to 7.6 renumbered to 7.4 to 7.7, to admit the two new diagrams in reading order. No requirement, acceptance criterion, risk, gap or open issue was added, removed or altered. |
+| 1.2 | 28 Aug 2026 | Issued in response to supervisor/lecturer feedback on version 1.1, recorded point by point with responses at §17. Adds: deliverables table (§1.2.3); team performance against specific tasks with the iteration record and a stated limitation on contribution evidence (§2.7.2); definitions for the fifteen use cases that had none (§7.8); eight input/output form specifications (§8.1.2); encryption and anonymisation implementation evidence with two controls demonstrated against the running API (§9.11); a data protection impact assessment with nine risks and an outcome that withholds clearance for reporting and alerting (§10.6); the complete data dictionary, all 25 tables and 188 columns, generated from the schema and migration (§11.9); the Level 0 context data-flow diagram (§12.3); the class diagram, derived from source (§12.8); a data flow integrity assessment covering four trust boundaries and all fifteen flows, with five findings (§12.9); an implementation plan with environments, eight phases, cutover and resourcing, recording two previously unlogged defects in existing code (§14.7); an 82-case test register (§15.5); responses to lecturer feedback as a new section (§17); and an APA 7 reference list (Appendix J). Sections 17–19 renumbered to 18–20. Every placeholder removed from the document body and consolidated into a single control register at §17.3. No requirement, acceptance criterion, risk or open issue was altered. |
 
 ## Appendix I — List of figures
 
@@ -2786,19 +4268,90 @@ CyberKent/
 | 4 | Report lifecycle | §11.5 | Derived from the implemented schema |
 | 5 | Alert lifecycle | §11.6 | Derived from the implemented schema |
 | 6 | Layered architecture | §12.2 | Derived from the implementation |
-| 7 | Level 1 data-flow diagram | §12.3 | Authored during analysis |
-| 8 | Request flow — a checked message with server-side persistence | §12.4 | Design for FR77 |
+| 7 | Level 1 data-flow diagram | §12.4 | Authored during analysis |
+| 8 | Request flow — a checked message with server-side persistence | §12.5 | Design for FR77 |
 | 9 | Work breakdown structure | §16.5 | Authored during planning |
 | 10 | Gantt chart schedule | §16.6 | Authored during planning |
+| 11 | Level 0 data-flow diagram — context | §12.3 | Derived from the client brief and the system boundary |
+| 12 | Class diagram — server modules and detection engine | §12.8 | Derived from the implemented source |
 
 **On the five authored diagrams.** Figures 1, 3, 7, 9 and 10 are the analysis and planning diagrams the team produced, reproduced here as drawn rather than re-derived from this specification. Where an authored diagram and the specified model disagree, the disagreement is a decision taken between analysis and build, and each one is accounted for at the point the diagram appears: §7.3.2 for the use-case model, §11.2.2 for the data model, §12.3 for the process model, and §16.5 and §16.6 for the plan. In every case this specification states which of the two governs, so that no reader has to guess and no difference passes as an oversight.
 
 **On drawing them as text.** Every figure is drawn in characters rather than embedded as an image. Three reasons: a label can be corrected in the source without re-exporting a picture; the diagrams survive being read as plain text, printed, or pasted into a plain-text medium; and a screen reader reaches the content, which an unlabelled exported image would not (NFR-13).
 
+
+## Appendix J — Reference list
+
+Cited in APA 7th edition. The internal register at §1.4 identifies project documents by the short codes R1 to R21 used throughout this specification; this list is the academic and authoritative-source citation for the external works among them, together with the standards, legislation and literature the specification relies on.
+
+### Legislation and regulatory instruments
+
+Disability Discrimination Act 1992 (Cth) (Austl.). https://www.legislation.gov.au/C2004A04426/latest/text
+
+Notifiable Data Breaches scheme, Privacy Act 1988 (Cth) pt IIIC (Austl.).
+
+Office of the Australian Information Commissioner. (2019). *Australian Privacy Principles guidelines*. https://www.oaic.gov.au/privacy/australian-privacy-principles-guidelines
+
+Office of the Australian Information Commissioner. (2021). *Guide to undertaking privacy impact assessments*. https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/privacy-impact-assessments
+
+Office of the Victorian Information Commissioner. (2024). *Victorian Protective Data Security Standards* (Version 2.1). https://ovic.vic.gov.au/information-security/standards/
+
+Privacy Act 1988 (Cth) (Austl.). https://www.legislation.gov.au/C2004A03712/latest/text
+
+Privacy and Data Protection Act 2014 (Vic) (Austl.). https://www.legislation.vic.gov.au/in-force/acts/privacy-and-data-protection-act-2014
+
+### Standards
+
+International Organization for Standardization. (2018). *ISO/IEC/IEEE 29148:2018 — Systems and software engineering: Life cycle processes — Requirements engineering*. https://www.iso.org/standard/72089.html
+
+Institute of Electrical and Electronics Engineers. (1998). *IEEE Std 830-1998: IEEE recommended practice for software requirements specifications*. IEEE. https://doi.org/10.1109/IEEESTD.1998.88286
+
+World Wide Web Consortium. (2018). *Web Content Accessibility Guidelines (WCAG) 2.1*. https://www.w3.org/TR/WCAG21/
+
+### Security and privacy guidance
+
+Australian Cyber Security Centre. (2024). *Essential Eight maturity model*. Australian Signals Directorate. https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight
+
+Grassi, P. A., Fenton, J. L., Newton, E. M., Perlner, R. A., Regenscheid, A. R., Burr, W. E., Richer, J. P., Lefkovitz, N. B., Danker, J. M., Choong, Y.-Y., Greene, K. K., & Theofanos, M. F. (2017). *Digital identity guidelines: Authentication and lifecycle management* (NIST Special Publication 800-63B). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-63b
+
+OWASP Foundation. (2021). *OWASP Top 10: 2021 — The ten most critical web application security risks*. https://owasp.org/Top10/
+
+Provos, N., & Mazières, D. (1999). A future-adaptable password scheme. In *Proceedings of the 1999 USENIX Annual Technical Conference* (pp. 81–91). USENIX Association. https://www.usenix.org/legacy/events/usenix99/provos.html
+
+Sweeney, L. (2002). k-anonymity: A model for protecting privacy. *International Journal of Uncertainty, Fuzziness and Knowledge-Based Systems, 10*(5), 557–570. https://doi.org/10.1142/S0218488502001648
+
+### Scams, fraud and the problem domain
+
+Australian Competition and Consumer Commission. (2024). *Targeting scams: Report of the ACCC on scams activity 2023*. https://www.accc.gov.au/system/files/targeting-scams-report-2023.pdf
+
+Australian Competition and Consumer Commission. (n.d.). *Scamwatch: Types of scams*. National Anti-Scam Centre. Retrieved 20 August 2026, from https://www.scamwatch.gov.au/types-of-scams
+
+IDCARE. (n.d.). *National identity and cyber support service*. Retrieved 20 August 2026, from https://www.idcare.org
+
+Whitty, M. T. (2019). Predicting susceptibility to cyber-fraud victimhood. *Journal of Financial Crime, 26*(1), 277–292. https://doi.org/10.1108/JFC-10-2017-0095
+
+### Local government and community context
+
+Australian Bureau of Statistics. (2021). *2021 Census QuickStats: Hume (C) local government area*. https://abs.gov.au/census/find-census-data/quickstats/2021/LGA23270
+
+Hume City Council. (2024). *Council plan 2021–2025*. https://www.hume.vic.gov.au/Council/Council-Plan
+
+### Software engineering practice
+
+Fowler, M. (2019, June 5). *Monolith first*. martinfowler.com. https://martinfowler.com/bliki/MonolithFirst.html
+
+Martin, R. C. (2017). *Clean architecture: A craftsman's guide to software structure and design*. Prentice Hall.
+
+Newman, S. (2019). *Monolith to microservices: Evolutionary patterns to transform your monolith*. O'Reilly Media.
+
+### A note on sources
+
+Two claims in this specification rest on figures that require confirmation against a current source before submission, and are marked here rather than left to be discovered: the resident population and demographic profile of the municipality (§2.1, §2.2.1), and the estimated local share of national reported scam losses used in the benefit case (§16.3). Both are cited above to the authoritative publisher, and both should be refreshed to the most recent release at the point of submission, since the figures move annually.
+
 ---
 
-*Prepared by Group CyberKent for Hume City Council CyberSafe Services, CPRO306 Capstone Project, Kent Institute Australia — first issued 13 August 2026; version 1.1 issued 20 August 2026.*
+*Prepared by Group CyberKent for Hume City Council CyberSafe Services, CPRO306 Capstone Project, Kent Institute Australia — first issued 13 August 2026; version 1.2 issued 28 August 2026.*
 
 *This document describes an advisory scam-detection service. Consistent with the ethical requirements it specifies, the system it describes does not constitute professional cybersecurity certification, does not guarantee protection from cyberattacks, and is not a substitute for qualified professional assistance or the relevant authorities.*
 
-*End of Final SRS Report, version 1.1.*
+*End of Final SRS Report, version 1.2.*
