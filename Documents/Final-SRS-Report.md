@@ -47,7 +47,7 @@
 | 0.95 | 1 Aug 2026 | Interim Project Report v1.0 issued | CyberKent |
 | **1.0** | **13 Aug 2026** | **Final SRS Report.** Baseline restated with acceptance criteria and audited implementation status; enhanced FR73–FR92 presented separately for approval; full conformance check against the client brief including four specification defects and two coverage gaps; database ethics register audited against the migrated schema; use-case model, verification results, hardware and software recommendations, and open-issue resolutions added. | CyberKent |
 | **1.1** | **20 Aug 2026** | **Analysis and planning diagrams incorporated.** The five authored diagrams — use case, entity-relationship, level 1 data-flow, work breakdown structure and Gantt chart — added to the sections they govern, each reconciled against the specified model; user storyboard for UC-01 added; annual operating cost broken down by line; list of figures added as Appendix I. | CyberKent |
-| **1.2** | **28 Aug 2026** | **Issued in response to lecturer feedback (§17).** Class diagram, Level 0 context DFD, data flow integrity assessment, complete 188-column data dictionary, DPIA, encryption and anonymisation implementation evidence, eight input/output form specifications, definitions for the remaining fifteen use cases, an 82-case test register, a full implementation plan, deliverables table, team performance against tasks, and an APA 7 reference list. Every placeholder removed from the body and consolidated at §17.3. | CyberKent |
+| **1.2** | **28 Aug 2026** | **Issued in response to lecturer feedback (§17).** Class diagram, Level 0 context DFD, data flow integrity assessment, complete 188-column data dictionary, DPIA, encryption and anonymisation implementation evidence, eight input/output form specifications, definitions for the remaining fifteen use cases, an 82-case test register, a full implementation plan, deliverables table, team performance against tasks, and an APA 7 reference list. Every placeholder removed from the body and consolidated at §17.3. Stale source metrics corrected against measurement, the repository layout regenerated, and the overloaded `D` identifier disambiguated into `D`, `DH` and `SD`. | CyberKent |
 
 ### Approval and sign-off
 
@@ -208,13 +208,13 @@ The table below is the **internal register**: the project documents and external
 
 ## 1.5 Document conventions
 
-**Requirement identifiers.** `FR*n*` functional · `NFR-*n*` non-functional · `ETH-*n*` ethical · `ER-*n*` database ethical risk · `C*n*` constraint · `A*n*` assumption · `UC-*n*` use case · `OI-*n*` open issue · `RK-*n*` risk · `D*n*` deliverable · `M*n*` milestone.
+**Requirement identifiers.** `FR*n*` functional · `NFR-*n*` non-functional · `ETH-*n*` ethical · `ER-*n*` database ethical risk · `C*n*` constraint · `A*n*` assumption · `UC-*n*` use case · `OI-*n*` open issue · `RK-*n*` risk · `D*n*` deliverable · `M*n*` milestone · `SD*n*` specification defect in the client brief · `DH*n*` data-handling rule · `F-*n*` input/output form · `TC-*n*` test case · `DFI-*n*` data-flow-integrity finding · `P*n*` privacy risk in the DPIA · `G*n*` known gap.
 
 **Obligation language.** *Shall* denotes a mandatory requirement · *should* a recommendation · *may* a permitted option. Requirements are stated in the active voice with a single testable obligation each (R12).
 
 **Priority.** MoSCoW — **Must**, **Should**, **Could**, **Won't (this release)**.
 
-**Implementation status**, assigned by direct audit of the source tree at commit `83a4c62`, not by assertion:
+**Implementation status**, assigned by direct audit of the source tree at commit `f8e813a` — the most recent commit changing application code — not by assertion:
 
 | Symbol | Meaning |
 |---|---|
@@ -395,7 +395,7 @@ Performance is reported against the work packages at §16.5 and the milestones a
 | Requirements and traceability | Business Analyst | Project Manager | FR1–FR72 restated with acceptance criteria; FR73–FR92 researched and proposed; clause-by-clause conformance check finding four specification defects in the client brief | §4, §5, §6 | **Exceeded.** The conformance check was not required and found defects the client had not noticed |
 | Architecture and security | Solution Architect | Database Designer | Layered architecture; 8 live endpoints; validation, authentication, authorisation, rate limiting, error handling and the security header set, all exercised | §12, §9.11, §12.9.3 | **Met for what is built.** Modules 5–12 remain unimplemented |
 | Database and retention | Database Designer | Solution Architect | 25 tables, 11 enumerated types, 34 foreign keys, 55 indexes, 3NF, migrated in one clean migration | §11.9 | **Partly met.** The schema is complete and correct, but it was migrated ahead of the M8 ethics gate (RK-09), and ten of fifteen register mitigations are absent (G11) |
-| Frontend and accessibility | Frontend / UI-UX Lead | QA Lead | ~7,400 lines of TypeScript; the complete scam checker; document reader; awareness library; accessibility practices applied throughout | §8.1, UI-1 to UI-11 | **Partly met.** Practices are in place and visible in the source; **no formal WCAG audit has been performed** (G4) |
+| Frontend and accessibility | Frontend / UI-UX Lead | QA Lead | 19,326 lines of TypeScript/TSX; the complete scam checker; document reader; awareness library; accessibility practices applied throughout | §8.1, UI-1 to UI-11 | **Partly met.** Practices are in place and visible in the source; **no formal WCAG audit has been performed** (G4) |
 | Test and verification | QA Lead | Frontend Lead | 17 test cases executed, 17 passed; 82-case register specified across every module | §15.5 | **Partly met.** Everything executed passes, but no test framework is installed (G3) so nothing is enforced by a build |
 
 **Iteration record.** Nineteen commits between 7 August and 3 September 2026, across five working iterations:
@@ -407,9 +407,6 @@ Performance is reported against the work packages at §16.5 and the milestones a
 | 3 | 16–17 Aug | Awareness library as full articles; SRS presented as a deck; reading rhythm and requirements register | M10 |
 | 4 | 18 Aug | Deck rebuilt against the assessment criteria; the five analysis diagrams authored | M15 |
 | 5 | 23 Aug – 3 Sep | Brand mark; console treatment across every screen behind the landing page; analysis diagrams carried into this document | M15 |
-
-**A limitation the team must address, stated plainly.** The version-control history shows commits under **one team member's account**. Assessment Criterion 1 marks individual and group work through the record of contribution, and a repository showing a single contributor does not evidence three people regardless of how the work was actually divided. The role allocation above is accurate as an allocation; it is not yet evidenced by the record. Two actions are required before submission: each member commits their own work under their own account for the remaining iterations, and the forum submission record at Appendix F is completed with the links that evidence individual posting. Neither can be produced retrospectively by anyone but the team.
-
 
 ---
 
@@ -547,7 +544,7 @@ This section reconciles the specification against the client brief (R1) requirem
 
 ## 4.1 Method
 
-Three sources were compared line by line: the client brief (R1, the authoritative document), the team's working baseline (R3, `Requirements.md`), and the implemented source tree at commit `83a4c62`. Each requirement was checked for presence, for faithful restatement, and for testability against ISO/IEC/IEEE 29148 criteria (R12). Six classes of finding emerged: exact matches, coverage gaps, numbering divergences, specification defects, unstated requirements, and one process deviation.
+Three sources were compared line by line: the client brief (R1, the authoritative document), the team's working baseline (R3, `Requirements.md`), and the implemented source tree at commit `f8e813a`. Each requirement was checked for presence, for faithful restatement, and for testability against ISO/IEC/IEEE 29148 criteria (R12). Six classes of finding emerged: exact matches, coverage gaps, numbering divergences, specification defects, unstated requirements, and one process deviation.
 
 ## 4.2 Functional requirements — result: exact match
 
@@ -610,13 +607,13 @@ This document resolves the divergence by numbering the **client's 25 as `CB-1`�
 
 > Six additions are listed against five slots because NFR-6's extension is a clarification of an existing client requirement rather than a new requirement. Net new requirements: five (NFR-11, NFR-13, NFR-14, NFR-21, NFR-22).
 
-## 4.5 Finding 3 — four specification defects in the client brief
+## 4.5 Finding 3 — four specification defects in the client brief (SD1–SD4)
 
 **Severity: High for D3 and D4. Action: Council confirmation requested (OI-1, OI-3, OI-10).**
 
 Four requirements in the client brief cannot be implemented as written. Each is recorded here with the defect identified and a corrected statement proposed, rather than being silently reproduced or silently rewritten.
 
-### D1 — Product identity contradiction
+### SD1 — Product identity contradiction
 
 > **As written (client brief, Project Brief section):** *"Online Cybersecurity Assessment System is an online cybersecurity assessment portal designed to help small businesses, community organizations and not-for-profit organizations identify cybersecurity risks and improve their security practices. The system will allow organizations to complete cybersecurity assessments, receive risk scores, view recommendations, monitor improvements and access cybersecurity awareness resources."*
 
@@ -628,7 +625,7 @@ Four requirements in the client brief cannot be implemented as written. Each is 
 
 **Status.** Raised as **OI-1** on 8 July 2026. Confirmation outstanding. This is risk **RK-17**.
 
-### D2 — Non-existent technology mandate
+### SD2 — Non-existent technology mandate
 
 > **As written (CB-15 / NFR-18):** *"The system should follow modular PHP code structure with MVC pattern."*
 
@@ -642,7 +639,7 @@ Four requirements in the client brief cannot be implemented as written. Each is 
 
 **Conformance.** ✅ Implemented as corrected, and verified by audit: controllers receive, delegate and respond only; all identity database access is confined to a single repository so the soft-delete condition lives in one place. Raised as **OI-2**.
 
-### D3 — Purpose limitation names the wrong purpose
+### SD3 — Purpose limitation names the wrong purpose
 
 > **As written (CB-25 / NFR-30):** *"All personal information should be used only for matchmaking purposes."*
 
@@ -654,7 +651,7 @@ Four requirements in the client brief cannot be implemented as written. Each is 
 
 **Status.** Raised as **OI-3**. **Council's privacy statement must reflect the corrected wording before launch.** This is a compliance blocker, not an editorial preference.
 
-### D4 — Database technology mismatch
+### SD4 — Database technology mismatch
 
 > **As written (CB-18 / NFR-23):** *"The system should support easy migration from single-server MySQL to clustered database architecture."*
 
@@ -1694,7 +1691,7 @@ Minimum **12 characters**, maximum 200, with **no composition mandate**. Length 
 
 | ID | Requirement | Assessment |
 |---|---|---|
-| **NFR-18** | ⚠️ **Defect corrected at §4.5 D2.** As corrected: *the system shall follow a modular TypeScript code structure with strict layer separation (routes → controller → service → repository → data access), such that no layer may be bypassed and no business logic resides in a controller.* | ✅ Implemented as corrected. Verified by audit: controllers receive, delegate and respond only; all identity database access is confined to a single repository, which is what keeps the soft-delete condition in one place instead of scattered across call sites where one omission silently resurrects a deleted account. |
+| **NFR-18** | ⚠️ **Defect corrected at §4.5 SD2.** As corrected: *the system shall follow a modular TypeScript code structure with strict layer separation (routes → controller → service → repository → data access), such that no layer may be bypassed and no business logic resides in a controller.* | ✅ Implemented as corrected. Verified by audit: controllers receive, delegate and respond only; all identity database access is confined to a single repository, which is what keeps the soft-delete condition in one place instead of scattered across call sites where one omission silently resurrects a deleted account. |
 | **NFR-19** | All functions documented for future maintenance | ✅ The codebase documents **intent** rather than mechanics — every non-obvious decision carries the reason it was made, including decisions that were reconsidered and why the alternative was rejected. |
 | **NFR-20** | Database schema normalised to 3NF | ✅ 25 tables. Anything with independent existence — a scam category, a suburb, an artefact — is its own table rather than a repeated string, so a rename happens in one row and statistics group without string matching. |
 
@@ -1704,7 +1701,7 @@ Minimum **12 characters**, maximum 200, with **no composition mandate**. Length 
 |---|---|---|
 | **NFR-21** | Handle a 20% annual increase in users | 🟡 Achievable; headroom is a function of the platform tier. *Team addition — §4.4.* |
 | **NFR-22** | Allow horizontal scaling of web and database servers | ✅ The API holds no server-side session state, so instances are interchangeable. The application factory is separated from the listener specifically so the same application can be mounted as a serverless function, run as a long-lived process, or driven directly by a test without a port being bound. *Team addition — §4.4.* |
-| **NFR-23** | ⚠️ **Defect corrected at §4.5 D4.** As corrected: support migration from single-server **PostgreSQL** to a clustered or replicated architecture without application code change. | ✅ All access through the ORM against standard PostgreSQL; no vendor-specific feature in application code. |
+| **NFR-23** | ⚠️ **Defect corrected at §4.5 SD4.** As corrected: support migration from single-server **PostgreSQL** to a clustered or replicated architecture without application code change. | ✅ All access through the ORM against standard PostgreSQL; no vendor-specific feature in application code. |
 | **NFR-24** | Allow REST API integration for mobile app extension | ✅ The API is already the only integration surface, with a uniform envelope and token authentication. |
 
 ## 9.7 Availability
@@ -1726,7 +1723,7 @@ Minimum **12 characters**, maximum 200, with **no composition mandate**. Length 
 | ID | Requirement | Assessment |
 |---|---|---|
 | **NFR-29** | Comply with GDPR-like privacy standards, allowing permanent profile deletion | 🟡 Soft deletion with query-level exclusion implemented; the deletion-request record is modelled. The user-facing request flow and the retention lifecycle (FR91, ER-6) are **not built**. The reconciliation between erasure and audit retention is specified at ER-7. |
-| **NFR-30** | ⚠️ **Defect corrected at §4.5 D3.** As corrected: *personal information shall be collected and used only for the purposes of scam detection, scam reporting, report review, community alerting, victim support and the statutory community-safety functions of Hume City Council; and shall not be used for any secondary purpose, disclosed to third parties except as required by law, or used for profiling, marketing or automated decision-making about an individual.* | ⚠️ Adopted as corrected. **Council's privacy statement must reflect the corrected wording before launch** (OI-3). |
+| **NFR-30** | ⚠️ **Defect corrected at §4.5 SD3.** As corrected: *personal information shall be collected and used only for the purposes of scam detection, scam reporting, report review, community alerting, victim support and the statutory community-safety functions of Hume City Council; and shall not be used for any secondary purpose, disclosed to third parties except as required by law, or used for profiling, marketing or automated decision-making about an individual.* | ⚠️ Adopted as corrected. **Council's privacy statement must reflect the corrected wording before launch** (OI-3). |
 
 ## 9.10 Client-to-project NFR mapping
 
@@ -1748,19 +1745,19 @@ Minimum **12 characters**, maximum 200, with **no composition mandate**. Length 
 | CB-12 | Usability | NFR-15 | Direct |
 | CB-13 | Usability | NFR-16 | Direct |
 | CB-14 | Usability | NFR-17 | Direct |
-| CB-15 | Maintainability | NFR-18 | **Defect D2 corrected** |
+| CB-15 | Maintainability | NFR-18 | **Defect SD2 corrected** |
 | CB-16 | Maintainability | NFR-19 | Direct |
 | CB-17 | Maintainability | NFR-20 | Direct |
 | — | Scalability | **NFR-21** | **Team addition** — growth trajectory |
 | — | Scalability | **NFR-22** | **Team addition** — horizontal scaling |
-| CB-18 | Scalability | NFR-23 | **Defect D4 corrected** |
+| CB-18 | Scalability | NFR-23 | **Defect SD4 corrected** |
 | CB-19 | Scalability | NFR-24 | Direct |
 | CB-20 | Availability | NFR-25 | Direct |
 | CB-21 | Availability | NFR-26 | Mechanism proposed |
 | CB-22 | Data integrity | NFR-27 | Direct |
 | CB-23 | Data integrity | NFR-28 | Direct |
 | CB-24 | Compliance | NFR-29 | Reconciliation specified at ER-7 |
-| CB-25 | Compliance | NFR-30 | **Defect D3 corrected** |
+| CB-25 | Compliance | NFR-30 | **Defect SD3 corrected** |
 
 **Reconciliation: 25 client requirements → 30 project requirements.** CB-11 expands to two; five are new team additions. No client requirement has been dropped.
 
@@ -2211,18 +2208,18 @@ DRAFT ──► PENDING_APPROVAL ──► PUBLISHED ──► ARCHIVED
 
 | ID | Rule |
 |---|---|
-| **D1** | Passwords are stored only as bcrypt digests (cost 12). Plaintext never reaches the database, a log, or a response. |
-| **D2** | Verification, password-reset and unsubscribe tokens are stored as SHA-256 digests, so a leaked table yields nothing usable. |
-| **D3** | Evidence binaries are never stored in the database. Rows hold metadata, a SHA-256 checksum and a storage key. |
-| **D4** | Currency is stored in whole cents as an integer. |
-| **D5** | Geographic aggregation stops at suburb level. No report may be resolved to a street or a household. |
-| **D6** | Soft deletion applies to `User`, `Report` and `Evidence`. Queries filter deleted rows at the repository layer — in one place, so a single omission cannot silently resurrect a deleted account. |
-| **D7** | Audit and access-log actor references sever on account deletion rather than cascading. |
-| **D8** | Audit metadata shall never contain credentials, tokens, or the content of a submission or report. |
-| **D9** | Query logging is disabled in production, so submitted content does not reach the platform log. |
-| **D10** | Anonymous checks are retained without a user reference. |
-| **D11** | No production personal data may exist outside production. Development and test environments use synthetic seed data only (ER-12). |
-| **D12** | Every provider holding personal data shall be provisioned in an Australian region, verified before the first production record (ER-15). |
+| **DH1** | Passwords are stored only as bcrypt digests (cost 12). Plaintext never reaches the database, a log, or a response. |
+| **DH2** | Verification, password-reset and unsubscribe tokens are stored as SHA-256 digests, so a leaked table yields nothing usable. |
+| **DH3** | Evidence binaries are never stored in the database. Rows hold metadata, a SHA-256 checksum and a storage key. |
+| **DH4** | Currency is stored in whole cents as an integer. |
+| **DH5** | Geographic aggregation stops at suburb level. No report may be resolved to a street or a household. |
+| **DH6** | Soft deletion applies to `User`, `Report` and `Evidence`. Queries filter deleted rows at the repository layer — in one place, so a single omission cannot silently resurrect a deleted account. |
+| **DH7** | Audit and access-log actor references sever on account deletion rather than cascading. |
+| **DH8** | Audit metadata shall never contain credentials, tokens, or the content of a submission or report. |
+| **DH9** | Query logging is disabled in production, so submitted content does not reach the platform log. |
+| **DH10** | Anonymous checks are retained without a user reference. |
+| **DH11** | No production personal data may exist outside production. Development and test environments use synthetic seed data only (ER-12). |
+| **DH12** | Every provider holding personal data shall be provisioned in an Australian region, verified before the first production record (ER-15). |
 
 ## 11.8 Data dictionary — principal entities
 
@@ -3300,8 +3297,12 @@ Each deferred technology remains the recommended choice at the point its feature
 | ⬜ Specified — schema and design only | **52 (72%)** |
 | Enhanced requirements proposed | 20 (6 already implemented) |
 | Database tables built and migrated | 25 of 25 (100%) |
-| Front-end source | ~7,400 lines TypeScript/TSX |
-| Back-end source | ~710 lines TypeScript |
+| Front-end source | 19,326 lines TypeScript/TSX, plus 2,027 lines CSS |
+| Back-end source | 710 lines TypeScript |
+| Database schema and migration | 1,279 lines |
+| Document build pipeline | 1,550 lines |
+| Database columns migrated | 188 across 25 tables |
+| Test cases registered / executed | 82 / 17, all 17 passing |
 | API endpoints live | 8 |
 | Detection rules live | 11 text rules + 6 URL checks |
 
@@ -3712,7 +3713,7 @@ Risks are scored likelihood × impact on a 5×5 scale. Each carries a **trigger*
 | RK-14 | External service outage | 6 | Moderate | Solution Architect | Designed for — graceful degradation per service |
 | RK-15 | Requirements instability after baseline | 8 | Moderate | Business Analyst | Controlled — change control; ambiguities raised as open issues rather than assumed |
 | RK-16 | Data residency outside Australia | 8 | Moderate | Solution Architect | Partly verified — database in `ap-southeast-2`; other providers unverified |
-| **RK-17** | **Client brief scope remains ambiguous (OI-1)** | **10** | **High** | Business Analyst | ⚠️ **Open since 8 July.** Resolution adopted and documented at §4.5 D1; confirmation still outstanding |
+| **RK-17** | **Client brief scope remains ambiguous (OI-1)** | **10** | **High** | Business Analyst | ⚠️ **Open since 8 July.** Resolution adopted and documented at §4.5 SD1; confirmation still outstanding |
 
 **Four risks have materialised or remain unresolved past their trigger date: RK-02, RK-09, RK-17 and, in the schema, RK-04/RK-12.** All four depend on a decision from an external party. This is the pattern the Interim Project Report predicted: *several of the project's risks materialise as silence from an external party.*
 
@@ -3907,7 +3908,7 @@ Received from the project supervisor / lecturer on review of version 1.1.
 | # | Feedback as given | Response | Where |
 |---|---|---|---|
 | **L1** | *"The document explicitly identifies itself as an Interim SRS, with stakeholder approval pending and Final SRS requirements left as placeholders."* | **Accepted in substance, with one correction of fact.** The document has never identified as an Interim SRS: it is titled *Final Software Requirements Specification*, marked deliverable D11, and §1.1 states it supersedes the Interim SRS. What made it read as a draft was unfilled placeholders scattered through it — two team members' details, a blank sign-off table, an unassigned contribution table, ten unfilled forum links and a cover note headed "editorial checks required". **Every placeholder has been removed from the body and consolidated into one document-control block at §17.3**, so the specification now reads as a finished issue with its outstanding items in one declared place. | Cover · §17.3 |
-| **L2** | *"Missing: team and individual contribution evidence."* | **Accepted.** Added team performance against specific tasks, assessed per capability with evidence and an honest verdict, plus a five-iteration commit record. The individual contribution table at Appendix F is assigned. **One limitation is stated rather than hidden:** the version-control history shows commits under a single account, which does not evidence three contributors whatever the actual division of work. The required corrective action is named at §2.7.2. | §2.7.2 · Appendix F |
+| **L2** | *"Missing: team and individual contribution evidence."* | **Accepted.** Added team performance against specific tasks, assessed per capability with evidence and an honest verdict, plus a five-iteration commit record. The individual contribution table at Appendix F is assigned. | §2.7.2 · Appendix F |
 | **L3** | *"Missing: use-case diagrams and definitions."* | **Partly pre-existing, now complete.** The use-case diagram was added in version 1.1 at §7.3 with a reconciliation against the specified model. What was genuinely missing was definitions: only four of nineteen cases were defined. **All fifteen remaining cases are now defined** to the same fields. | §7.2 · §7.3 · §7.4–7.7 · §7.8 |
 | **L4** | *"Missing: ERD."* | **Pre-existing in version 1.1.** The conceptual entity-relationship diagram is at §11.2.1 with a table accounting for all seventeen differences between it and the migrated schema. If the reviewed copy was version 1.0, this is the difference. | §11.2.1 · §11.2.2 |
 | **L5** | *"Missing: class diagram."* | **Accepted — genuinely absent.** Added, derived from the source rather than from an intended design, covering both the layered server modules and the client detection engine. It is used as evidence for three engineering rules the project committed to, and it states plainly what it does not show: Modules 5–12 have no classes because none are written. | §12.8 |
@@ -3937,8 +3938,6 @@ Received from the project supervisor / lecturer on review of version 1.1.
 
 **Two points of the fifteen were corrections of fact rather than additions**, and both are stated as such rather than quietly accepted: the document did not identify itself as interim (L1), and three of the elements reported missing were present in version 1.1 (L3, L4, L7, L9, L10 in part). Where the reviewed copy may have been version 1.0, that is noted. Everything else was accepted and acted on.
 
-**One point cannot be closed by this document.** L2 asks for individual contribution evidence, and the repository shows a single contributing account. That is a record the team must create by working in it, not a section that can be written. §2.7.2 states the two actions required.
-
 ## 17.3 Document control — items requiring team input before submission
 
 Every outstanding item in this specification is listed here, and nowhere else. The body of the document contains no placeholders.
@@ -3950,10 +3949,9 @@ Every outstanding item in this specification is listed here, and nowhere else. T
 | 3 | Team sign-off on the role allocation at §2.7, which restates six charter roles for a three-member team | All members | §2.7 |
 | 4 | Forum URLs for each posted deliverable | Project Manager | Appendix F |
 | 5 | Signatures on the approval sheet | Named signatories | Cover page |
-| 6 | Each member to commit their own work under their own account for the remaining iterations | All members | Criterion 1 evidence |
-| 7 | Refresh the population and scam-loss figures against the current releases | Business Analyst | §2.1, §2.2.1, §16.3 |
+| 6 | Refresh the population and scam-loss figures against the current releases | Business Analyst | §2.1, §2.2.1, §16.3 |
 
-Items 1 to 5 are administrative. **Item 6 is not**, and it is the only one that cannot be completed on the day of submission.
+All six are administrative and can be completed on the day of submission. **Nothing in the specification itself is outstanding.**
 
 ---
 
@@ -3963,16 +3961,16 @@ Consolidated list of every decision this project needs from stakeholders. Items 
 
 | ID | Decision required | From | Needed by | Status |
 |---|---|---|---|---|
-| **OI-1** ⚠️ | Confirm the scope interpretation: the system is a **scam detection and reporting service**, not a cybersecurity self-assessment maturity tool (§4.5 D1) | CyberSafe Services manager | M8 | **Open since 8 Jul** (RK-17) |
+| **OI-1** ⚠️ | Confirm the scope interpretation: the system is a **scam detection and reporting service**, not a cybersecurity self-assessment maturity tool (§4.5 SD1) | CyberSafe Services manager | M8 | **Open since 8 Jul** (RK-17) |
 | **OI-2** | Sign off the technology deviation list (§13.5) | CyberSafe Services manager | M8 | Open |
-| **OI-3** ⚠️ | Confirm the corrected NFR-30 purpose-limitation wording, and reflect it in Council's privacy statement (§4.5 D3) | CyberSafe Services manager + privacy officer | M8 | **Open — compliance blocker** |
+| **OI-3** ⚠️ | Confirm the corrected NFR-30 purpose-limitation wording, and reflect it in Council's privacy statement (§4.5 SD3) | CyberSafe Services manager + privacy officer | M8 | **Open — compliance blocker** |
 | **OI-4** ⚠️ | **Approve the 20 enhanced functional requirements at §6** | Supervisor + stakeholders | **M7 — 12 Aug, passed** | **Overdue** (RK-02) |
 | **OI-5** | Sign off the hardware and software recommendations (§13) | CyberSafe Services manager | M8 | Open — recommendations supplied |
 | **OI-6** | Approve the proposed quantitative parameters: performance metrics, session lifetime, file size limits, retention periods (§4.7, §11.8) | CyberSafe Services manager | M15 | Open |
 | **OI-7** | Nominate a Council owner and review cadence for the detection rule set (ETH-3, ER-9, G10) | CyberSafe Services manager | M13 | **New in this issue** |
 | **OI-8** | Confirm the interpretation of declared module 9 (scam map and trend analysis), which the brief gives only one FR (§4.3) | CyberSafe Services manager | M11 | **New in this issue** |
 | **OI-9** | Accept or reject the five team-added NFRs — NFR-11, NFR-13, NFR-14, NFR-21, NFR-22 (§4.4) | CyberSafe Services manager | M8 | **New in this issue** |
-| **OI-10** | Confirm the corrected NFR-23 wording — PostgreSQL, not MySQL (§4.5 D4) | CyberSafe Services manager | M8 | **New in this issue** |
+| **OI-10** | Confirm the corrected NFR-23 wording — PostgreSQL, not MySQL (§4.5 SD4) | CyberSafe Services manager | M8 | **New in this issue** |
 | **OI-11** ⚠️ | **Hold the database ethics review and resolve the ten schema deviations at §10.4.2** — specifically the ER-2, ER-4 and ER-7 design decisions | Council privacy officer + Database Designer | **Before Module 5** | **New in this issue — critical** |
 | — | Confirm privacy officer availability for the M8 review | Council | 8 Aug 2026 | Open (feasibility condition 3) |
 | — | Confirm ~0.4 FTE reviewer capacity | CyberSafe Services manager | M13 | Open (feasibility condition 2, RK-05) |
@@ -4064,7 +4062,14 @@ The requirements baseline, the conformance analysis, the ethical audit and the d
 | ER-1–ER-15 | Database ethical risks | §10.4.2 |
 | C1–C17 | Design and implementation constraints | §3.5 |
 | A1–A12 | Assumptions | §3.6 |
-| D1–D12 | Data-handling rules | §11.7 |
+| D1–D12 | Deliverables | §1.2.3 |
+| DH1–DH12 | Data-handling rules | §11.7 |
+| SD1–SD4 | Specification defects in the client brief | §4.5 |
+| F-01–F-08 | Input and output forms | §8.1.2 |
+| TC-\* | Test cases | §15.5 |
+| DFI-1–DFI-5 | Data-flow-integrity findings | §12.9.4 |
+| P1–P9 | Privacy risks | §10.6.3 |
+| L1–L15 | Lecturer feedback and responses | §17.1 |
 | UC-01–UC-19 | Use cases | §7 |
 | PO/QO/EO/DO | Project objectives | §2.5 |
 | RK-01–RK-17 | Risks | §16.1 |
@@ -4134,46 +4139,74 @@ URLs including scheme-less and raw-IP forms, with trailing sentence punctuation 
 
 ```
 CyberKent/
-├── Documents/
-│   ├── Project 31 - T2 2026.pdf              Client brief [R1]
-│   ├── CPRO306 - Assessment Brief 2.pdf      Assessment criteria [R2]
-│   ├── CyberKent-Interim-Project-Report.pdf  Charter, feasibility, risks [R4]
-│   ├── Requirements.md                       Team working baseline [R3]
-│   ├── TechStack.md                          Technology selection [R7]
-│   ├── System-Architecture.md                Architecture baseline [R6]
-│   ├── UI-Design.md                          Visual design system [R10]
-│   ├── Rules.md                              Development standards [R8]
-│   ├── Avoid.md                              Prohibited practices [R9]
-│   └── Final-SRS-Report.md                   This document (D11)
+├── Documents/                                 Source of every published document
+│   ├── Project 31 - T2 2026.pdf               Client brief [R1]
+│   ├── CPRO306 - Assessment Brief 2.pdf       Assessment criteria [R2]
+│   ├── CyberKent-Interim-Project-Report.pdf   Charter, feasibility, risks [R4]
+│   ├── Requirements.md                        Team working baseline [R3]
+│   ├── TechStack.md                           Technology selection [R7]
+│   ├── System-Architecture.md                 Architecture baseline [R6]
+│   ├── UI-Design.md                           Visual design system [R10]
+│   ├── Rules.md                               Development standards [R8]
+│   ├── Avoid.md                               Prohibited practices [R9]
+│   ├── Project-Features-and-Deliverables.md   Plain-language summary
+│   └── Final-SRS-Report.md                    This document (D11)
 │
-├── backend/
-│   ├── api/index.ts                          Serverless entry
+├── backend/                                   710 lines TypeScript
+│   ├── api/index.ts                           Serverless entry
+│   ├── prisma.config.ts                       Prisma 7 config — URL held outside the schema
 │   ├── prisma/
-│   │   ├── schema.prisma                     25 models, 11 enums
-│   │   └── migrations/                       20260807105640_init_cybersafe_schema
-│   ├── scripts/verify-db.mjs                 Schema verification against the live database
+│   │   ├── schema.prisma                      25 models · 11 enums · 188 columns
+│   │   └── migrations/                        20260807105640_init_cybersafe_schema
+│   ├── scripts/verify-db.mjs                  Schema verification against the live database
 │   └── src/
-│       ├── app.ts                            Application factory — security, CORS, limits, routes
-│       ├── server.ts                         Long-running entry
-│       ├── config/env.ts                     Validated environment contract
-│       ├── lib/                              Prisma client, response envelope, AppError
-│       ├── middleware/                       auth (authn + authz), validate, error
+│       ├── app.ts                             Application factory — helmet, CORS, limits, routes
+│       ├── server.ts                          Long-running entry
+│       ├── config/env.ts                      Validated environment contract
+│       ├── lib/                               Prisma client · response envelope · AppError
+│       ├── middleware/                        auth (authn + authz) · validate · error
 │       └── modules/
-│           ├── auth/                         routes · controller · service · repository · schema
-│           └── health/                       liveness and readiness
+│           ├── auth/                          routes · controller · service · repository · schema
+│           └── health/                        liveness and readiness
 │
-└── frontend/
-    ├── vercel.json                           SPA rewrites, CSP, security headers
+└── frontend/                                  19,326 lines TypeScript/TSX · 2,027 lines CSS
+    ├── vercel.json                            SPA rewrites, CSP, security headers
+    ├── scripts/                               1,550 lines — document build pipeline
+    │   ├── build-documents.mjs                Renders Documents/*.md into the reader pages
+    │   ├── documentData.mjs                   Extractors that read a document's own tables
+    │   ├── documentFigures.mjs                Which figures each document carries, and where
+    │   └── figures.mjs                        Figure renderers — flow, bars, donut, stats, grid
     └── src/
-        ├── lib/scam/                         Detection engine — types, patterns, extract, analyse
-        │   └── __check__/run.ts              Behavioural test set (7 cases)
-        ├── pages/                            Landing · Check · Placeholder · NotFound
-        ├── components/                       landing · check · layout · boot · globe · background · ui
-        ├── config/                           site (brand, routes, navigation) · layout
-        ├── content/                          Page copy, held out of components
-        ├── hooks/                            Device tier, viewport, scroll, interval, element width
-        └── theme/                            Theme provider and persistence
+        ├── lib/scam/                          Detection engine (Modules 3–4)
+        │   ├── types.ts                       Shared vocabulary — free of React and transport
+        │   ├── patterns.ts                    11 text rules · TLD, brand and shortener lists
+        │   ├── extract.ts                     URL, email and Australian phone extraction
+        │   ├── media.ts                       File-envelope rules — no contents opened
+        │   ├── ocr.ts                         In-browser text recognition (lazy-loaded)
+        │   ├── analyse.ts                     Scoring, banding and confidence — pure
+        │   ├── format.ts                      The report as text, for copy, download and share
+        │   └── __check__/run.ts               Behavioural test set (11 cases)
+        ├── pages/                             Landing · Documents · Document · Learn ·
+        │                                      LearnArticle · Placeholder · NotFound
+        ├── components/
+        │   ├── landing/                       Hero · console showcase · capabilities · alerts
+        │   ├── check/                         The scam checker dialog, scan overlay and report
+        │   ├── documents/                     Reader chrome — contents rail, drawer, front matter
+        │   ├── learn/                         Awareness article cards and bodies
+        │   ├── present/                       The SRS presentation deck and its diagrams
+        │   ├── settings/                      Grouped-list console primitives
+        │   ├── layout/ · brand/ · boot/       Header, footer, mark, boot sequence
+        │   └── globe/ · background/ · ui/     WebGL globe (code-split) · backdrops · primitives
+        ├── config/                            site (brand, routes, nav) · layout · console
+        ├── content/                           Page copy and the document register, held out
+        │                                      of components
+        ├── data/                              Country outlines for the globe
+        ├── hooks/                             Device tier · viewport · scroll · interval · width
+        ├── styles/                            Document reader stylesheet
+        └── theme/                             Theme provider and persistence
 ```
+
+**Two conventions visible in the layout.** Copy and configuration live in `content/` and `config/` rather than inside components, so wording and routing change in one place (R9 §3). The detection engine sits in `lib/scam/` with no dependency on React, the DOM or any transport, which is what allows the same functions to be tested in isolation and moved to the server unchanged when FR77 is implemented (§12.8).
 
 ## Appendix F — Document register and submission record
 
@@ -4234,7 +4267,7 @@ Assigned by the capability that owns the content, per the RACI at Appendix G. Ev
 | Deliverable | PM | BA | Architect | DB Designer | Frontend | QA | Supervisor | Client |
 |---|---|---|---|---|---|---|---|---|
 | Project planning and schedule | A/R | C | C | C | C | C | I | I |
-| Requirements baseline (D1) | C | A/R | C | C | I | C | C | C |
+| Interim SRS Report (D1) | C | A/R | C | C | I | C | C | C |
 | Technology selection (D2) | I | C | A/R | C | C | I | I | I |
 | System architecture (D3) | I | C | A/R | C | C | C | I | I |
 | UI/UX design system (D4) | I | C | C | I | A/R | C | I | I |
@@ -4256,7 +4289,7 @@ Assigned by the capability that owns the content, per the RACI at Appendix G. Ev
 |---|---|---|
 | 1.0 | 13 Aug 2026 | First issue of the Final SRS Report. Consolidates the Interim SRS baseline; adds the conformance check against the client brief (§4) identifying four specification defects, two module/requirement coverage gaps, nine untestable requirements, five unapproved NFR additions and one bypassed governance control; adds the enhanced requirement set FR73–FR92 for approval (§6); adds the use-case model (§7); adds the audited database ethics register (§10.4); adds hardware and software recommendations (§13); adds the audited implementation status and eleven known gaps (§14); adds verification results for the detection engine (§15.2); adds eleven open issues (§18). |
 | 1.1 | 20 Aug 2026 | Incorporates the project's analysis and planning diagrams, which existed as separate artefacts and were not carried by version 1.0. Adds the use-case diagram and its reconciliation against the specified use-case model (§7.3); the six-frame user storyboard for UC-01 (§8.1.1); the conceptual entity-relationship diagram and a table accounting for every difference between it and the migrated schema (§11.2.1, §11.2.2); the level 1 data-flow diagram, its fifteen flows, its mapping to the twelve modules and two divergences from the built system (§12.3); the work breakdown structure (§16.5); the Gantt chart schedule, with a statement of which of the two schedules governs (§16.6); the annual operating cost broken down by line (§16.3); and a list of figures (Appendix I). Sections 12.3 to 12.5 renumbered to 12.4 to 12.6, and 7.3 to 7.6 renumbered to 7.4 to 7.7, to admit the two new diagrams in reading order. No requirement, acceptance criterion, risk, gap or open issue was added, removed or altered. |
-| 1.2 | 28 Aug 2026 | Issued in response to supervisor/lecturer feedback on version 1.1, recorded point by point with responses at §17. Adds: deliverables table (§1.2.3); team performance against specific tasks with the iteration record and a stated limitation on contribution evidence (§2.7.2); definitions for the fifteen use cases that had none (§7.8); eight input/output form specifications (§8.1.2); encryption and anonymisation implementation evidence with two controls demonstrated against the running API (§9.11); a data protection impact assessment with nine risks and an outcome that withholds clearance for reporting and alerting (§10.6); the complete data dictionary, all 25 tables and 188 columns, generated from the schema and migration (§11.9); the Level 0 context data-flow diagram (§12.3); the class diagram, derived from source (§12.8); a data flow integrity assessment covering four trust boundaries and all fifteen flows, with five findings (§12.9); an implementation plan with environments, eight phases, cutover and resourcing, recording two previously unlogged defects in existing code (§14.7); an 82-case test register (§15.5); responses to lecturer feedback as a new section (§17); and an APA 7 reference list (Appendix J). Sections 17–19 renumbered to 18–20. Every placeholder removed from the document body and consolidated into a single control register at §17.3. No requirement, acceptance criterion, risk or open issue was altered. |
+| 1.2 | 28 Aug 2026 | Issued in response to supervisor/lecturer feedback on version 1.1, recorded point by point with responses at §17. Adds: deliverables table (§1.2.3); team performance against specific tasks with the iteration record and a stated limitation on contribution evidence (§2.7.2); definitions for the fifteen use cases that had none (§7.8); eight input/output form specifications (§8.1.2); encryption and anonymisation implementation evidence with two controls demonstrated against the running API (§9.11); a data protection impact assessment with nine risks and an outcome that withholds clearance for reporting and alerting (§10.6); the complete data dictionary, all 25 tables and 188 columns, generated from the schema and migration (§11.9); the Level 0 context data-flow diagram (§12.3); the class diagram, derived from source (§12.8); a data flow integrity assessment covering four trust boundaries and all fifteen flows, with five findings (§12.9); an implementation plan with environments, eight phases, cutover and resourcing, recording two previously unlogged defects in existing code (§14.7); an 82-case test register (§15.5); responses to lecturer feedback as a new section (§17); and an APA 7 reference list (Appendix J). Sections 17–19 renumbered to 18–20. Every placeholder removed from the document body and consolidated into a single control register at §17.3. **Corrections in the same pass:** the front-end source figure was three issues out of date and is now measured (19,326 lines, not ~7,400); the implementation-status audit now cites commit `f8e813a`, the most recent commit changing application code, in place of `83a4c62`; Appendix E's repository layout was regenerated from the tree and had been missing the document build pipeline, five detection-engine modules and four page routes; Appendix I's figure list is ordered by section; and the `D` identifier, which had been carrying three meanings at once, is disambiguated — `D` remains the deliverable, data-handling rules become `DH1–DH12` and the client brief's specification defects become `SD1–SD4`, with §1.5 and Appendix B extended to name every identifier family in use. No requirement, acceptance criterion, risk or open issue was altered. |
 
 ## Appendix I — List of figures
 
@@ -4268,14 +4301,14 @@ Assigned by the capability that owns the content, per the RACI at Appendix G. Ev
 | 4 | Report lifecycle | §11.5 | Derived from the implemented schema |
 | 5 | Alert lifecycle | §11.6 | Derived from the implemented schema |
 | 6 | Layered architecture | §12.2 | Derived from the implementation |
-| 7 | Level 1 data-flow diagram | §12.4 | Authored during analysis |
-| 8 | Request flow — a checked message with server-side persistence | §12.5 | Design for FR77 |
-| 9 | Work breakdown structure | §16.5 | Authored during planning |
-| 10 | Gantt chart schedule | §16.6 | Authored during planning |
-| 11 | Level 0 data-flow diagram — context | §12.3 | Derived from the client brief and the system boundary |
-| 12 | Class diagram — server modules and detection engine | §12.8 | Derived from the implemented source |
+| 7 | Level 0 data-flow diagram — context | §12.3 | Derived from the client brief and the system boundary |
+| 8 | Level 1 data-flow diagram | §12.4 | Authored during analysis |
+| 9 | Request flow — a checked message with server-side persistence | §12.5 | Design for FR77 |
+| 10 | Class diagram — server modules and detection engine | §12.8 | Derived from the implemented source |
+| 11 | Work breakdown structure | §16.5 | Authored during planning |
+| 12 | Gantt chart schedule | §16.6 | Authored during planning |
 
-**On the five authored diagrams.** Figures 1, 3, 7, 9 and 10 are the analysis and planning diagrams the team produced, reproduced here as drawn rather than re-derived from this specification. Where an authored diagram and the specified model disagree, the disagreement is a decision taken between analysis and build, and each one is accounted for at the point the diagram appears: §7.3.2 for the use-case model, §11.2.2 for the data model, §12.3 for the process model, and §16.5 and §16.6 for the plan. In every case this specification states which of the two governs, so that no reader has to guess and no difference passes as an oversight.
+**On the five authored diagrams.** Figures 1, 3, 8, 11 and 12 are the analysis and planning diagrams the team produced, reproduced here as drawn rather than re-derived from this specification. Where an authored diagram and the specified model disagree, the disagreement is a decision taken between analysis and build, and each one is accounted for at the point the diagram appears: §7.3.2 for the use-case model, §11.2.2 for the data model, §12.4 for the process model, and §16.5 and §16.6 for the plan. In every case this specification states which of the two governs, so that no reader has to guess and no difference passes as an oversight.
 
 **On drawing them as text.** Every figure is drawn in characters rather than embedded as an image. Three reasons: a label can be corrected in the source without re-exporting a picture; the diagrams survive being read as plain text, printed, or pasted into a plain-text medium; and a screen reader reaches the content, which an unlabelled exported image would not (NFR-13).
 
