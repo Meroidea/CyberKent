@@ -3,6 +3,7 @@ import { kindOf } from "@/lib/scam/media";
 import { readProvenance } from "@/lib/scam/provenance";
 import { readSynthetic } from "@/lib/scam/synthetic";
 import { readEdits } from "@/lib/scam/forensics";
+import { readMetadata } from "@/lib/scam/metadata";
 
 /**
  * Reading the text out of an uploaded image, in the browser.
@@ -101,7 +102,14 @@ export async function describeFiles(
     onProgress?.(index, file.name);
 
     const kind = kindOf(file.type, file.name);
-    const base = { name: file.name, size: file.size, type: file.type, kind };
+
+    /*
+     * Read for every file, image or not. It is the one pass that always has
+     * something to say, and a submission that produced no verdict must still
+     * come back having described what it was handed.
+     */
+    const metadata = await readMetadata(file);
+    const base = { name: file.name, size: file.size, type: file.type, kind, metadata };
 
     if (kind === "image") {
       /*

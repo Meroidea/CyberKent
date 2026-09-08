@@ -272,11 +272,34 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
   const fileIndicators = analyseMedia(media);
 
   if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0) {
+    /*
+     * Nothing scored — but that is not the same as nothing examined.
+     *
+     * The copy used to tell every reader to "paste the full message", which is
+     * the wrong sentence to show someone who attached an image and had it read
+     * end to end. An image that raises no indicator is the ordinary case: most
+     * pictures are neither generated nor doctored, and a checker that could
+     * only speak when it had bad news would be silent on almost every genuine
+     * submission. So where files were examined the verdict says what was
+     * looked at and points at the detail, and only a genuinely empty
+     * submission is told to paste more.
+     */
+    const examinedFiles = media.filter((file) => file.metadata || file.provenance || file.edits);
+
     return {
       score: 0,
       band: "unclear",
       confidence: 0,
-      ...BAND_COPY.unclear,
+      ...(examinedFiles.length > 0
+        ? {
+            headline: "Nothing here scores as a scam",
+            summary: `${
+              examinedFiles.length === 1 ? "The file was" : "The files were"
+            } examined and no scam indicator was raised — no signed declaration of AI generation, no sign of editing, and nothing in the wording. That is the ordinary result for an ordinary picture, and it is not a guarantee: a careful fake trips none of these checks either. Everything read from ${
+              examinedFiles.length === 1 ? "the file" : "each file"
+            } is set out below. If a message came with it, paste that too — the wording is where most scams give themselves away.`,
+          }
+        : BAND_COPY.unclear),
       indicators: [],
       extracted,
       examined,

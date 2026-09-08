@@ -1,5 +1,5 @@
 import { SITE } from "@/config/site";
-import type { Analysis, Channel, RiskBand, Submission } from "@/lib/scam/types";
+import type { Analysis, Channel, MediaDescriptor, RiskBand, Submission } from "@/lib/scam/types";
 
 /**
  * Rendering an analysis as text, for the copies of it that leave the screen.
@@ -32,7 +32,7 @@ const BAND_LABELS: Record<RiskBand, string> = {
  * than the page it came from, and it has to take its own qualification with it.
  */
 const ADVISORY =
-  "This is general guidance based on the text provided, not a professional assessment, and it cannot guarantee that a message is safe or unsafe. If money has already changed hands, contact your bank first.";
+  "This is general guidance based on what you provided, not a professional assessment, and it cannot guarantee that a message is safe or unsafe. If money has already changed hands, contact your bank first.";
 
 function formatTimestamp(at: Date): string {
   return at.toLocaleString("en-AU", {
@@ -83,6 +83,120 @@ export interface ReportInput {
 }
 
 /** The full report, as it is downloaded. */
+
+const BYTE_UNITS = ["bytes", "KB", "MB", "GB"];
+
+function bytes(size: number): string {
+  let value = size;
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return unit === 0 ? `${size} bytes` : `${value.toFixed(1)} ${BYTE_UNITS[unit]} (${size.toLocaleString()} bytes)`;
+}
+
+/**
+ * Everything read from the attached files, as text.
+ *
+ * The exported report used to carry the verdict and the message and nothing
+ * else, so a reader who submitted an image and downloaded their report got a
+ * page that did not mention it. Whatever the screen shows about a file, the
+ * copy that leaves with the reader has to show too — that copy is the one that
+ * gets forwarded to a bank or attached to a police report.
+ */
+function describeFiles(media: MediaDescriptor[]): string[] {
+  const sections: string[] = [];
+
+  for (const file of media) {
+    const lines: string[] = [file.name, ""];
+    const meta = file.metadata;
+
+    if (meta) {
+      const row = (label: string, value: string) => lines.push(`  ${(label + ":").padEnd(24)}${value}`);
+
+      row("Size", bytes(meta.sizeBytes));
+      if (meta.width && meta.height) row("Dimensions", `${meta.width} x ${meta.height} px`);
+      if (meta.format) row("Format", meta.format);
+      row(
+        "Declared type",
+        meta.typeMatches === false
+          ? `${meta.declaredType} - but the bytes are ${meta.sniffedLabel}`
+          : `${meta.declaredType}${meta.sniffedLabel ? ` (bytes confirm ${meta.sniffedLabel})` : ""}`,
+      );
+      if (meta.colour) row("Colour", meta.colour);
+      if (meta.bitDepth) row("Bit depth", `${meta.bitDepth}-bit`);
+      if (meta.subsampling) row("Chroma subsampling", meta.subsampling);
+      if (typeof meta.quality === "number") row("JPEG quality (est.)", `about ${meta.quality} of 100`);
+      if (meta.progressive !== undefined) row("Encoding", meta.progressive ? "Progressive" : "Baseline");
+      if (meta.interlaced !== undefined) row("Interlacing", meta.interlaced ? "Interlaced" : "None");
+      row("Colour profile", meta.iccProfile ?? "none embedded");
+      row("Metadata carried", meta.segments?.length ? meta.segments.join(", ") : "none");
+      if (meta.sha256) row("SHA-256", meta.sha256);
+
+      lines.push("", "  Camera record (EXIF)");
+
+      if (meta.exif?.present) {
+        const e = meta.exif;
+        row("  Tags found", String(e.fields));
+        if (e.make || e.model) row("  Camera", [e.make, e.model].filter(Boolean).join(" "));
+        if (e.lens) row("  Lens", e.lens);
+        if (e.software) row("  Software", e.software);
+        if (e.taken) row("  Taken", e.taken);
+        if (e.capturedWidth && e.capturedHeight) row("  Captured at", `${e.capturedWidth} x ${e.capturedHeight} px`);
+        row("  Location", e.gps ? `${e.gps.lat.toFixed(5)}, ${e.gps.lon.toFixed(5)}` : "not recorded");
+
+        if (e.gps) {
+          lines.push("", indent(wrap("This image carries the coordinates of where it was taken. Sending the file sends that location with it.", 70), 4));
+        }
+      } else {
+        lines.push(indent(wrap("None. The file carries no camera record. This is ordinary for a screenshot and for any photograph that has passed through a messaging app, which strip it. Its absence says nothing about whether the image is genuine.", 70), 4));
+      }
+    }
+
+    if (file.provenance) {
+      lines.push("", "  Origin", indent(wrap(file.provenance.detail, 70), 4));
+    }
+
+    if (file.synthetic) {
+      lines.push(
+        "",
+        "  AI-image check",
+        indent(
+          file.synthetic.unavailable ??
+            `Assessed on this device at ${Math.round(file.synthetic.probability * 100)}% likely to be AI-generated (${file.synthetic.model}).`,
+          4,
+        ),
+      );
+    }
+
+    if (file.edits) {
+      lines.push("", "  Edit check");
+      if (file.edits.unavailable) {
+        lines.push(indent(wrap(file.edits.unavailable, 70), 4));
+      } else if (file.edits.findings.length === 0) {
+        lines.push(indent(wrap(`${file.edits.examined ?? "The file"} examined; nothing indicating the image was altered. A careful edit leaves nothing either.`, 70), 4));
+      } else {
+        for (const finding of file.edits.findings) {
+          lines.push(indent(`- ${finding.label} [${finding.weight}]`, 4));
+          lines.push(indent(wrap(finding.detail, 68), 6));
+          if (finding.evidence) lines.push(indent(`Evidence: ${finding.evidence}`, 6));
+        }
+      }
+    }
+
+    if (file.extractedText?.trim()) {
+      lines.push("", "  Text read from this file", indent(wrap(file.extractedText.trim(), 70), 4));
+    } else if (file.unreadable) {
+      lines.push("", "  Contents", indent(wrap(file.unreadable, 70), 4));
+    }
+
+    sections.push(lines.join("\n"));
+  }
+
+  return sections;
+}
+
 export function formatReport({ analysis, submission, generatedAt }: ReportInput): string {
   const rule = "=".repeat(76);
   const sections: string[] = [];
@@ -158,7 +272,21 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     sections.push(["PULLED OUT OF THE MESSAGE", "", ...extracted].join("\n"));
   }
 
-  sections.push(["THE MESSAGE AS SUBMITTED", "", indent(submission.text.trim(), 2)].join("\n"));
+  const files = submission.media ?? [];
+
+  if (files.length > 0) {
+    sections.push(
+      [
+        files.length === 1 ? "THE FILE THAT WAS CHECKED" : "THE FILES THAT WERE CHECKED",
+        "",
+        ...describeFiles(files),
+      ].join("\n"),
+    );
+  }
+
+  if (submission.text.trim()) {
+    sections.push(["THE MESSAGE AS SUBMITTED", "", indent(submission.text.trim(), 2)].join("\n"));
+  }
 
   sections.push(["IMPORTANT", "", indent(wrap(ADVISORY, 72), 2)].join("\n"));
 
@@ -166,7 +294,7 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     [
       rule,
       wrap(
-        `Checked on the reader's own device by ${SITE.name}. The message was not sent to ${SITE.owner} and was not stored. To report it, visit the service and choose "Report a scam".`,
+        `Checked on the reader's own device by ${SITE.name}. Nothing submitted — message or file — was sent to ${SITE.owner} or stored. To report it, visit the service and choose "Report a scam".`,
       ),
       rule,
     ].join("\n"),

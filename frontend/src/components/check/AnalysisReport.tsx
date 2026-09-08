@@ -124,6 +124,157 @@ function originVerdict(file: MediaDescriptor): OriginVerdict {
   return "unconfirmed";
 }
 
+/** One label/value line in the file-detail list. */
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-[3px]">
+      <dt className="shrink-0 text-caption text-slate-500 dark:text-slate-400">{label}</dt>
+      <dd className="min-w-0 break-words text-right text-caption font-medium text-slate-700 dark:text-slate-300">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+const BYTE_UNITS = ["bytes", "KB", "MB", "GB"];
+
+function bytes(size: number): string {
+  let value = size;
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${unit === 0 ? value : value.toFixed(1)} ${BYTE_UNITS[unit]}${
+    unit > 0 ? ` (${size.toLocaleString()} bytes)` : ""
+  }`;
+}
+
+/**
+ * Everything the file said about itself.
+ *
+ * Always rendered when a file was submitted, including — especially — when
+ * nothing was found. A reader who attached an image and was handed a score of
+ * zero and no detail has been told their file was ignored, which is both untrue
+ * and the single most common way this checker looked broken.
+ */
+function FileDetails({ file }: { file: MediaDescriptor }) {
+  const meta = file.metadata;
+
+  if (!meta) {
+    return null;
+  }
+
+  const exif = meta.exif;
+
+  return (
+    <details className="mt-2 border-t border-slate-900/[0.06] pt-2 dark:border-white/10" open>
+      <summary className="cursor-pointer list-none text-caption font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+        File and image details
+      </summary>
+
+      <dl className="mt-2 divide-y divide-slate-900/[0.04] dark:divide-white/[0.06]">
+        <Detail label="Size" value={bytes(meta.sizeBytes)} />
+        {meta.width && meta.height ? (
+          <Detail
+            label="Dimensions"
+            value={`${meta.width} × ${meta.height} px (${(
+              (meta.width * meta.height) / 1_000_000
+            ).toFixed(2)} MP)`}
+          />
+        ) : null}
+        {meta.format ? <Detail label="Format" value={meta.format} /> : null}
+        <Detail
+          label="Declared type"
+          value={
+            meta.typeMatches === false
+              ? `${meta.declaredType} — but the bytes are ${meta.sniffedLabel}`
+              : `${meta.declaredType}${
+                  meta.sniffedLabel ? ` (bytes confirm ${meta.sniffedLabel})` : ""
+                }`
+          }
+        />
+        {meta.colour ? <Detail label="Colour" value={meta.colour} /> : null}
+        {meta.bitDepth ? <Detail label="Bit depth" value={`${meta.bitDepth}-bit`} /> : null}
+        {meta.subsampling ? <Detail label="Chroma subsampling" value={meta.subsampling} /> : null}
+        {typeof meta.quality === "number" ? (
+          <Detail label="JPEG quality (estimated)" value={`about ${meta.quality} of 100`} />
+        ) : null}
+        {meta.progressive !== undefined ? (
+          <Detail label="Encoding" value={meta.progressive ? "Progressive" : "Baseline"} />
+        ) : null}
+        {meta.interlaced !== undefined ? (
+          <Detail label="Interlacing" value={meta.interlaced ? "Interlaced (Adam7)" : "None"} />
+        ) : null}
+        <Detail label="Colour profile" value={meta.iccProfile ?? "none embedded"} />
+        <Detail
+          label="Metadata carried"
+          value={meta.segments?.length ? meta.segments.join(", ") : "none"}
+        />
+        {meta.lastModified ? (
+          <Detail
+            label="File modified"
+            value={new Date(meta.lastModified).toLocaleString("en-AU")}
+          />
+        ) : null}
+        {meta.sha256 ? (
+          <Detail label="SHA-256" value={`${meta.sha256.slice(0, 32)}…`} />
+        ) : null}
+      </dl>
+
+      {/* The camera record, kept as its own list because its absence means
+          something different from a missing colour profile: it is the ordinary
+          state of every image that has been through a messaging app. */}
+      <p className="mt-3 text-caption font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+        Camera record (EXIF)
+      </p>
+
+      {exif?.present ? (
+        <dl className="mt-1 divide-y divide-slate-900/[0.04] dark:divide-white/[0.06]">
+          <Detail label="Tags found" value={String(exif.fields)} />
+          {exif.make || exif.model ? (
+            <Detail label="Camera" value={[exif.make, exif.model].filter(Boolean).join(" ")} />
+          ) : null}
+          {exif.lens ? <Detail label="Lens" value={exif.lens} /> : null}
+          {exif.software ? <Detail label="Software" value={exif.software} /> : null}
+          {exif.taken ? (
+            <Detail label="Taken" value={new Date(exif.taken).toLocaleString("en-AU")} />
+          ) : null}
+          {exif.capturedWidth && exif.capturedHeight ? (
+            <Detail
+              label="Captured at"
+              value={`${exif.capturedWidth} × ${exif.capturedHeight} px`}
+            />
+          ) : null}
+          {exif.orientation ? <Detail label="Orientation" value={String(exif.orientation)} /> : null}
+          <Detail
+            label="Location"
+            value={
+              exif.gps
+                ? `${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`
+                : "not recorded"
+            }
+          />
+        </dl>
+      ) : (
+        <p className="mt-1 text-copy leading-relaxed text-slate-600 dark:text-slate-400">
+          None. The file carries no camera record at all. This is the ordinary state of a
+          screenshot, and of any photograph that has passed through a messaging app or a social
+          network — they strip it. Its absence says nothing about whether the image is genuine.
+        </p>
+      )}
+
+      {exif?.gps ? (
+        <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-copy leading-relaxed text-amber-700 dark:text-amber-400">
+          This image carries the coordinates of where it was taken. Sending it to anyone sends
+          that location with it. Nothing was uploaded from here — the coordinates were read on
+          this device — but consider stripping them before you forward the file.
+        </p>
+      ) : null}
+    </details>
+  );
+}
+
 /**
  * What the forensic pass found on one image, and the map it drew.
  *
@@ -211,7 +362,8 @@ function ImageEdits({ file }: { file: MediaDescriptor }) {
  */
 function ImageOrigin({ media }: { media: MediaDescriptor[] }) {
   const images = media.filter(
-    (file) => file.kind === "image" && (file.provenance || file.synthetic || file.edits),
+    (file) =>
+      file.metadata || (file.kind === "image" && (file.provenance || file.synthetic || file.edits)),
   );
 
   if (images.length === 0) {
@@ -221,8 +373,8 @@ function ImageOrigin({ media }: { media: MediaDescriptor[] }) {
   return (
     <div>
       <h3 className="text-caption font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-        Where {images.length === 1 ? "the image" : "each image"} came from, and whether it was
-        altered
+        What {images.length === 1 ? "the file" : "each file"} is, where it came from, and whether
+        it was altered
       </h3>
 
       <ul className="mt-3 flex flex-col gap-2">
@@ -240,15 +392,20 @@ function ImageOrigin({ media }: { media: MediaDescriptor[] }) {
                 <p className="min-w-0 break-all font-mono text-[0.6875rem] text-slate-600 dark:text-slate-300">
                   {file.name}
                 </p>
-                <span
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.1em]",
-                    style.chip,
-                  )}
-                >
-                  <style.Icon className="h-3 w-3" aria-hidden="true" />
-                  {style.label}
-                </span>
+                {/* The origin verdict is about pixels, so it is shown only for
+                    images. A PDF gets its details and no chip, rather than an
+                    "unconfirmed" badge for a question never asked of it. */}
+                {file.kind === "image" ? (
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.1em]",
+                      style.chip,
+                    )}
+                  >
+                    <style.Icon className="h-3 w-3" aria-hidden="true" />
+                    {style.label}
+                  </span>
+                ) : null}
               </div>
 
               {file.provenance ? (
@@ -274,15 +431,17 @@ function ImageOrigin({ media }: { media: MediaDescriptor[] }) {
               ) : null}
 
               <ImageEdits file={file} />
+              <FileDetails file={file} />
             </li>
           );
         })}
       </ul>
 
       <p className="mt-2 text-caption leading-relaxed text-slate-500 dark:text-slate-400">
-        Images are checked on this device and are never uploaded. An image with nothing to confirm
-        it is the ordinary case — messaging apps and social networks strip this information from
-        every picture that passes through them, so its absence is not a sign of anything.
+        Every one of these checks ran on this device and nothing was uploaded — the file never left
+        your browser. An image with nothing to confirm it is the ordinary case: messaging apps and
+        social networks strip this information from every picture that passes through them, so its
+        absence is not a sign of anything.
       </p>
     </div>
   );

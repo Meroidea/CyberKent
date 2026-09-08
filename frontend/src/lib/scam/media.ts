@@ -1,5 +1,6 @@
 import type { Indicator, MediaDescriptor, MediaKind } from "@/lib/scam/types";
 import { SYNTHETIC_ABOVE } from "@/lib/scam/synthetic";
+import { fileTypeMismatch } from "@/lib/scam/metadata";
 
 /**
  * Rules that read a file's envelope rather than its contents.
@@ -81,6 +82,23 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
 
   for (const file of media) {
     const extension = extensionOf(file.name);
+
+    /*
+     * The bytes disagree with the name. Read from the metadata pass rather than
+     * re-sniffed here, because there should be exactly one answer in the report
+     * to "what is this file", and two sniffers eventually give two.
+     */
+    const mismatch = file.metadata ? fileTypeMismatch(file.metadata) : null;
+
+    if (mismatch) {
+      indicators.push({
+        id: `file-bytes-mismatch-${file.name}`,
+        label: "File is not the type it claims",
+        detail: `${mismatch} A file that is one thing and announces itself as another is the oldest way of getting something opened that would not be opened otherwise.`,
+        weight: "high",
+        evidence: file.name,
+      });
+    }
 
     if (BIDI_OVERRIDE.test(file.name)) {
       indicators.push({

@@ -1,4 +1,5 @@
 import type { EditFinding, EditRead } from "@/lib/scam/types";
+import { loadExifr } from "@/lib/scam/metadata";
 
 /**
  * Asking whether an image has been edited since it was created.
@@ -239,10 +240,12 @@ function readPngSoftware(bytes: Uint8Array): string[] {
  * tags are asked for, so the parse is cheap, and a file with no EXIF at all
  * simply returns null and the resize check does not run.
  */
-async function capturedDimensions(file: File): Promise<{ width: number; height: number } | null> {
+async function capturedDimensions(bytes: Uint8Array): Promise<{ width: number; height: number } | null> {
   try {
-    const exifr = await import("exifr");
-    const tags = (await exifr.parse(file, {
+    const exifr = await loadExifr();
+    /* The bytes, not the File: exifr's File path needs FileReader, which is
+       browser-only and re-reads the whole file for tags already in hand. */
+    const tags = (await exifr.parse(bytes, {
       pick: ["ExifImageWidth", "ExifImageHeight"],
     })) as { ExifImageWidth?: number; ExifImageHeight?: number } | undefined;
 
@@ -451,7 +454,7 @@ export async function readEdits(file: File): Promise<EditRead> {
      * app shrinks an attachment, and is also what happens on the way to a
      * doctored copy. Reported as a low weight for exactly that reason.
      */
-    const declared = await capturedDimensions(file);
+    const declared = await capturedDimensions(bytes);
 
     if (declared && jpeg.width && jpeg.height) {
       const shrunk = declared.width > jpeg.width * 1.2 || declared.height > jpeg.height * 1.2;

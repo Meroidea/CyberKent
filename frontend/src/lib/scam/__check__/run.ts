@@ -1,5 +1,6 @@
 import { analyse } from "@/lib/scam/analyse";
 import { readEdits } from "@/lib/scam/forensics";
+import { readMetadata } from "@/lib/scam/metadata";
 import type { Channel } from "@/lib/scam/types";
 
 const cases: { name: string; text: string; channel: Channel; expect: string }[] = [
@@ -224,3 +225,85 @@ for (const c of byteCases) {
   if (!ok) console.log(`      expected [${want.join(", ")}]`);
 }
 console.log(`\n${bytePass}/${byteCases.length} structural parsing cases correct`);
+
+/* --- Metadata: the pass that always has something to say -------------------
+
+   The defect this covers was reported from the live site. A reader attached a
+   photograph, no text, and got "Not enough to assess. Paste the full message"
+   with nothing about the file at all — no dimensions, no format, no statement
+   that anything had been looked at. The file had in fact been read end to end.
+   Three things were wrong: nothing captured the description, the exported
+   report never mentioned files, and the verdict copy told the reader to do
+   something they had already done. */
+
+const jpegWithApp0 = () => [
+  ...SOI,
+  0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00,
+  0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+  ...dqt(), ...sof(), ...sos(), ...EOI,
+];
+
+const metaCases: { name: string; file: File; check: (m: NonNullable<Awaited<ReturnType<typeof readMetadata>>>) => boolean; want: string }[] = [
+  {
+    name: "JPEG geometry and format are read",
+    file: jpegFile("photo.jpg", jpegWithApp0()),
+    check: (m) => m.width === 800 && m.height === 600 && m.format === "JPEG, baseline" && m.bitDepth === 8,
+    want: "800x600 baseline 8-bit",
+  },
+  {
+    name: "container segments are listed",
+    file: jpegFile("photo.jpg", jpegWithApp0()),
+    check: (m) => (m.segments ?? []).includes("JFIF (APP0)"),
+    want: "JFIF (APP0) listed",
+  },
+  {
+    name: "bytes confirm the declared type",
+    file: jpegFile("photo.jpg", jpegWithApp0()),
+    check: (m) => m.sniffedLabel === "JPEG" && m.typeMatches === true,
+    want: "sniffed JPEG, matches",
+  },
+  {
+    name: "an executable named .jpg is caught",
+    file: new File([new Uint8Array([0x4d, 0x5a, 0x90, 0x00, 0x03])], "invoice.jpg", { type: "image/jpeg" }),
+    check: (m) => m.typeMatches === false && m.sniffedLabel === "Windows executable",
+    want: "mismatch flagged",
+  },
+  {
+    name: "absent EXIF is reported as absent, not as failure",
+    file: jpegFile("photo.jpg", jpegWithApp0()),
+    check: (m) => m.exif?.present === false && m.exif.fields === 0,
+    want: "present:false",
+  },
+];
+
+console.log("");
+let metaPass = 0;
+for (const c of metaCases) {
+  const m = await readMetadata(c.file);
+  const ok = c.check(m);
+  if (ok) metaPass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(48)} (${c.want})`);
+}
+console.log(`\n${metaPass}/${metaCases.length} metadata cases correct`);
+
+/* The type mismatch is the one descriptive fact allowed to score. */
+const disguised = analyse({ text: "", channel: "email", media: [{
+  name: "invoice.jpg", size: 5, type: "image/jpeg", kind: "image",
+  metadata: await readMetadata(new File([new Uint8Array([0x4d, 0x5a, 0x90])], "invoice.jpg", { type: "image/jpeg" })),
+}] });
+console.log(
+  `${disguised.indicators.some((i) => i.id.startsWith("file-bytes-mismatch")) ? "PASS" : "FAIL"}` +
+    `  disguised executable reaches the score   band=${disguised.band} score=${disguised.score}`,
+);
+
+/* A file that scores nothing must still be told it was examined, and must not
+   be told to paste a message it already sent. */
+const quiet = analyse({ text: "", channel: "email", media: [{
+  name: "photo.jpg", size: 100, type: "image/jpeg", kind: "image",
+  metadata: await readMetadata(jpegFile("photo.jpg", jpegWithApp0())),
+  edits: { findings: [], examined: "JPEG segment structure" },
+}] });
+const speaksToTheFile = !quiet.summary.includes("Paste the full message") && /examined/i.test(quiet.summary);
+console.log(
+  `${speaksToTheFile ? "PASS" : "FAIL"}  quiet result names what was examined   headline="${quiet.headline}"`,
+);

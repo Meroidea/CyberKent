@@ -81,6 +81,59 @@ export interface Provenance {
  * it carries the checkpoint that produced it.
  */
 /**
+ * What a file says about itself, before anything judges it.
+ *
+ * Description rather than verdict: nothing here raises or lowers a score,
+ * except the declared-versus-actual type mismatch, which the rule set reads
+ * through `fileTypeMismatch`. It is shown whether or not anything was found,
+ * because "we looked and it carries no camera record" is an answer and an
+ * empty panel is not.
+ */
+export interface FileMetadata {
+  name: string;
+  sizeBytes: number;
+  /** What the browser said the file was. */
+  declaredType: string;
+  /** What the file's own leading bytes say it is. */
+  sniffedType?: string;
+  sniffedLabel?: string;
+  /** False only where the two disagree on the family, never on spelling. */
+  typeMatches?: boolean;
+  sha256?: string;
+  lastModified?: number;
+
+  /** Pixel dimensions as the container's own header declares them. */
+  width?: number;
+  height?: number;
+  format?: string;
+  bitDepth?: number;
+  colour?: string;
+  subsampling?: string;
+  /** Estimated JPEG quality, or null where the table is not a scaled standard. */
+  quality?: number | null;
+  progressive?: boolean;
+  interlaced?: boolean;
+  iccProfile?: string | null;
+  /** Metadata segments or chunks the container actually carries. */
+  segments?: string[];
+
+  exif?: {
+    present: boolean;
+    /** How many tags were found, so "present but sparse" is visible. */
+    fields: number;
+    make?: string;
+    model?: string;
+    lens?: string;
+    software?: string;
+    taken?: string;
+    orientation?: number;
+    capturedWidth?: number;
+    capturedHeight?: number;
+    gps?: { lat: number; lon: number } | null;
+  };
+}
+
+/**
  * One structural or pixel-level reason to think an image was altered.
  *
  * Shaped like {@link Indicator} on purpose: an edit finding is evidence of the
@@ -137,6 +190,8 @@ export interface MediaDescriptor {
   synthetic?: SyntheticRead;
   /** Images only: whether the file shows signs of having been edited. */
   edits?: EditRead;
+  /** Every file: what it says about itself, judged by nothing. */
+  metadata?: FileMetadata;
 }
 
 /** FR13, FR14, FR19, FR22, FR23 — everything a submission can carry. */

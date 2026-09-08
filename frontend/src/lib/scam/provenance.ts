@@ -1,4 +1,5 @@
 import type { Provenance } from "@/lib/scam/types";
+import { loadExifr } from "@/lib/scam/metadata";
 
 /**
  * Reading what an image says about its own origin, in the browser.
@@ -265,7 +266,7 @@ function collectSourceTypes(data: unknown): string[] {
  */
 async function readUnsigned(file: File): Promise<{ generator?: string }> {
   try {
-    const exifr = await import("exifr");
+    const exifr = await loadExifr();
     const tags = (await exifr.parse(file, { xmp: true, iptc: true, tiff: true })) as
       | Record<string, unknown>
       | undefined;
