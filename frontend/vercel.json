@@ -26,7 +26,6 @@
       ]
     },
     {
-      "comment": "Model weights are tens of megabytes and change only when the checkpoint does, which changes the path with it. Cached for a week so a second image check on the same device costs nothing.",
       "source": "/models/(.*)",
       "headers": [
         {
