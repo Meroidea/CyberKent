@@ -1,4 +1,5 @@
 import { analyse } from "@/lib/scam/analyse";
+import { readEdits } from "@/lib/scam/forensics";
 import type { Channel } from "@/lib/scam/types";
 
 const cases: { name: string; text: string; channel: Channel; expect: string }[] = [
@@ -52,3 +53,174 @@ for (const c of mediaCases) {
   if (!ok) console.log(`      expected ${c.expect}; got: ${r.indicators.map((i) => i.id).join(", ")}`);
   console.log(`      examined: ${r.examined.map((e) => `${e.label} [${e.status}]`).join(" | ")}`);
 }
+
+/* --- Image origin: C2PA provenance and the on-device classifier ---
+   Asserted on the indicator raised rather than on the band. A generated image
+   is not by itself a scam, so these deliberately do not move the score far —
+   what matters is that the right finding is raised, and that silence and a
+   missing model both stay silent. */
+const base = { name: "shot.jpg", size: 180000, type: "image/jpeg", kind: "image" as const };
+
+const originCases: { name: string; media: Parameters<typeof analyse>[0]["media"]; expectId: string | null }[] = [
+  { name: "signed manifest says AI", expectId: "image-declared-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "declared-ai", generator: "Firefly", detail: "signed: generated" } }] },
+  { name: "signed manifest says camera", expectId: null,
+    media: [{ ...base, provenance: { status: "declared-capture", detail: "signed: captured" } }] },
+  { name: "unsigned EXIF names a generator", expectId: "image-hinted-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "hinted-ai", generator: "midjourney", detail: "exif hint" } }] },
+  { name: "manifest present but invalid", expectId: "image-untrusted-manifest-shot.jpg",
+    media: [{ ...base, provenance: { status: "untrusted", detail: "does not validate" } }] },
+  { name: "no metadata at all", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing to read" } }] },
+  { name: "classifier confident", expectId: "image-synthetic-shot.jpg",
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.93, model: "m" } }] },
+  { name: "classifier weak — stays silent", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.41, model: "m" } }] },
+  { name: "classifier unavailable — stays silent", expectId: null,
+    media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0, model: "m", unavailable: "did not run" } }] },
+  { name: "signed AI + confident model counted once", expectId: "image-declared-ai-shot.jpg",
+    media: [{ ...base, provenance: { status: "declared-ai", generator: "Firefly", detail: "signed" }, synthetic: { probability: 0.99, model: "m" } }] },
+];
+
+console.log("");
+let originPass = 0;
+for (const c of originCases) {
+  const r = analyse({ text: "", channel: "email", media: c.media });
+  const ids = r.indicators.map((i) => i.id);
+  const origin = ids.filter((id) => id.startsWith("image-"));
+  const ok = c.expectId === null ? origin.length === 0 : origin.length === 1 && origin[0] === c.expectId;
+  if (ok) originPass += 1;
+  console.log(
+    `${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(40)} raised=[${origin.join(", ")}] band=${r.band}`,
+  );
+  if (!ok) console.log(`      expected ${c.expectId ?? "nothing"}`);
+}
+console.log(`\n${originPass}/${originCases.length} image-origin cases correct`);
+
+/* A missing model must lower confidence, not pass the image off as cleared.
+   Probed with a real message attached: the confidence penalty is multiplicative,
+   so on a submission with no text and no indicators the base is zero and no
+   penalty of any size could be observed. */
+const withText = "Your parcel could not be delivered. Confirm your address to reschedule the delivery today.";
+const cleared = analyse({ text: withText, channel: "sms",
+  media: [{ ...base, provenance: { status: "absent", detail: "n" }, synthetic: { probability: 0.1, model: "m" } }] });
+const gapped = analyse({ text: withText, channel: "sms",
+  media: [{ ...base, provenance: { status: "absent", detail: "n" }, synthetic: { probability: 0, model: "m", unavailable: "did not run" } }] });
+console.log(
+  `${gapped.confidence < cleared.confidence ? "PASS" : "FAIL"}  unavailable model costs confidence` +
+    `        ran=${cleared.confidence.toFixed(2)} vs missing=${gapped.confidence.toFixed(2)}`,
+);
+
+/* --- Edit detection (Layer 3): findings reach the score and the report --- */
+
+const editCases: { name: string; expect: string[]; media: Parameters<typeof analyse>[0]["media"] }[] = [
+  {
+    name: "resized-after-capture raises low",
+    expect: ["image-edit-jpeg-resized-shot.jpg"],
+    media: [{ ...base, edits: { findings: [{ id: "jpeg-resized", label: "Resized after it was captured",
+      detail: "smaller than captured", weight: "low", evidence: "4032x3024 captured, 800x600 here" }], examined: "JPEG segment structure" } }],
+  },
+  {
+    name: "appended payload raises high",
+    expect: ["image-edit-jpeg-trailing-data-shot.jpg"],
+    media: [{ ...base, edits: { findings: [{ id: "jpeg-trailing-data", label: "Extra data after the image ends",
+      detail: "tail", weight: "high", evidence: "40,000 bytes" }], examined: "JPEG segment structure" } }],
+  },
+  {
+    name: "clean structure raises nothing",
+    expect: [],
+    media: [{ ...base, edits: { findings: [], examined: "JPEG segment structure" } }],
+  },
+  {
+    name: "edit pass unavailable raises nothing",
+    expect: [],
+    media: [{ ...base, edits: { findings: [], unavailable: "could not be read" } }],
+  },
+  {
+    name: "editor marker and ELA region both carried",
+    expect: ["image-edit-jpeg-editor-marker-shot.jpg", "image-edit-ela-region-shot.jpg"],
+    media: [{ ...base, edits: { findings: [
+      { id: "jpeg-editor-marker", label: "Written by image-editing software", detail: "adobe", weight: "medium" },
+      { id: "ela-region", label: "One area compresses unlike the rest", detail: "region", weight: "low" },
+    ], examined: "JPEG segment structure and pixel error levels" } }],
+  },
+];
+
+console.log("");
+let editPass = 0;
+for (const c of editCases) {
+  const r = analyse({ text: "", channel: "email", media: c.media });
+  const got = r.indicators.map((i) => i.id).filter((id) => id.startsWith("image-edit-"));
+  const ok = got.length === c.expect.length && c.expect.every((id) => got.includes(id));
+  if (ok) editPass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(44)} raised=[${got.join(", ")}]`);
+  if (!ok) console.log(`      expected [${c.expect.join(", ")}]`);
+}
+console.log(`\n${editPass}/${editCases.length} edit-detection cases correct`);
+
+/* An edit finding must be able to move the band on its own: a real photograph
+   of a real document with something painted over scores nothing on the text
+   rules and nothing on the origin passes, and is the whole point of Layer 3. */
+const untouched = analyse({ text: "", channel: "email",
+  media: [{ ...base, edits: { findings: [], examined: "JPEG segment structure" } }] });
+const tampered = analyse({ text: "", channel: "email",
+  media: [{ ...base, edits: { findings: [
+    { id: "jpeg-trailing-data", label: "Extra data after the image ends", detail: "d", weight: "high" },
+    { id: "jpeg-editor-marker", label: "Written by image-editing software", detail: "d", weight: "medium" },
+  ], examined: "JPEG segment structure" } }] });
+console.log(
+  `${tampered.score > untouched.score && tampered.band !== "unclear" ? "PASS" : "FAIL"}` +
+    `  edits alone can move the verdict        clean=${untouched.score}/${untouched.band}` +
+    ` vs edited=${tampered.score}/${tampered.band}`,
+);
+
+/* --- Structural parsing, over bytes rather than hand-made descriptors -------
+
+   The cases above check that a finding reaches the score. These check that the
+   parser produces the right finding from the right bytes, which is where the
+   one real bug in this layer was found. An earlier revision raised "saved more
+   than once" whenever a JPEG carried more than one DQT segment, on the
+   reasoning that a camera writes one. An ordinary single-save JPEG carries two
+   — luminance and chrominance — so the rule fired on untouched camera files.
+   The rule is gone; the first case below is the guard that keeps it gone. */
+
+const SOI = [0xff, 0xd8];
+const EOI = [0xff, 0xd9];
+const dqt = () => [0xff, 0xdb, 0x00, 0x43, 0x00, ...Array<number>(64).fill(0x10)];
+const sof = () => [0xff, 0xc0, 0x00, 0x11, 0x08, 0x02, 0x58, 0x03, 0x20, 0x03, ...Array<number>(9).fill(0x01)];
+const sos = () => [0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00];
+
+function jpegFile(name: string, ...parts: number[][]): File {
+  return new File([new Uint8Array(parts.flat())], name, { type: "image/jpeg" });
+}
+
+const byteCases: { name: string; file: File; expect: string[] }[] = [
+  {
+    name: "single-save JPEG, two DQT segments",
+    file: jpegFile("camera.jpg", SOI, dqt(), dqt(), sof(), sos(), EOI),
+    expect: [],
+  },
+  {
+    name: "data appended after end-of-image",
+    file: jpegFile("carrier.jpg", SOI, dqt(), sof(), sos(), EOI, Array<number>(4096).fill(0x41)),
+    expect: ["jpeg-trailing-data"],
+  },
+  {
+    name: "a few padding bytes are not a payload",
+    file: jpegFile("padded.jpg", SOI, dqt(), sof(), sos(), EOI, Array<number>(16).fill(0x00)),
+    expect: [],
+  },
+];
+
+console.log("");
+let bytePass = 0;
+for (const c of byteCases) {
+  const read = await readEdits(c.file);
+  const got = read.findings.map((f) => f.id).sort();
+  const want = [...c.expect].sort();
+  const ok = got.length === want.length && want.every((id, i) => got[i] === id);
+  if (ok) bytePass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(44)} -> [${got.join(", ")}]`);
+  if (!ok) console.log(`      expected [${want.join(", ")}]`);
+}
+console.log(`\n${bytePass}/${byteCases.length} structural parsing cases correct`);

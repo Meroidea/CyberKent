@@ -1,5 +1,8 @@
 import type { MediaDescriptor } from "@/lib/scam/types";
 import { kindOf } from "@/lib/scam/media";
+import { readProvenance } from "@/lib/scam/provenance";
+import { readSynthetic } from "@/lib/scam/synthetic";
+import { readEdits } from "@/lib/scam/forensics";
 
 /**
  * Reading the text out of an uploaded image, in the browser.
@@ -101,8 +104,24 @@ export async function describeFiles(
     const base = { name: file.name, size: file.size, type: file.type, kind };
 
     if (kind === "image") {
+      /*
+       * Four passes over the same image, cheapest and most certain first.
+       * Provenance is metadata and costs nothing; the forensic pass reads the
+       * file's own structure and one canvas re-encode; the classifier is a
+       * model and costs a download; OCR is the one that feeds the existing rule
+       * set. None of them can fail the others — each returns its own gap.
+       *
+       * They answer three different questions, and keeping them apart is the
+       * point: where did this come from, has it been altered since, and what
+       * does it say. An image can be a real photograph, edited, and carrying a
+       * scam, and a reader is entitled to see all three answers separately.
+       */
+      const provenance = await readProvenance(file);
+      const edits = await readEdits(file);
+      const synthetic = await readSynthetic(file);
       const { text, unreadable } = await readImage(file);
-      described.push({ ...base, extractedText: text, unreadable });
+
+      described.push({ ...base, extractedText: text, unreadable, provenance, synthetic, edits });
       continue;
     }
 

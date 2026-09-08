@@ -1,12 +1,23 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, AtSign, Link2, Phone, ShieldCheck, ShieldQuestion } from "lucide-react";
+import {
+  AlertTriangle,
+  AtSign,
+  Camera,
+  Link2,
+  Phone,
+  Scissors,
+  ShieldCheck,
+  ShieldQuestion,
+  Sparkles,
+} from "lucide-react";
 import { ROUTES } from "@/config/site";
 import { ReportActions } from "@/components/check/ReportActions";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
 import { ProgressRing } from "@/components/settings/ProgressRing";
-import type { Analysis, RiskBand, Submission } from "@/lib/scam/types";
+import { SYNTHETIC_ABOVE } from "@/lib/scam/synthetic";
+import type { Analysis, MediaDescriptor, RiskBand, Submission } from "@/lib/scam/types";
 import { fadeUp, staggerParent } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 
@@ -57,6 +68,225 @@ const WEIGHT_CHIP: Record<string, string> = {
   medium: "bg-amber-500/12 text-amber-600 dark:text-amber-400",
   low: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400",
 };
+
+/**
+ * The three states an image's origin can be reported in.
+ *
+ * There is no "likely real" among them, and its absence is the point. The only
+ * green this panel shows is `captured`, which requires a signed declaration
+ * that a camera took the picture. An image with no metadata and a low model
+ * score is `unconfirmed`, not clean — telling someone their screenshot passed
+ * when nothing actually verified it is the failure mode that would make this
+ * whole feature worse than not having it.
+ */
+type OriginVerdict = "generated" | "unconfirmed" | "captured";
+
+const ORIGIN_STYLES: Record<
+  OriginVerdict,
+  { chip: string; dot: string; label: string; Icon: typeof ShieldCheck }
+> = {
+  generated: {
+    chip: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    dot: "bg-rose-500",
+    label: "AI-generated",
+    Icon: Sparkles,
+  },
+  unconfirmed: {
+    chip: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    dot: "bg-amber-500",
+    label: "Unconfirmed",
+    Icon: ShieldQuestion,
+  },
+  captured: {
+    chip: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    dot: "bg-emerald-500",
+    label: "Camera capture",
+    Icon: Camera,
+  },
+};
+
+/** Reduces the two origin passes on one image to a single reportable state. */
+function originVerdict(file: MediaDescriptor): OriginVerdict {
+  if (file.provenance?.status === "declared-ai") {
+    return "generated";
+  }
+
+  if (file.provenance?.status === "declared-capture") {
+    return "captured";
+  }
+
+  const synthetic = file.synthetic;
+
+  if (synthetic && !synthetic.unavailable && synthetic.probability >= SYNTHETIC_ABOVE) {
+    return "generated";
+  }
+
+  return "unconfirmed";
+}
+
+/**
+ * What the forensic pass found on one image, and the map it drew.
+ *
+ * Kept beneath the origin verdict rather than beside it because it answers the
+ * second question, not the first. An image can be a genuine photograph — camera
+ * credentials and all — and still have had a figure painted over, and this is
+ * the only part of the report that would say so.
+ *
+ * The error map is offered rather than shown. It is a picture of compression
+ * error, not a picture of tampering, and unfolding it by default would invite
+ * every reader to interpret ordinary texture as evidence.
+ */
+function ImageEdits({ file }: { file: MediaDescriptor }) {
+  const edits = file.edits;
+
+  if (!edits) {
+    return null;
+  }
+
+  if (edits.unavailable) {
+    return (
+      <p className="mt-1.5 text-caption text-slate-500 dark:text-slate-400">{edits.unavailable}</p>
+    );
+  }
+
+  return (
+    <div className="mt-2 border-t border-slate-900/[0.06] pt-2 dark:border-white/10">
+      {edits.findings.length === 0 ? (
+        <p className="text-caption text-slate-500 dark:text-slate-400">
+          {edits.examined ? `${edits.examined} checked` : "Checked"} for signs of editing; none
+          found. A careful edit leaves none either.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {edits.findings.map((finding) => (
+            <li key={finding.id} className="flex items-start gap-2">
+              <Scissors
+                className="mt-0.5 h-3 w-3 shrink-0 text-amber-500"
+                aria-hidden="true"
+              />
+              <p className="text-copy leading-relaxed text-slate-600 dark:text-slate-400">
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {finding.label}.
+                </span>{" "}
+                {finding.detail}
+                {finding.evidence ? (
+                  <span className="ml-1 font-mono text-caption text-slate-500 dark:text-slate-400">
+                    ({finding.evidence})
+                  </span>
+                ) : null}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {edits.heatmap ? (
+        <details className="mt-2 group">
+          <summary className="cursor-pointer list-none text-caption text-ui-tint underline underline-offset-2">
+            Show the compression error map
+          </summary>
+          <img
+            src={edits.heatmap}
+            alt={`Error level map for ${file.name}. Brighter areas compressed differently from the rest of the image.`}
+            className="mt-2 w-full rounded-lg border border-slate-900/[0.06] bg-black dark:border-white/10"
+          />
+          <p className="mt-1.5 text-caption leading-relaxed text-slate-500 dark:text-slate-400">
+            Brighter means the area changed more when the image was re-compressed. Edges, text and
+            fine detail are bright on any image, including untouched ones — this map is a prompt to
+            look, never a finding on its own.
+          </p>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Per-image origin, shown only when images were actually submitted.
+ *
+ * Separate from the indicator list because it answers a question the score does
+ * not: the score is how scam-like the message is, and this is what could be
+ * established about where one of its pictures came from. An image can be
+ * verifiably AI-generated in a message that is otherwise entirely benign.
+ */
+function ImageOrigin({ media }: { media: MediaDescriptor[] }) {
+  const images = media.filter(
+    (file) => file.kind === "image" && (file.provenance || file.synthetic || file.edits),
+  );
+
+  if (images.length === 0) {
+    return null;
+  }
+
+  return (
+    <div>
+      <h3 className="text-caption font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+        Where {images.length === 1 ? "the image" : "each image"} came from, and whether it was
+        altered
+      </h3>
+
+      <ul className="mt-3 flex flex-col gap-2">
+        {images.map((file) => {
+          const verdict = originVerdict(file);
+          const style = ORIGIN_STYLES[verdict];
+          const reading = file.synthetic;
+
+          return (
+            <li
+              key={file.name}
+              className="rounded-xl border border-slate-900/[0.06] bg-slate-900/[0.02] p-3 dark:border-white/10 dark:bg-black/20"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 break-all font-mono text-[0.6875rem] text-slate-600 dark:text-slate-300">
+                  {file.name}
+                </p>
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.1em]",
+                    style.chip,
+                  )}
+                >
+                  <style.Icon className="h-3 w-3" aria-hidden="true" />
+                  {style.label}
+                </span>
+              </div>
+
+              {file.provenance ? (
+                <p className="mt-2 text-copy leading-relaxed text-slate-600 dark:text-slate-400">
+                  {file.provenance.detail}
+                </p>
+              ) : null}
+
+              {/*
+               * The model's own number, shown whenever it ran — including when
+               * it came back low. A detector that is only quoted when it agrees
+               * with the verdict is not evidence, it is decoration.
+               */}
+              {reading?.unavailable ? (
+                <p className="mt-1.5 text-caption text-slate-500 dark:text-slate-400">
+                  {reading.unavailable}
+                </p>
+              ) : reading ? (
+                <p className="mt-1.5 font-mono text-caption text-slate-500 dark:text-slate-400">
+                  on-device model · {Math.round(reading.probability * 100)}% generated ·{" "}
+                  {reading.model}
+                </p>
+              ) : null}
+
+              <ImageEdits file={file} />
+            </li>
+          );
+        })}
+      </ul>
+
+      <p className="mt-2 text-caption leading-relaxed text-slate-500 dark:text-slate-400">
+        Images are checked on this device and are never uploaded. An image with nothing to confirm
+        it is the ordinary case — messaging apps and social networks strip this information from
+        every picture that passes through them, so its absence is not a sign of anything.
+      </p>
+    </div>
+  );
+}
 
 /**
  * The verdict, drawn as the accessory panel draws a battery.
@@ -244,6 +474,12 @@ export function AnalysisReport({
               ))}
             </SettingsRows>
           </SettingsGroup>
+        </motion.div>
+      ) : null}
+
+      {submission.media && submission.media.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <ImageOrigin media={submission.media} />
         </motion.div>
       ) : null}
 
