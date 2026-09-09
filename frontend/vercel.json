@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|models/|documents/data/|documents/[^/]+\\.pdf|favicon\\.(?:ico|svg)|favicon-96\\.png|apple-touch-icon\\.png|icon-[^/]+\\.png|og-image\\.png|logo\\.svg|site\\.webmanifest|robots\\.txt).*)",
+      "source": "/((?!api/|assets/|models/|ort/|documents/data/|documents/[^/]+\\.pdf|favicon\\.(?:ico|svg)|favicon-96\\.png|apple-touch-icon\\.png|icon-[^/]+\\.png|og-image\\.png|logo\\.svg|site\\.webmanifest|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ],
@@ -40,6 +40,15 @@
         {
           "key": "Cache-Control",
           "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/ort/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800"
         }
       ]
     },

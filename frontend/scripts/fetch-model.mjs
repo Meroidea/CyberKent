@@ -1,4 +1,4 @@
-import { mkdir, writeFile, access } from "node:fs/promises";
+import { copyFile, mkdir, readdir, writeFile, access } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -176,7 +176,54 @@ async function main() {
   );
 }
 
+/**
+ * Copies the ONNX runtime's own WebAssembly files into `public/ort/`.
+ *
+ * Without this the classifier does not run on the deployed site at all, and
+ * says so in a way that reads like an ordinary absence.
+ *
+ * `onnxruntime-web` cannot locate its `.wasm` files when it has been bundled,
+ * so it falls back to importing them from a public CDN at runtime. That import
+ * is a script import, and this site's Content-Security-Policy allows scripts
+ * from its own origin only — so the fetch is blocked, the backend fails to
+ * initialise, and the reading comes back "the AI-image check did not run on
+ * this device". The policy is right and the default is wrong for it.
+ *
+ * Copying the files here and pointing `wasmPaths` at them fixes that and is
+ * the better arrangement anyway: the runtime is served from the same origin as
+ * everything else, so no third party is told that somebody is checking an
+ * image, and a blocked or unreachable CDN cannot silently disable the check on
+ * one visit and not the next.
+ */
+async function copyRuntime() {
+  const from = join(ROOT, "node_modules", "onnxruntime-web", "dist");
+  const to = join(ROOT, "public", "ort");
+
+  let files;
+
+  try {
+    files = (await readdir(from)).filter((name) => /^ort-wasm.*\.(wasm|mjs)$/.test(name));
+  } catch {
+    process.stdout.write("  onnxruntime-web is not installed; the AI-image check will not run\n");
+    return;
+  }
+
+  if (files.length === 0) {
+    process.stdout.write("  no onnxruntime wasm files found; the AI-image check will not run\n");
+    return;
+  }
+
+  await mkdir(to, { recursive: true });
+
+  for (const name of files) {
+    await copyFile(join(from, name), join(to, name));
+  }
+
+  process.stdout.write(`  onnx runtime      ${files.length} files copied to public/ort/\n`);
+}
+
 try {
+  await copyRuntime();
   await main();
 } catch (error) {
   process.stdout.write(

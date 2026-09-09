@@ -26,6 +26,9 @@ import type { SyntheticRead } from "@/lib/scam/types";
  */
 const MODEL_ROOT = "/models/";
 
+/** Where the ONNX runtime's own WebAssembly lives. Same origin, deliberately. */
+const RUNTIME_ROOT = "/ort/";
+
 /**
  * The checkpoint, as a repository id under {@link MODEL_ROOT}.
  *
@@ -59,15 +62,16 @@ const MODEL_DTYPE = "q8";
 /** Labels that mean "a machine made this", across the checkpoints in use. */
 const SYNTHETIC_LABELS = ["artificial", "ai", "ai-generated", "aigenerated", "fake", "synthetic", "generated"];
 
-/**
- * Below this the reading is treated as saying nothing rather than as saying
- * "real". These detectors are confidently wrong often enough that a weak score
- * in either direction is not worth showing a resident.
+/*
+ * The thresholds that used to live here are gone.
+ *
+ * Two constants decided when this model's raw score was worth showing and when
+ * it was strong enough to raise an indicator, which put the judgement about how
+ * far to trust a detector in the same file as the code that runs it. That
+ * judgement now lives in `origin.ts`, where the score is damped, capped and
+ * weighed against everything else known about the image — so this module
+ * reports a number and says nothing about what it means.
  */
-export const INCONCLUSIVE_BELOW = 0.15;
-
-/** At or above this the reading is strong enough to raise as an indicator. */
-export const SYNTHETIC_ABOVE = 0.7;
 
 type Classifier = (input: string) => Promise<{ label: string; score: number }[]>;
 
@@ -160,6 +164,23 @@ function load(): Promise<Classifier> {
     env.allowRemoteModels = false;
     env.allowLocalModels = true;
     env.localModelPath = MODEL_ROOT;
+
+    /*
+     * The runtime, from this origin too — and this line is the difference
+     * between the check running and not running at all.
+     *
+     * `onnxruntime-web` cannot find its own `.wasm` files once it has been
+     * bundled, so its default is to import them from a public CDN. That is a
+     * script import, this site's Content-Security-Policy allows scripts from
+     * its own origin only, and so the import is blocked, the backend never
+     * initialises, and the reading comes back "the AI-image check did not run
+     * on this device" — indistinguishable from a device that genuinely could
+     * not manage it. `scripts/fetch-model.mjs` copies the files here at build
+     * time; this points the runtime at them.
+     */
+    if (env.backends.onnx.wasm) {
+      env.backends.onnx.wasm.wasmPaths = RUNTIME_ROOT;
+    }
 
     const pipe = await pipeline("image-classification", MODEL_ID, { dtype: MODEL_DTYPE });
 
