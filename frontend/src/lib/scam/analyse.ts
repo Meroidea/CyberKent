@@ -1,11 +1,6 @@
-import { extractEmails, extractPhones, extractUrls, hostOf } from "@/lib/scam/extract";
-import {
-  IMPERSONATED_BRANDS,
-  OFFICIAL_SUFFIXES,
-  SUSPICIOUS_TLDS,
-  TEXT_RULES,
-  URL_SHORTENERS,
-} from "@/lib/scam/patterns";
+import { extractEmails, extractPhones, extractUrls } from "@/lib/scam/extract";
+import { TEXT_RULES } from "@/lib/scam/patterns";
+import { inspectStructure, linkIndicators, type LinkReport } from "@/lib/scam/links";
 import { analyseMedia } from "@/lib/scam/media";
 import type {
   Analysis,
@@ -98,93 +93,6 @@ function runTextRules(text: string, channel: Channel): Indicator[] {
   });
 }
 
-/** FR20, FR21 — validate the shape of each URL, then inspect the host. */
-function runUrlRules(urls: string[]): Indicator[] {
-  const indicators: Indicator[] = [];
-
-  for (const url of urls) {
-    const host = hostOf(url);
-
-    if (!host) {
-      indicators.push({
-        id: `url-malformed-${url}`,
-        label: "Link is malformed",
-        detail: "The address could not be parsed, which is itself unusual in a genuine message.",
-        weight: "medium",
-        evidence: url,
-      });
-      continue;
-    }
-
-    /* An official Australian domain cannot be registered by a scammer, so it
-       clears the host-shape rules below rather than being scored by them. */
-    if (OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      continue;
-    }
-
-    const tld = host.split(".").pop() ?? "";
-
-    if (SUSPICIOUS_TLDS.includes(tld)) {
-      indicators.push({
-        id: `url-tld-${host}`,
-        label: "Uncommon top-level domain",
-        detail: `".${tld}" is cheap to register and carries a high share of abuse.`,
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    if (URL_SHORTENERS.includes(host)) {
-      indicators.push({
-        id: `url-shortener-${host}`,
-        label: "Shortened link",
-        detail: "A shortener hides the real destination until you have already opened it.",
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    /*
-     * Lookalike test: the host names a brand but is not that brand's own
-     * domain. "hume-rates-refund.online" contains "hume" without being
-     * anything hume.vic.gov.au controls.
-     */
-    const brand = IMPERSONATED_BRANDS.find((candidate) => host.includes(candidate));
-
-    if (brand && !OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      indicators.push({
-        id: `url-lookalike-${host}`,
-        label: "Lookalike domain",
-        detail: `Contains "${brand}" but is not an official address for it.`,
-        weight: "high",
-        evidence: host,
-      });
-    }
-
-    if (host.split(".").length > 3) {
-      indicators.push({
-        id: `url-depth-${host}`,
-        label: "Deeply nested subdomain",
-        detail: "Stacking subdomains pushes the real domain out of view on a phone.",
-        weight: "low",
-        evidence: host,
-      });
-    }
-
-    if (/\d{1,3}(\.\d{1,3}){3}/.test(host)) {
-      indicators.push({
-        id: `url-ip-${host}`,
-        label: "Link points to a raw IP address",
-        detail: "Genuine services publish a domain name, not a bare address.",
-        weight: "high",
-        evidence: host,
-      });
-    }
-  }
-
-  return indicators;
-}
-
 /**
  * FR16 — combine indicator weights into a 0–100 score.
  *
@@ -247,25 +155,24 @@ const WEIGHT_ORDER: Record<IndicatorWeight, number> = { high: 0, medium: 1, low:
  * which is what makes the rule set testable and what will let the same code run
  * server-side without change.
  */
-export function analyse({ text, channel, media = [] }: Submission): Analysis {
+export function analyse({ text, channel, media = [], links }: Submission): Analysis {
   const typed = text.trim();
-
-  /*
-   * Text recognised inside an upload is treated as part of the message, not as
-   * a separate class of evidence. A scam screenshotted and a scam pasted are
-   * the same scam, and the rules that catch one have to catch the other.
-   */
-  const readFromMedia = media
-    .map((file) => file.extractedText?.trim() ?? "")
-    .filter((value) => value.length > 0);
-
-  const corpus = [typed, ...readFromMedia].filter((value) => value.length > 0).join("\n\n");
+  const corpus = corpusOf({ text, channel, media });
 
   const extracted = {
-    urls: extractUrls(corpus),
+    urls: urlsIn({ text, channel, media }),
     emails: extractEmails(corpus),
     phones: extractPhones(corpus),
   };
+
+  /*
+   * Links arrive already followed where the pipeline had the chance to follow
+   * them, and are read structurally here where it did not. Either way there is
+   * one report per link and the score is built from it, so what the reader is
+   * shown about a link and what it contributed to the verdict are the same
+   * thing rather than two parallel accounts.
+   */
+  const reports: LinkReport[] = links ?? extracted.urls.map(inspectStructure);
 
   const examined = describeSources(typed, media);
   /* Envelope rules stand on their own: they need no text to have been read. */
@@ -302,13 +209,14 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
         : BAND_COPY.unclear),
       indicators: [],
       extracted,
+      links: reports,
       examined,
     };
   }
 
   const textIndicators =
     corpus.length >= MINIMUM_USEFUL_LENGTH
-      ? [...runTextRules(corpus, channel), ...runUrlRules(extracted.urls)]
+      ? [...runTextRules(corpus, channel), ...linkIndicators(reports)]
       : [];
 
   const indicators = [...textIndicators, ...fileIndicators].sort(
@@ -325,8 +233,44 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
     ...BAND_COPY[band],
     indicators,
     extracted,
+    links: reports,
     examined,
   };
+}
+
+/**
+ * Everything in a submission that the text rules read, as one string.
+ *
+ * Text recognised inside an upload is treated as part of the message, not as a
+ * separate class of evidence. A scam screenshotted and a scam pasted are the
+ * same scam, and the rules that catch one have to catch the other.
+ *
+ * Exported because the pipeline needs the same corpus this function builds in
+ * order to find the links before the analysis runs, and two implementations of
+ * "what counts as the message" would eventually disagree.
+ */
+export function corpusOf({ text, media = [] }: Submission): string {
+  const readFromMedia = media
+    .map((file) => file.extractedText?.trim() ?? "")
+    .filter((value) => value.length > 0);
+
+  return [text.trim(), ...readFromMedia].filter((value) => value.length > 0).join("\n\n");
+}
+
+/**
+ * Every link in a submission: those in the words, and those a document carries.
+ *
+ * A PDF's links do not appear in any text the reader pasted — they sit in the
+ * document's own annotation objects — so a link check that only read the
+ * message would miss the address an attached invoice actually points at.
+ */
+export function urlsIn(submission: Submission): string[] {
+  const fromText = extractUrls(corpusOf(submission));
+  const fromFiles = (submission.media ?? []).flatMap(
+    (file) => file.metadata?.container?.urls ?? [],
+  );
+
+  return [...new Set([...fromText, ...fromFiles])];
 }
 
 /** One line per source, saying whether it was read and what came of it. */

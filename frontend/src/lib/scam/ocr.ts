@@ -3,7 +3,8 @@ import { kindOf } from "@/lib/scam/media";
 import { readProvenance } from "@/lib/scam/provenance";
 import { readSynthetic } from "@/lib/scam/synthetic";
 import { readEdits } from "@/lib/scam/forensics";
-import { readMetadata } from "@/lib/scam/metadata";
+import { readFile } from "@/lib/scam/metadata";
+import { assessOrigin } from "@/lib/scam/origin";
 
 /**
  * Reading the text out of an uploaded image, in the browser.
@@ -82,7 +83,7 @@ const NOT_READ: Record<string, string> = {
   video:
     "Video is not examined. If there is a message shown in it, screenshot that frame and attach the image instead.",
   document:
-    "The contents of this file were not opened — only its name and type were checked. Opening an attachment to inspect it is the risk the check is meant to avoid.",
+    "This file's structure, properties and metadata were read, and it was searched for anything hidden inside it — but it was not opened and nothing in it was run. Opening an attachment to inspect it is the risk the check exists to avoid, so what is written below is what the file states about itself.",
 };
 
 /**
@@ -96,7 +97,7 @@ export async function describeFiles(
   files: File[],
   onProgress?: (index: number, name: string) => void,
 ): Promise<MediaDescriptor[]> {
-  const described: MediaDescriptor[] = [];
+  const descriptions: MediaDescriptor[] = [];
 
   for (const [index, file] of files.entries()) {
     onProgress?.(index, file.name);
@@ -104,16 +105,21 @@ export async function describeFiles(
     const kind = kindOf(file.type, file.name);
 
     /*
-     * Read for every file, image or not. It is the one pass that always has
-     * something to say, and a submission that produced no verdict must still
-     * come back having described what it was handed.
+     * One read of the file, for every pass.
+     *
+     * The bytes and the parsed metadata are read here and handed down. Each
+     * pass used to open the file for itself with its own parser options, which
+     * is how two checks of the same image could describe it differently: three
+     * parses, three sets of swallowed failures, and whichever one happened to
+     * succeed became the report. Reading once also halves the work on a large
+     * photograph, but that is the smaller reason.
      */
-    const metadata = await readMetadata(file);
+    const { metadata, tags, bytes } = await readFile(file);
     const base = { name: file.name, size: file.size, type: file.type, kind, metadata };
 
     if (kind === "image") {
       /*
-       * Four passes over the same image, cheapest and most certain first.
+       * Four passes over the same bytes, cheapest and most certain first.
        * Provenance is metadata and costs nothing; the forensic pass reads the
        * file's own structure and one canvas re-encode; the classifier is a
        * model and costs a download; OCR is the one that feeds the existing rule
@@ -122,19 +128,22 @@ export async function describeFiles(
        * They answer three different questions, and keeping them apart is the
        * point: where did this come from, has it been altered since, and what
        * does it say. An image can be a real photograph, edited, and carrying a
-       * scam, and a reader is entitled to see all three answers separately.
+       * scam, and a reader is entitled to see all three answers separately —
+       * and then the one combined answer `assessOrigin` draws from them.
        */
-      const provenance = await readProvenance(file);
-      const edits = await readEdits(file);
+      const provenance = await readProvenance(file, tags, bytes);
+      const edits = await readEdits(file, tags, bytes);
       const synthetic = await readSynthetic(file);
       const { text, unreadable } = await readImage(file);
 
-      described.push({ ...base, extractedText: text, unreadable, provenance, synthetic, edits });
+      const described = { ...base, extractedText: text, unreadable, provenance, synthetic, edits };
+
+      descriptions.push({ ...described, origin: assessOrigin(described) ?? undefined });
       continue;
     }
 
-    described.push({ ...base, unreadable: NOT_READ[kind] });
+    descriptions.push({ ...base, unreadable: NOT_READ[kind] });
   }
 
-  return described;
+  return descriptions;
 }

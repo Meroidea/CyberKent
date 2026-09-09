@@ -1,5 +1,6 @@
 import type { Provenance } from "@/lib/scam/types";
-import { loadExifr } from "@/lib/scam/metadata";
+import type { TagRead } from "@/lib/scam/tags";
+import { asciiRaw, bytesOf, indexOfBytes } from "@/lib/scam/bytes";
 
 /**
  * Reading what an image says about its own origin, in the browser.
@@ -264,76 +265,68 @@ function collectSourceTypes(data: unknown): string[] {
  * the most common way an image reaches this service already labelled and the
  * one no EXIF parser looks at.
  */
-async function readUnsigned(file: File): Promise<{ generator?: string }> {
-  try {
-    const exifr = await loadExifr();
-    const tags = (await exifr.parse(file, { xmp: true, iptc: true, tiff: true })) as
-      | Record<string, unknown>
-      | undefined;
-
-    if (tags) {
-      const haystack = [
-        tags.Software,
-        tags.CreatorTool,
-        tags.HistorySoftwareAgent,
-        tags.DigitalSourceType,
-        tags.Description,
-        tags.Comment,
-      ]
-        .filter((value) => typeof value === "string")
-        .join(" ");
-
-      if (GENERATED_SOURCE_TYPES.some((needle) => haystack.includes(needle))) {
-        return { generator: typeof tags.Software === "string" ? tags.Software : undefined };
-      }
-
-      const named = matchGeneratorName(haystack);
-
-      if (named) {
-        return { generator: named };
-      }
-    }
-  } catch {
-    /* Unreadable metadata is the same as no metadata. */
+function readUnsigned(tags: TagRead): { generator?: string } {
+  if (tags.failed) {
+    return {};
   }
 
-  if (file.type === "image/png") {
-    const named = await readPngTextChunks(file);
+  /*
+   * Read from the one parse rather than starting another. This function used
+   * to run its own `exifr` call with its own options, which meant the origin
+   * pass and the description pass could see different tags on the same file
+   * and report different things about it.
+   */
+  const haystack = [
+    tags.ifd0.Software,
+    tags.ifd0.Artist,
+    tags.xmp.CreatorTool,
+    tags.xmp.Software,
+    tags.xmp.HistorySoftwareAgent,
+    tags.xmp.DigitalSourceType,
+    tags.xmp.description,
+    tags.exif.UserComment,
+    tags.iptc.Credit,
+    tags.xmpRaw,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
 
-    if (named) {
-      return { generator: named };
-    }
+  if (GENERATED_SOURCE_TYPES.some((needle) => haystack.includes(needle))) {
+    const software = tags.ifd0.Software;
+    return { generator: typeof software === "string" ? software : undefined };
   }
 
-  return {};
+  const named = matchGeneratorName(haystack);
+
+  return named ? { generator: named } : {};
 }
 
-/** How much of a PNG to scan for text chunks before giving up. */
+/** How far into a PNG to look for text chunks when there is no image data. */
 const PNG_SCAN_BYTES = 256 * 1024;
 
 /**
- * Scans the head of a PNG for `tEXt`/`iTXt` chunks naming a generator.
+ * Scans a PNG's chunk region for a generator's name.
  *
- * Reads the leading bytes only. Generator metadata is written before the image
- * data, and pulling a whole multi-megabyte screenshot into memory to find a
- * string in its first few kilobytes would cost more than the check is worth.
+ * Locally-run generators write their whole prompt into a `parameters` or
+ * `workflow` text chunk, and that is both the most common way an image reaches
+ * this service already labelled and the one no EXIF parser looks at. Read from
+ * the bytes the description pass already holds, and only as far as the image
+ * data, so the search cannot reach into compressed pixels where any short
+ * string eventually appears by chance.
  */
-async function readPngTextChunks(file: File): Promise<string | undefined> {
-  try {
-    const head = await file.slice(0, PNG_SCAN_BYTES).arrayBuffer();
-    /* Latin-1 rather than UTF-8: PNG keyword fields are Latin-1 by spec, and
-       decoding binary image data as UTF-8 throws away bytes that may be part
-       of a keyword straddling the boundary. */
-    const text = new TextDecoder("latin1").decode(head);
+function readPngTextChunks(bytes: Uint8Array): string | undefined {
+  const idat = indexOfBytes(bytes, bytesOf("IDAT"), 0);
+  const stop = idat < 0 ? Math.min(bytes.length, PNG_SCAN_BYTES) : idat;
 
-    if (!/tEXt|iTXt|parameters|workflow/.test(text)) {
-      return undefined;
-    }
+  /* Latin-1: PNG keyword fields are Latin-1 by spec, and decoding image data
+     as UTF-8 discards bytes that may be part of a keyword at the boundary. */
+  const text = asciiRaw(bytes, 0, stop);
 
-    return matchGeneratorName(text);
-  } catch {
+  if (!/tEXt|iTXt|zTXt|parameters|workflow/.test(text)) {
     return undefined;
   }
+
+  return matchGeneratorName(text);
 }
 
 /**
@@ -342,21 +335,38 @@ async function readPngTextChunks(file: File): Promise<string | undefined> {
  * Signed evidence is asked for first and wins outright: where a manifest
  * validates, an unsigned string that disagrees with it is not a second opinion,
  * it is noise.
+ *
+ * The tags and the bytes are handed in rather than re-read. Three passes
+ * parsing one file independently is how the same image came back described two
+ * different ways on two consecutive checks.
  */
-export async function readProvenance(file: File): Promise<Provenance> {
+export async function readProvenance(
+  file: File,
+  tags: TagRead,
+  bytes: Uint8Array,
+): Promise<Provenance> {
   const signed = await readManifest(file);
 
   if (signed) {
     return signed;
   }
 
-  const { generator } = await readUnsigned(file);
+  const generator =
+    readUnsigned(tags).generator ??
+    (bytes[0] === 0x89 && bytes[1] === 0x50 ? readPngTextChunks(bytes) : undefined);
 
   if (generator) {
     return {
       status: "hinted-ai",
       generator,
       detail: `The file's metadata names ${generator}, which suggests it was generated rather than photographed. This tag is not signed, so it can be written by anyone and can equally be removed.`,
+    };
+  }
+
+  if (tags.failed) {
+    return {
+      status: "absent",
+      detail: `${tags.failed} No origin claim could be read either way, so nothing here says how this image was made.`,
     };
   }
 

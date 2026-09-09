@@ -1,6 +1,8 @@
 import { analyse } from "@/lib/scam/analyse";
 import { readEdits } from "@/lib/scam/forensics";
-import { readMetadata } from "@/lib/scam/metadata";
+import { readFile, readMetadata } from "@/lib/scam/metadata";
+import { assessOrigin } from "@/lib/scam/origin";
+import { inspectStructure, withResolution } from "@/lib/scam/links";
 import type { Channel } from "@/lib/scam/types";
 
 const cases: { name: string; text: string; channel: Channel; expect: string }[] = [
@@ -67,13 +69,13 @@ const originCases: { name: string; media: Parameters<typeof analyse>[0]["media"]
     media: [{ ...base, provenance: { status: "declared-ai", generator: "Firefly", detail: "signed: generated" } }] },
   { name: "signed manifest says camera", expectId: null,
     media: [{ ...base, provenance: { status: "declared-capture", detail: "signed: captured" } }] },
-  { name: "unsigned EXIF names a generator", expectId: "image-hinted-ai-shot.jpg",
+  { name: "unsigned EXIF names a generator", expectId: "image-origin-shot.jpg",
     media: [{ ...base, provenance: { status: "hinted-ai", generator: "midjourney", detail: "exif hint" } }] },
   { name: "manifest present but invalid", expectId: "image-untrusted-manifest-shot.jpg",
     media: [{ ...base, provenance: { status: "untrusted", detail: "does not validate" } }] },
   { name: "no metadata at all", expectId: null,
     media: [{ ...base, provenance: { status: "absent", detail: "nothing to read" } }] },
-  { name: "classifier confident", expectId: "image-synthetic-shot.jpg",
+  { name: "classifier confident", expectId: "image-origin-shot.jpg",
     media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.93, model: "m" } }] },
   { name: "classifier weak — stays silent", expectId: null,
     media: [{ ...base, provenance: { status: "absent", detail: "nothing" }, synthetic: { probability: 0.41, model: "m" } }] },
@@ -216,7 +218,8 @@ const byteCases: { name: string; file: File; expect: string[] }[] = [
 console.log("");
 let bytePass = 0;
 for (const c of byteCases) {
-  const read = await readEdits(c.file);
+  const source = await readFile(c.file);
+  const read = await readEdits(c.file, source.tags, source.bytes);
   const got = read.findings.map((f) => f.id).sort();
   const want = [...c.expect].sort();
   const ok = got.length === want.length && want.every((id, i) => got[i] === id);
@@ -306,4 +309,212 @@ const quiet = analyse({ text: "", channel: "email", media: [{
 const speaksToTheFile = !quiet.summary.includes("Paste the full message") && /examined/i.test(quiet.summary);
 console.log(
   `${speaksToTheFile ? "PASS" : "FAIL"}  quiet result names what was examined   headline="${quiet.headline}"`,
+);
+
+
+/* ─────────────────────────── determinism ──────────────────────────────────
+   The complaint this whole revision answers: the same image checked twice
+   came back described differently. The description is now built from one
+   parse of the bytes with no clock, no network and no canvas in it, so the
+   guard is simply that two reads of one file are identical — byte for byte,
+   through JSON, so a differing key order fails too. */
+
+const twiceCases: { name: string; file: File }[] = [
+  { name: "JPEG with JFIF", file: jpegFile("photo.jpg", jpegWithApp0()) },
+  { name: "JPEG with data appended", file: jpegFile("carrier.jpg", SOI, dqt(), sof(), sos(), EOI, Array<number>(4096).fill(0x41)) },
+  { name: "executable named .jpg", file: new File([new Uint8Array([0x4d, 0x5a, 0x90, 0x00, 0x03])], "invoice.jpg", { type: "image/jpeg" }) },
+  { name: "PDF with two revisions", file: new File([new TextEncoder().encode("%PDF-1.7\n/Type /Page \n/Producer (Acme 2.0)\ntrailer\n%%EOF\n1 0 obj\n%%EOF\n")], "statement.pdf", { type: "application/pdf" }) },
+];
+
+console.log("");
+let twicePass = 0;
+for (const c of twiceCases) {
+  const first = JSON.stringify(await readMetadata(c.file));
+  const second = JSON.stringify(await readMetadata(c.file));
+  const ok = first === second;
+  if (ok) twicePass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  read twice, identical: ${c.name}`);
+  if (!ok) console.log(`      first:  ${first.slice(0, 160)}\n      second: ${second.slice(0, 160)}`);
+}
+console.log(`\n${twicePass}/${twiceCases.length} files describe identically on a second read`);
+
+/* ─────────────────────────── containers and hidden content ───────────────── */
+
+const pdfBytes = (body: string) => new File([new TextEncoder().encode(body)], "doc.pdf", { type: "application/pdf" });
+
+const containerCases: { name: string; file: File; check: (m: Awaited<ReturnType<typeof readMetadata>>) => boolean; want: string }[] = [
+  {
+    name: "PDF names its producer and author",
+    file: pdfBytes("%PDF-1.6\n/Author (Jane Roe)\n/Producer (Microsoft Word)\n/Type /Page \n%%EOF"),
+    check: (m) => m.container?.people.author === "Jane Roe" && m.container.people.producer === "Microsoft Word",
+    want: "author and producer",
+  },
+  {
+    name: "PDF page count is read",
+    file: pdfBytes("%PDF-1.6\n/Type /Page \n/Type /Page \n/Type /Page \n%%EOF"),
+    check: (m) => m.container?.count === 3 && m.container.countLabel === "pages",
+    want: "3 pages",
+  },
+  {
+    name: "a PDF saved twice is reported as revised",
+    file: pdfBytes("%PDF-1.6\n/Type /Page \n%%EOF\n7 0 obj\n%%EOF"),
+    check: (m) => (m.container?.findings ?? []).some((f) => f.id === "pdf-incremental-update"),
+    want: "incremental update",
+  },
+  {
+    name: "a single-revision PDF is not reported as revised",
+    file: pdfBytes("%PDF-1.6\n/Type /Page \n%%EOF"),
+    check: (m) => !(m.container?.findings ?? []).some((f) => f.id === "pdf-incremental-update"),
+    want: "no finding",
+  },
+  {
+    name: "a PDF that runs script on opening is caught",
+    file: pdfBytes("%PDF-1.6\n/OpenAction 4 0 R\n/JavaScript 5 0 R\n/Type /Page \n%%EOF"),
+    check: (m) => {
+      const ids = (m.container?.findings ?? []).map((f) => f.id);
+      return ids.includes("pdf-javascript") && ids.includes("pdf-openaction");
+    },
+    want: "javascript + openaction",
+  },
+  {
+    name: "links inside a PDF are collected",
+    file: pdfBytes("%PDF-1.6\n/Type /Page \n/URI (https://mygov-refund.top/claim)\n%%EOF"),
+    check: (m) => (m.container?.urls ?? []).includes("https://mygov-refund.top/claim"),
+    want: "URI extracted",
+  },
+  {
+    name: "an archive appended to a JPEG is found",
+    file: jpegFile("holiday.jpg", SOI, dqt(), sof(), sos(), EOI, [0x50, 0x4b, 0x03, 0x04], Array<number>(2048).fill(0x42)),
+    check: (m) => (m.hidden?.findings ?? []).some((f) => f.id === "trailing-payload"),
+    want: "trailing payload",
+  },
+  {
+    name: "an ordinary JPEG carries nothing hidden",
+    file: jpegFile("photo.jpg", jpegWithApp0()),
+    check: (m) => (m.hidden?.findings ?? []).length === 0 && m.hidden?.trailingBytes === 0,
+    want: "nothing found, and it says so",
+  },
+];
+
+console.log("");
+let containerPass = 0;
+for (const c of containerCases) {
+  const m = await readMetadata(c.file);
+  const ok = c.check(m);
+  if (ok) containerPass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(48)} (${c.want})`);
+}
+console.log(`\n${containerPass}/${containerCases.length} container and hidden-content cases correct`);
+
+/* ─────────────────────────── the origin verdict ──────────────────────────── */
+
+const verdictCases: { name: string; file: Parameters<typeof assessOrigin>[0]; expect: string }[] = [
+  {
+    name: "nothing known at all",
+    expect: "unclear",
+    file: { name: "a.jpg", size: 1, type: "image/jpeg", kind: "image",
+      provenance: { status: "absent", detail: "" } },
+  },
+  {
+    name: "a signed generative declaration",
+    expect: "generated",
+    file: { name: "b.jpg", size: 1, type: "image/jpeg", kind: "image",
+      provenance: { status: "declared-ai", detail: "signed", generator: "Firefly" } },
+  },
+  {
+    name: "the classifier alone, at full confidence",
+    expect: "leaning-generated",
+    file: { name: "c.jpg", size: 1, type: "image/jpeg", kind: "image",
+      provenance: { status: "absent", detail: "" },
+      synthetic: { probability: 0.99, model: "test" } },
+  },
+  {
+    name: "a full camera record",
+    expect: "likely-captured",
+    file: { name: "d.jpg", size: 1, type: "image/jpeg", kind: "image",
+      provenance: { status: "absent", detail: "" },
+      metadata: { name: "d.jpg", sizeBytes: 1, declaredType: "image/jpeg",
+        exif: { present: true, fields: 40, make: "Apple", model: "iPhone 15", exposure: "f/1.8 · 1/120s · ISO 64" } } },
+  },
+  {
+    name: "metadata naming a generator",
+    expect: "leaning-generated",
+    file: { name: "e.png", size: 1, type: "image/png", kind: "image",
+      provenance: { status: "hinted-ai", generator: "midjourney", detail: "" } },
+  },
+  {
+    name: "a camera record contradicting the model",
+    expect: "unclear",
+    file: { name: "f.jpg", size: 1, type: "image/jpeg", kind: "image",
+      provenance: { status: "absent", detail: "" },
+      synthetic: { probability: 0.9, model: "test" },
+      metadata: { name: "f.jpg", sizeBytes: 1, declaredType: "image/jpeg",
+        exif: { present: true, fields: 40, make: "Canon", model: "R6", exposure: "f/4 · 1/250s · ISO 200" } } },
+  },
+];
+
+console.log("");
+let verdictPass = 0;
+for (const c of verdictCases) {
+  const a = assessOrigin(c.file);
+  const ok = a?.answer === c.expect;
+  if (ok) verdictPass += 1;
+  console.log(
+    `${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(44)} ${String(a?.answer).padEnd(18)} p=${a ? a.probability.toFixed(2) : "-"}`,
+  );
+}
+console.log(`\n${verdictPass}/${verdictCases.length} origin verdicts correct`);
+
+/* The classifier must never reach the top band on its own, whatever it says. */
+const modelOnly = assessOrigin({ name: "g.jpg", size: 1, type: "image/jpeg", kind: "image",
+  provenance: { status: "absent", detail: "" }, synthetic: { probability: 0.9999, model: "test" } });
+console.log(
+  `${modelOnly && modelOnly.answer !== "likely-generated" && modelOnly.answer !== "generated" ? "PASS" : "FAIL"}` +
+    `  the model alone cannot convict          answer=${modelOnly?.answer} p=${modelOnly?.probability.toFixed(2)}`,
+);
+
+/* ─────────────────────────── links ───────────────────────────────────────── */
+
+const linkCases: { name: string; url: string; expect: string[] }[] = [
+  { name: "credentials before the host", url: "https://mygov.au@203.0.113.9/login", expect: ["userinfo", "raw-ip"] },
+  { name: "punycode host", url: "https://xn--myg0v-9za.com/refund", expect: ["punycode"] },
+  { name: "open redirect carrying another URL", url: "https://trusted.com.au/go?next=https%3A%2F%2Fevil.top%2Fx", expect: ["embedded-url"] },
+  { name: "link that downloads a program", url: "https://files.example.net/update.exe", expect: ["downloads-file"] },
+  { name: "brand after the real domain", url: "https://pay-now.top/mygov/login", expect: ["suspicious-tld", "brand-in-path"] },
+  { name: "an ordinary council link", url: "https://hume.vic.gov.au/waste", expect: [] },
+];
+
+console.log("");
+let linkPass = 0;
+for (const c of linkCases) {
+  const report = inspectStructure(c.url);
+  const got = report.findings.map((f) => f.id).sort();
+  const want = [...c.expect].sort();
+  const ok = got.length === want.length && want.every((id, i) => got[i] === id);
+  if (ok) linkPass += 1;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${c.name.padEnd(44)} -> [${got.join(", ")}]`);
+}
+console.log(`\n${linkPass}/${linkCases.length} link structure cases correct`);
+
+/* Following the link is what a shortener exists to defeat, so the resolved
+   destination has to reach the findings and the summary. */
+const shortened = withResolution(inspectStructure("https://bit.ly/3xKq9"), {
+  finalUrl: "https://mygov-refund.top/login",
+  finalHost: "mygov-refund.top",
+  status: 200,
+  hops: [
+    { url: "https://bit.ly/3xKq9", status: 301, via: "start" },
+    { url: "https://mygov-refund.top/login", status: 200, via: "http-redirect" },
+  ],
+  contentType: "text/html",
+  title: "myGov | Sign in",
+  asksForPassword: true,
+  hasForm: true,
+});
+const followed =
+  shortened.findings.some((f) => f.id === "cross-site-redirect") &&
+  shortened.findings.some((f) => f.id === "asks-for-password") &&
+  shortened.summary.includes("mygov-refund.top");
+console.log(
+  `${followed ? "PASS" : "FAIL"}  a shortened link is reported by destination\n      "${shortened.summary}"`,
 );

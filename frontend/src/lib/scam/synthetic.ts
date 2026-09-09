@@ -84,30 +84,58 @@ let deployed: Promise<boolean> | null = null;
  * is not there. One conditional request for a small JSON file settles it.
  */
 function isDeployed(): Promise<boolean> {
-  deployed ??= fetch(`${MODEL_ROOT}${MODEL_ID}/config.json`)
-    .then(async (response) => {
-      if (!response.ok) {
-        return false;
-      }
+  /*
+   * Only a settled answer is cached, and only in the affirmative direction.
+   *
+   * The earlier version memoised the promise whatever it resolved to, so one
+   * transient network failure on the first image of a session poisoned every
+   * later check in that tab: the model was there, the probe had merely failed
+   * once, and the reader was told the AI check was unavailable for as long as
+   * the page stayed open. Reloading fixed it, which is exactly what makes a
+   * fault like this read as "the site gives different answers to the same
+   * image". A negative from a failed request is therefore not remembered.
+   */
+  deployed ??= probe().then((result) => {
+    if (!result.available && result.retryable) {
+      deployed = null;
+    }
 
-      /*
-       * A 200 is not enough. This is a single-page app behind a catch-all
-       * rewrite, so a request for a file that does not exist comes back as the
-       * app's own `index.html` with a perfectly healthy status. Parsing the
-       * body is what distinguishes a deployed model from the front page
-       * wearing its name — without this the check passes, twenty megabytes of
-       * runtime download, and the failure surfaces at the far end instead.
-       */
-      try {
-        const config: unknown = await response.json();
-        return typeof config === "object" && config !== null && "architectures" in config;
-      } catch {
-        return false;
-      }
-    })
-    .catch(() => false);
+    return result.available;
+  });
 
   return deployed;
+}
+
+/** One conditional request, and what its outcome means. */
+async function probe(): Promise<{ available: boolean; retryable: boolean }> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${MODEL_ROOT}${MODEL_ID}/config.json`, { cache: "force-cache" });
+  } catch {
+    /* The network failed. That says nothing about whether the model is there. */
+    return { available: false, retryable: true };
+  }
+
+  if (!response.ok) {
+    return { available: false, retryable: response.status >= 500 };
+  }
+
+  /*
+   * A 200 is not enough. This is a single-page app behind a catch-all rewrite,
+   * so a request for a file that does not exist comes back as the app's own
+   * `index.html` with a perfectly healthy status. Parsing the body is what
+   * distinguishes a deployed model from the front page wearing its name —
+   * without this the check passes, twenty megabytes of runtime download, and
+   * the failure surfaces at the far end instead.
+   */
+  try {
+    const config: unknown = await response.json();
+    const valid = typeof config === "object" && config !== null && "architectures" in config;
+    return { available: valid, retryable: false };
+  } catch {
+    return { available: false, retryable: false };
+  }
 }
 
 /**
@@ -118,6 +146,9 @@ function isDeployed(): Promise<boolean> {
  * arrives rather than bundled — the same treatment `tesseract.js` gets.
  */
 function load(): Promise<Classifier> {
+  /* Cleared on failure for the same reason the deployment probe is: a pipeline
+     that failed to build once must not make every later image in the session
+     report "the check did not run". */
   classifier ??= (async () => {
     const { env, pipeline } = await import("@huggingface/transformers");
 
@@ -135,7 +166,10 @@ function load(): Promise<Classifier> {
     return (input: string) => pipe(input) as Promise<{ label: string; score: number }[]>;
   })();
 
-  return classifier;
+  return classifier.catch((error: unknown) => {
+    classifier = null;
+    throw error;
+  });
 }
 
 /**

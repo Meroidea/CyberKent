@@ -1,5 +1,6 @@
 import type { EditFinding, EditRead } from "@/lib/scam/types";
-import { loadExifr } from "@/lib/scam/metadata";
+import type { TagRead } from "@/lib/scam/tags";
+import { tagNumber } from "@/lib/scam/tags";
 
 /**
  * Asking whether an image has been edited since it was created.
@@ -234,30 +235,19 @@ function readPngSoftware(bytes: Uint8Array): string[] {
 /**
  * The dimensions the camera recorded at the moment of capture.
  *
- * Read here rather than taken from the provenance pass, so this module stays
- * answerable for its own findings — a check that depends on another pass having
- * run is a check that quietly stops working when that pass is skipped. Only two
- * tags are asked for, so the parse is cheap, and a file with no EXIF at all
- * simply returns null and the resize check does not run.
+ * Taken from the one shared parse rather than opened again here. This function
+ * used to run its own `exifr` call, which meant the resize check could see a
+ * different set of tags from the description shown beside it on the same
+ * screen — two answers to one question, and no way for a reader to tell which
+ * had been used.
  */
-async function capturedDimensions(bytes: Uint8Array): Promise<{ width: number; height: number } | null> {
-  try {
-    const exifr = await loadExifr();
-    /* The bytes, not the File: exifr's File path needs FileReader, which is
-       browser-only and re-reads the whole file for tags already in hand. */
-    const tags = (await exifr.parse(bytes, {
-      pick: ["ExifImageWidth", "ExifImageHeight"],
-    })) as { ExifImageWidth?: number; ExifImageHeight?: number } | undefined;
+function capturedDimensions(tags: TagRead): { width: number; height: number } | null {
+  const width = tagNumber(tags, "ExifImageWidth") ?? tagNumber(tags, "PixelXDimension");
+  const height = tagNumber(tags, "ExifImageHeight") ?? tagNumber(tags, "PixelYDimension");
 
-    const width = tags?.ExifImageWidth;
-    const height = tags?.ExifImageHeight;
-
-    return typeof width === "number" && typeof height === "number" && width > 0 && height > 0
-      ? { width, height }
-      : null;
-  } catch {
-    return null;
-  }
+  return typeof width === "number" && typeof height === "number" && width > 0 && height > 0
+    ? { width, height }
+    : null;
 }
 
 /* ───────────────────────────── error level analysis ─────────────────────── */
@@ -405,6 +395,61 @@ async function errorLevels(bitmap: ImageBitmap): Promise<ElaResult | null> {
   };
 }
 
+/**
+ * Whether this browser hands back the pixels that were drawn.
+ *
+ * A known pattern is drawn and read straight back. On a faithful canvas the
+ * values return exactly; on a browser that perturbs canvas reads to resist
+ * fingerprinting they come back shifted by a small, varying amount. The result
+ * is cached for the page because it is a property of the browser rather than
+ * of the file, and it is computed rather than sniffed from a user-agent string
+ * because the browsers that do this are precisely the ones that lie about who
+ * they are.
+ */
+let faithful: boolean | null = null;
+
+function canvasIsFaithful(): boolean {
+  if (faithful !== null) {
+    return faithful;
+  }
+
+  try {
+    const probe = context(16, 1);
+
+    if (!probe) {
+      faithful = false;
+      return faithful;
+    }
+
+    const [, ctx] = probe;
+    const pattern = ctx.createImageData(16, 1);
+
+    for (let i = 0; i < 16; i += 1) {
+      pattern.data[i * 4] = i * 16;
+      pattern.data[i * 4 + 1] = 255 - i * 16;
+      pattern.data[i * 4 + 2] = 128;
+      pattern.data[i * 4 + 3] = 255;
+    }
+
+    ctx.putImageData(pattern, 0, 0);
+    const back = ctx.getImageData(0, 0, 16, 1).data;
+
+    faithful = true;
+
+    for (let i = 0; i < pattern.data.length; i += 1) {
+      if (back[i] !== pattern.data[i]) {
+        faithful = false;
+        break;
+      }
+    }
+
+    return faithful;
+  } catch {
+    faithful = false;
+    return faithful;
+  }
+}
+
 /* ──────────────────────────────── the pass ──────────────────────────────── */
 
 /**
@@ -414,16 +459,12 @@ async function errorLevels(bitmap: ImageBitmap): Promise<ElaResult | null> {
  * the same reason the other passes do: a check that silently did not run must
  * not be indistinguishable from a check that ran and found nothing.
  */
-export async function readEdits(file: File): Promise<EditRead> {
+export async function readEdits(file: File, tags: TagRead, bytes: Uint8Array): Promise<EditRead> {
   const findings: EditFinding[] = [];
   let heatmap: string | undefined;
   let examined = "";
 
-  let bytes: Uint8Array;
-
-  try {
-    bytes = new Uint8Array(await file.arrayBuffer());
-  } catch {
+  if (bytes.length === 0) {
     return { findings: [], unavailable: "This image could not be read on this device." };
   }
 
@@ -454,7 +495,7 @@ export async function readEdits(file: File): Promise<EditRead> {
      * app shrinks an attachment, and is also what happens on the way to a
      * doctored copy. Reported as a low weight for exactly that reason.
      */
-    const declared = await capturedDimensions(bytes);
+    const declared = capturedDimensions(tags);
 
     if (declared && jpeg.width && jpeg.height) {
       const shrunk = declared.width > jpeg.width * 1.2 || declared.height > jpeg.height * 1.2;
@@ -500,9 +541,30 @@ export async function readEdits(file: File): Promise<EditRead> {
     examined = "container structure";
   }
 
-  /* The pixel pass. Only attempted where a canvas is available, which excludes
-     no browser this service supports but does exclude a test runner. */
+  /*
+   * The pixel pass. Attempted only where a canvas is available — which excludes
+   * no browser this service supports, but does exclude a test runner — and only
+   * where reading a canvas back gives the same answer twice.
+   *
+   * That second condition is the fix for a real complaint. Several browsers
+   * add per-session noise to canvas reads to defeat fingerprinting, and error
+   * level analysis is a measurement of exactly the kind of small pixel
+   * difference that noise swamps. On those browsers the same image checked
+   * twice produced two different error maps and, at the margin, two different
+   * answers about whether it had been edited. A check that cannot be repeated
+   * is not a check, so where the probe fails the pass reports itself as
+   * unavailable rather than returning a number it cannot stand behind.
+   */
   if (typeof document !== "undefined" && typeof createImageBitmap === "function") {
+    if (!canvasIsFaithful()) {
+      return {
+        findings,
+        examined: examined || undefined,
+        unavailable:
+          "This browser alters the pixels an image reads back as, which it does to prevent fingerprinting. The structural checks above still ran, but the pixel comparison would give a different answer every time it was run, so it was not.",
+      };
+    }
+
     const bitmap = await decode(file);
 
     if (bitmap) {

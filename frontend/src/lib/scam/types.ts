@@ -1,3 +1,8 @@
+import type { ContainerRead } from "@/lib/scam/containers";
+import type { LinkReport } from "@/lib/scam/links";
+import type { OriginAssessment } from "@/lib/scam/origin";
+import type { HiddenRead } from "@/lib/scam/hidden";
+
 /**
  * Shared vocabulary for scam analysis.
  *
@@ -105,17 +110,53 @@ export interface FileMetadata {
   /** Pixel dimensions as the container's own header declares them. */
   width?: number;
   height?: number;
+  /**
+   * The dimensions after the orientation flag is applied.
+   *
+   * Kept beside the stored frame rather than replacing it, because these are
+   * the two numbers people compare. A phone writes a landscape frame plus
+   * "rotate 90°"; every viewer and file inspector shows the portrait result.
+   * Reporting only the stored frame is why this service's description of an
+   * image did not match what its owner could see on their own machine.
+   */
+  displayWidth?: number;
+  displayHeight?: number;
   format?: string;
   bitDepth?: number;
   colour?: string;
+  hasAlpha?: boolean;
   subsampling?: string;
+  /** Pixels per inch as the file declares it, not as it was resampled. */
+  dpi?: number;
   /** Estimated JPEG quality, or null where the table is not a scaled standard. */
   quality?: number | null;
   progressive?: boolean;
   interlaced?: boolean;
+  /** The profile's own name — "Display P3" — rather than merely "embedded". */
   iccProfile?: string | null;
   /** Metadata segments or chunks the container actually carries. */
   segments?: string[];
+  /** EXIF orientation, and what it means in words. */
+  orientation?: number;
+  orientationLabel?: string;
+
+  /** Whoever the file names as its author, from any of its metadata blocks. */
+  author?: string;
+  copyright?: string;
+  /** The application that wrote the file, from EXIF, XMP or a container. */
+  software?: string;
+  description?: string;
+
+  /** How many tags each metadata block carried. Zero is an answer. */
+  tagCounts?: { exif: number; gps: number; xmp: number; iptc: number; icc: number };
+  /**
+   * Set where metadata is present but could not be parsed.
+   *
+   * The distinction this field exists to preserve: a file with no metadata and
+   * a file whose metadata the reader failed on both used to come back as "no
+   * metadata", and a reader could not tell which had happened.
+   */
+  metadataUnreadable?: string;
 
   exif?: {
     present: boolean;
@@ -124,13 +165,31 @@ export interface FileMetadata {
     make?: string;
     model?: string;
     lens?: string;
+    /** Body or lens serial, where the camera wrote one. Identifies a device. */
+    serial?: string;
     software?: string;
+    /** When the shutter fired. */
     taken?: string;
+    /** When it was digitised, which differs for a scan. */
+    digitised?: string;
+    /** When the file was last written, as the file itself records it. */
+    changed?: string;
+    /** The timezone offset the camera was set to, where it recorded one. */
+    offset?: string;
     orientation?: number;
     capturedWidth?: number;
     capturedHeight?: number;
-    gps?: { lat: number; lon: number } | null;
+    /** Aperture, shutter, ISO and focal length, as one line. */
+    exposure?: string;
+    /** True where the file carries the camera's own embedded thumbnail. */
+    thumbnail?: boolean;
+    gps?: { lat: number; lon: number; altitude?: number } | null;
   };
+
+  /** Non-images: what the PDF, archive or Office container states about itself. */
+  container?: ContainerRead;
+  /** Every file: what it carries that it has no reason to carry. */
+  hidden?: HiddenRead;
 }
 
 /**
@@ -190,6 +249,14 @@ export interface MediaDescriptor {
   synthetic?: SyntheticRead;
   /** Images only: whether the file shows signs of having been edited. */
   edits?: EditRead;
+  /**
+   * Images only: the single answer to "is this AI-generated?".
+   *
+   * Derived from the three readings above rather than stored alongside them,
+   * so there is exactly one place in the codebase that decides what they add
+   * up to and exactly one answer in the report.
+   */
+  origin?: OriginAssessment;
   /** Every file: what it says about itself, judged by nothing. */
   metadata?: FileMetadata;
 }
@@ -199,6 +266,15 @@ export interface Submission {
   text: string;
   channel: Channel;
   media?: MediaDescriptor[];
+  /**
+   * Links, already inspected and where possible already followed.
+   *
+   * Passed in rather than produced by the analyser because following a link is
+   * the one part of the check that needs the network, and the analyser is
+   * deliberately pure. Where these are absent the analyser inspects each link's
+   * address and says plainly that it did not follow it.
+   */
+  links?: LinkReport[];
 }
 
 /**
@@ -230,6 +306,8 @@ export interface Analysis {
     emails: string[];
     phones: string[];
   };
+  /** One report per link: what it is, where it goes, and what is there. */
+  links: LinkReport[];
   /** What the verdict actually got to look at, source by source. */
   examined: ExaminedSource[];
 }

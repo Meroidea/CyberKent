@@ -1,6 +1,6 @@
 import type { Indicator, MediaDescriptor, MediaKind } from "@/lib/scam/types";
-import { SYNTHETIC_ABOVE } from "@/lib/scam/synthetic";
 import { fileTypeMismatch } from "@/lib/scam/metadata";
+import { assessOrigin } from "@/lib/scam/origin";
 
 /**
  * Rules that read a file's envelope rather than its contents.
@@ -187,6 +187,7 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
     }
 
     indicators.push(...imageOriginIndicators(file));
+    indicators.push(...contentsIndicators(file));
   }
 
   return indicators;
@@ -215,7 +216,7 @@ function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
   }
 
   const indicators: Indicator[] = [];
-  const { provenance, synthetic } = file;
+  const { provenance } = file;
 
   if (provenance?.status === "declared-ai") {
     indicators.push({
@@ -227,15 +228,13 @@ function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
     });
   }
 
-  if (provenance?.status === "hinted-ai") {
-    indicators.push({
-      id: `image-hinted-ai-${file.name}`,
-      label: "Metadata names an image generator",
-      detail: provenance.detail,
-      weight: "low",
-      evidence: provenance.generator ?? file.name,
-    });
-  }
+  /*
+   * An unsigned tag naming a generator used to raise its own indicator here.
+   * It no longer does, because the origin assessment below already weighs that
+   * exact fact — and weighs it alongside everything that contradicts it. Two
+   * indicators from one finding is double-counting, and it was pushing images
+   * into a band on the strength of a single forgeable string.
+   */
 
   if (provenance?.status === "untrusted") {
     indicators.push({
@@ -248,24 +247,30 @@ function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
   }
 
   /*
-   * The classifier is only raised where it is confident and where the signed
-   * evidence has not already settled the question — repeating "this is AI" as
-   * a second indicator would double-count one finding and push the score into
-   * a band on the strength of a single fact.
+   * The one number, rather than the model's raw score.
+   *
+   * This used to raise an indicator whenever the classifier alone crossed a
+   * threshold, which meant the score could move on a single statistical read
+   * of the pixels while the report next to it hedged about that same read.
+   * Now the combined assessment decides — the classifier still cannot get
+   * there by itself, by construction, but when it is joined by anything else
+   * the finding is the assessment's and says so.
    */
-  const alreadyDeclared = provenance?.status === "declared-ai";
+  /* Computed here when the pipeline did not attach one, so the rule set gives
+     the same answer whether it is handed a described file or a bare one. The
+     assessment is pure, so doing it twice costs nothing and guarantees the
+     score and the panel are reading the same verdict. */
+  const origin = file.origin ?? assessOrigin(file);
 
-  if (
-    !alreadyDeclared &&
-    synthetic &&
-    !synthetic.unavailable &&
-    synthetic.probability >= SYNTHETIC_ABOVE
-  ) {
+  if (origin && origin.answer !== "generated" && (origin.answer === "likely-generated" || origin.answer === "leaning-generated")) {
     indicators.push({
-      id: `image-synthetic-${file.name}`,
-      label: "Image looks generated rather than photographed",
-      detail: `An on-device model put this at ${Math.round(synthetic.probability * 100)}% likely to be AI-generated. Detectors are trained on the generators that existed when they were built and are regularly wrong about newer ones, so treat this as a reason to check rather than as a finding.`,
-      weight: "medium",
+      id: `image-origin-${file.name}`,
+      label:
+        origin.answer === "likely-generated"
+          ? "Image was probably generated rather than photographed"
+          : "Image may have been generated rather than photographed",
+      detail: `${origin.detail} Weighing everything that could be read, this service puts it at ${Math.round(origin.probability * 100)}% generated.`,
+      weight: origin.answer === "likely-generated" ? "medium" : "low",
       evidence: file.name,
     });
   }
@@ -290,4 +295,32 @@ function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
   }
 
   return indicators;
+}
+
+/**
+ * What a non-image file turned out to contain.
+ *
+ * The container and hidden-content passes produce findings in the same shape
+ * as everything else here, so they are passed through with their own weights
+ * rather than being re-judged. A macro project, a program inside an archive
+ * and a payload appended past the end of a picture are all facts about the
+ * file, established by reading its own tables — none of them is an inference
+ * that needs softening on the way to the score.
+ */
+function contentsIndicators(file: MediaDescriptor): Indicator[] {
+  const meta = file.metadata;
+
+  if (!meta) {
+    return [];
+  }
+
+  const findings = [...(meta.container?.findings ?? []), ...(meta.hidden?.findings ?? [])];
+
+  return findings.map((finding) => ({
+    id: `file-${finding.id}-${file.name}`,
+    label: finding.label,
+    detail: finding.detail,
+    weight: finding.weight,
+    evidence: finding.evidence ?? file.name,
+  }));
 }
