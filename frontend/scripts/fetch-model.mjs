@@ -252,8 +252,19 @@ async function copyRuntime() {
 async function copyRecogniser() {
   const to = join(ROOT, "public", "tesseract");
 
+  /*
+   * All three LSTM cores, because the worker picks one at runtime.
+   *
+   * An earlier revision copied the SIMD and plain builds only, on the
+   * assumption that those covered every browser. A real browser run then asked
+   * for `relaxedsimd`, which was not there, and text recognition failed with
+   * the same message the CDN block used to produce. The variants differ by
+   * which WebAssembly extensions the browser supports, the worker chooses
+   * without asking, and eleven megabytes is the price of not guessing.
+   */
   const wanted = [
     [join(ROOT, "node_modules", "tesseract.js", "dist"), "worker.min.js"],
+    [join(ROOT, "node_modules", "tesseract.js-core"), "tesseract-core-relaxedsimd-lstm.wasm.js"],
     [join(ROOT, "node_modules", "tesseract.js-core"), "tesseract-core-simd-lstm.wasm.js"],
     [join(ROOT, "node_modules", "tesseract.js-core"), "tesseract-core-lstm.wasm.js"],
   ];
