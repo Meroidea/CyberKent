@@ -172,7 +172,7 @@ export function tagText(tags: TagRead, key: string): string | undefined {
 
 /** A tag as a finite number, from whichever block carries it. */
 export function tagNumber(tags: TagRead, key: string): number | undefined {
-  for (const source of [tags.exif, tags.ifd0, tags.xmp]) {
+  for (const source of [tags.exif, tags.ifd0, tags.gps, tags.xmp]) {
     const value = source[key];
 
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -183,27 +183,82 @@ export function tagNumber(tags: TagRead, key: string): number | undefined {
   return undefined;
 }
 
-/** A tag as an ISO timestamp, accepting the several shapes EXIF dates arrive in. */
+/**
+ * A capture time, as the clock in the camera read it.
+ *
+ * Deliberately **not** converted to an instant. An EXIF timestamp is a bare
+ * wall-clock reading — "2026:07:14 18:22:31" — with no timezone in it at all;
+ * the zone, when a camera bothers to record one, is a separate tag. Turning
+ * that into UTC and rendering it in the reader's own timezone is how a photo
+ * taken at ten past six in Melbourne came back as a photo taken at ten past
+ * eight, disagreeing with every other program on their machine.
+ *
+ * So the value is returned as a local-time ISO string with no zone suffix,
+ * which `Date` parses back as local and every formatter then prints unchanged.
+ * The recorded offset is reported separately, beside it, as its own fact.
+ */
 export function tagDate(tags: TagRead, key: string): string | undefined {
   for (const source of [tags.exif, tags.ifd0, tags.xmp]) {
     const value = source[key];
 
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return value.toISOString();
+      return wallClock(value);
     }
 
     if (typeof value === "string" && value.trim()) {
-      /* EXIF writes "2026:09:08 14:22:31", which `Date` will not parse. */
+      /* EXIF writes "2026:07:14 18:22:31", which `Date` will not parse. */
       const normalised = value.trim().replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3");
       const parsed = new Date(normalised);
 
       if (!Number.isNaN(parsed.getTime())) {
-        return parsed.toISOString();
+        return wallClock(parsed);
       }
     }
   }
 
   return undefined;
+}
+
+/** A date's own local components, so nothing is shifted on the way out. */
+function wallClock(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  );
+}
+
+/**
+ * The orientation flag, whether it arrives as a number or as a phrase.
+ *
+ * `translateValues` turns tag 0x0112 into "Rotate 90 CW" and similar, which a
+ * numeric read silently misses — and missing it is what left every rotated
+ * photograph reported at its stored dimensions rather than the ones its owner
+ * can see. Both forms are accepted rather than turning translation off, which
+ * would cost the readable GPS references and everything else it helps with.
+ */
+export function orientationFlag(tags: TagRead): number | undefined {
+  const value = tags.ifd0.Orientation ?? tags.exif.Orientation;
+
+  if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 8) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const phrase = value.toLowerCase();
+  const mirrored = /mirror|flip/.test(phrase);
+  const rotation = /(90|180|270)/.exec(phrase)?.[1];
+  const clockwise = /\bcw\b/.test(phrase) && !/ccw/.test(phrase);
+
+  if (rotation === "180") return mirrored ? 4 : 3;
+  if (rotation === "90") return mirrored ? (clockwise ? 7 : 5) : clockwise ? 6 : 8;
+  if (rotation === "270") return mirrored ? 7 : 8;
+
+  return mirrored ? 2 : 1;
 }
 
 /**

@@ -246,6 +246,43 @@ const jpegWithApp0 = () => [
   ...dqt(), ...sof(), ...sos(), ...EOI,
 ];
 
+/**
+ * A JPEG carrying a minimal but real Exif block: an orientation flag and a
+ * capture time. Written by hand rather than fixtured, so the two properties
+ * most likely to regress — the rotation being applied, and the clock not being
+ * shifted into the reader's timezone — are pinned to actual bytes.
+ */
+function exifJpeg(orientation: number): number[] {
+  const be16 = (n: number) => [(n >> 8) & 0xff, n & 0xff];
+  const be32 = (n: number) => [(n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff];
+  const text = (value: string) => [...value].map((c) => c.charCodeAt(0));
+
+  /* IFD0: Orientation, then a pointer to an Exif IFD holding the date. */
+  const stamp = text("2026:07:14 18:22:31").concat([0]);
+  const ifd0Size = 2 + 2 * 12 + 4;
+  const exifOffset = 8 + ifd0Size;
+  const exifSize = 2 + 1 * 12 + 4;
+  const stampOffset = exifOffset + exifSize;
+
+  const ifd0 = [
+    ...be16(2),
+    ...be16(0x0112), ...be16(3), ...be32(1), ...be16(orientation), 0, 0,
+    ...be16(0x8769), ...be16(4), ...be32(1), ...be32(exifOffset),
+    ...be32(0),
+  ];
+
+  const exifIfd = [
+    ...be16(1),
+    ...be16(0x9003), ...be16(2), ...be32(stamp.length), ...be32(stampOffset),
+    ...be32(0),
+  ];
+
+  const tiff = [...text("MM"), 0x00, 0x2a, ...be32(8), ...ifd0, ...exifIfd, ...stamp];
+  const payload = [...text("Exif"), 0, 0, ...tiff];
+
+  return [...SOI, 0xff, 0xe1, ...be16(payload.length + 2), ...payload, ...dqt(), ...sof(), ...sos(), ...EOI];
+}
+
 const metaCases: { name: string; file: File; check: (m: NonNullable<Awaited<ReturnType<typeof readMetadata>>>) => boolean; want: string }[] = [
   {
     name: "JPEG geometry and format are read",
@@ -270,6 +307,25 @@ const metaCases: { name: string; file: File; check: (m: NonNullable<Awaited<Retu
     file: new File([new Uint8Array([0x4d, 0x5a, 0x90, 0x00, 0x03])], "invoice.jpg", { type: "image/jpeg" }),
     check: (m) => m.typeMatches === false && m.sniffedLabel === "Windows executable",
     want: "mismatch flagged",
+  },
+  {
+    name: "a rotated frame is reported as it is displayed",
+    file: jpegFile("upright.jpg", exifJpeg(6)),
+    check: (m) =>
+      m.width === 800 && m.height === 600 && m.displayWidth === 600 && m.displayHeight === 800,
+    want: "800x600 stored, 600x800 shown",
+  },
+  {
+    name: "an upright frame is not transposed",
+    file: jpegFile("flat.jpg", exifJpeg(1)),
+    check: (m) => m.displayWidth === 800 && m.displayHeight === 600,
+    want: "unchanged",
+  },
+  {
+    name: "capture time is the camera's clock, not the reader's",
+    file: jpegFile("dated.jpg", exifJpeg(1)),
+    check: (m) => m.exif?.taken === "2026-07-14T18:22:31",
+    want: "18:22:31 whatever timezone this runs in",
   },
   {
     name: "absent EXIF is reported as absent, not as failure",

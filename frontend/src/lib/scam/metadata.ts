@@ -5,6 +5,7 @@ import { readHidden } from "@/lib/scam/hidden";
 import {
   colourProfileName,
   coordinates,
+  orientationFlag,
   readTags,
   tagDate,
   tagNumber,
@@ -422,7 +423,7 @@ function applyTags(out: FileMetadata, tags: TagRead, bytes: Uint8Array): void {
    * replaced — a description that quietly substitutes one for the other is how
    * two people looking at the same file end up disagreeing about its size.
    */
-  const orientation = tagNumber(tags, "Orientation");
+  const orientation = orientationFlag(tags);
   const turn = orientation ? ORIENTATIONS[orientation] : undefined;
 
   if (out.width && out.height) {
