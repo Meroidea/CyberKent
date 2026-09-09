@@ -10,8 +10,8 @@ import { useEffect, useState } from "react";
  * entries to it when they need a longer hold.
  */
 export const SCAN_STAGES = [
-  "Reading the message structure",
-  "Checking links, numbers and addresses",
+  "Reading the message and any file attached",
+  "Following where each link actually goes",
   "Matching indicators reported in Hume",
   "Scoring what was found",
 ] as const;

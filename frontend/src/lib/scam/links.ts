@@ -50,7 +50,6 @@ export type LinkFindingId =
   | "cross-site-redirect"
   | "asks-for-password"
   | "asks-for-payment"
-  | "new-certificate"
   | "unreachable";
 
 export interface LinkFinding {
@@ -438,11 +437,20 @@ export function withResolution(report: LinkReport, resolution: LinkResolution): 
     return {
       ...report,
       resolution,
+      /* Carrying the array this branch just pushed to, not the one on `report`.
+         Spreading the report kept its original findings and silently discarded
+         the "could not be reached" note that had just been added. */
+      findings,
       summary: `This link goes to ${report.host}, which did not respond when this service tried it.`,
     };
   }
 
   const redirects = resolution.hops.filter((hop) => hop.via !== "start");
+
+  /* A plain-http address that lands on https is what every site does when it
+     upgrades a visitor. Following the link is what turns the structural guess
+     into an answer, so the guess is withdrawn rather than left standing. */
+  const upgraded = report.scheme === "http" && resolution.finalUrl.startsWith("https://");
   const startDomain = report.domain ?? report.host ?? "";
   const endDomain = registrableDomain(resolution.finalHost);
   const crossed = Boolean(startDomain) && startDomain !== endDomain;
@@ -486,23 +494,25 @@ export function withResolution(report: LinkReport, resolution: LinkResolution): 
   }
 
   /*
-   * A certificate issued days ago. Every site has a new certificate at some
-   * point, so this is weak on its own — it is worth raising only because
-   * throwaway phishing domains are, almost by definition, days old.
+   * The destination's certificate is reported as a fact and scored as nothing.
+   *
+   * An earlier revision raised a finding when it was less than a fortnight
+   * old, on the reasoning that a domain set up for one campaign has a
+   * certificate as young as the campaign. Testing that against real sites
+   * showed it to be wrong now rather than later: github.com came back at six
+   * days and t.co at zero, because short-lived certificates have become the
+   * norm and the industry is moving towards reissuing them every few days. A
+   * check that fires on GitHub is not a check. The issuer and the date still
+   * appear in the detail rows, where a reader can weigh them; what would
+   * actually carry this signal is the age of the domain's registration, which
+   * needs a registry lookup this service does not yet make.
    */
-  if (typeof resolution.tls?.daysOld === "number" && resolution.tls.daysOld <= 14) {
-    findings.push({
-      id: "new-certificate",
-      label: "The destination's certificate is days old",
-      detail: `The security certificate for ${resolution.finalHost} was issued ${
-        resolution.tls.daysOld === 0 ? "today" : `${resolution.tls.daysOld} days ago`
-      }. Legitimate sites are usually older than their visitors' interest in them; sites set up for a single campaign are not.`,
-      weight: "medium",
-      evidence: `issued by ${resolution.tls.issuer ?? "an unnamed authority"}`,
-    });
-  }
 
-  return { ...report, resolution, findings, summary: resolutionSummary(report, resolution, crossed) };
+  /* Derived here rather than earlier, so it filters the findings this function
+     has finished adding to rather than a copy taken before them. */
+  const kept = upgraded ? findings.filter((finding) => finding.id !== "insecure") : findings;
+
+  return { ...report, resolution, findings: kept, summary: resolutionSummary(report, resolution, crossed) };
 }
 
 function resolutionSummary(

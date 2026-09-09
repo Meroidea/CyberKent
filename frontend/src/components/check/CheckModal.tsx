@@ -11,9 +11,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { analyse } from "@/lib/scam/analyse";
+import { analyse, urlsIn } from "@/lib/scam/analyse";
+import { resolveLinks } from "@/lib/scam/links";
 import { describeFiles } from "@/lib/scam/ocr";
 import type { Analysis, Channel, MediaDescriptor } from "@/lib/scam/types";
+import type { LinkReport } from "@/lib/scam/links";
 import { AnalysisReport } from "@/components/check/AnalysisReport";
 import { MediaDropzone } from "@/components/check/MediaDropzone";
 import {
@@ -27,6 +29,31 @@ import { HAS_WEBGL, ScanGlobe } from "@/components/globe/ScanGlobe";
 import { holdScroll } from "@/lib/smoothScroll";
 import { EASE_OUT_EXPO, springSoft } from "@/lib/motion";
 import { cn } from "@/lib/cn";
+
+/**
+ * Everything that has to happen before the rule set can run.
+ *
+ * Two stages, in this order for a reason. Files are read first because the
+ * text recognised inside a screenshot is part of the message, and a link that
+ * only appears in a picture has to be found before it can be followed. Links
+ * are then followed second, which is the one step that leaves the device —
+ * so it is the one step that cannot begin until there is something to follow.
+ */
+async function examine(
+  text: string,
+  channel: Channel,
+  files: File[],
+  onProgress: (label: string | null) => void,
+): Promise<{ described: MediaDescriptor[]; links: LinkReport[] }> {
+  const described = await describeFiles(files, (_, name) => onProgress(`Reading ${name}`));
+  const urls = urlsIn({ text, channel, media: described });
+
+  const links = await resolveLinks(urls, (url, index, total) =>
+    onProgress(total > 1 ? `Following ${url} (${index} of ${total})` : `Following ${url}`),
+  );
+
+  return { described, links };
+}
 
 /** FR14 — the channels a submission can be attributed to. */
 const CHANNELS: { value: Channel; label: string; Icon: typeof MessageSquare }[] = [
@@ -240,19 +267,18 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
      * Reading attachments is genuinely slow, so the hold is a floor under it
      * rather than a wait beside it.
      */
-    void atLeast(
-      describeFiles(files, (_, name) => setReading(name)),
-      holdMs,
-    ).then((described) => {
-      if (run !== runRef.current) {
-        return;
-      }
+    void atLeast(examine(text, channel!, files, setReading), holdMs).then(
+      ({ described, links }) => {
+        if (run !== runRef.current) {
+          return;
+        }
 
-      setMedia(described);
-      setAnalysis(analyse({ text, channel: channel!, media: described }));
-      setReading(null);
-      setPhase("report");
-    });
+        setMedia(described);
+        setAnalysis(analyse({ text, channel: channel!, media: described, links }));
+        setReading(null);
+        setPhase("report");
+      },
+    );
   };
 
   const checkAnother = () => {
@@ -483,11 +509,12 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
                       </AnimatePresence>
                     </p>
 
-                    {/* Named while it happens: reading three screenshots takes
-                        long enough that an unchanging caption looks stuck. */}
+                    {/* Named while it happens: reading three screenshots and
+                        following their links takes long enough that an
+                        unchanging caption looks stuck. */}
                     {reading ? (
                       <p className="max-w-full truncate text-caption text-slate-500 dark:text-slate-400">
-                        Reading {reading}
+                        {reading}
                       </p>
                     ) : null}
 
@@ -564,7 +591,9 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
                   className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-caption text-slate-500 dark:text-slate-400"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  Checked on your own device. Nothing is sent to Council or stored.
+                  Checked on your own device — your message and files stay on it. Any link is
+                  opened by CyberKent rather than by you, so only its address is sent, and nothing
+                  is stored.
                 </p>
               </div>
             ) : null}

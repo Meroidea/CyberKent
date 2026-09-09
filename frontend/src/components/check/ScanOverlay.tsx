@@ -106,7 +106,8 @@ export function ScanOverlay({ active }: { active: boolean }) {
             </div>
 
             <p className="max-w-xs text-caption text-slate-500 dark:text-slate-400">
-              Checked on your own device. The message is not sent to Council.
+              Checked on your own device. The message and any file stay on it; only a link's
+              address is sent, so CyberKent opens it instead of you.
             </p>
           </div>
         </motion.div>

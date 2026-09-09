@@ -1,5 +1,7 @@
 import { SITE } from "@/config/site";
 import type { Analysis, Channel, MediaDescriptor, RiskBand, Submission } from "@/lib/scam/types";
+import { assessOrigin } from "@/lib/scam/origin";
+import type { LinkReport } from "@/lib/scam/links";
 
 /**
  * Rendering an analysis as text, for the copies of it that leave the screen.
@@ -116,7 +118,18 @@ function describeFiles(media: MediaDescriptor[]): string[] {
       const row = (label: string, value: string) => lines.push(`  ${(label + ":").padEnd(24)}${value}`);
 
       row("Size", bytes(meta.sizeBytes));
-      if (meta.width && meta.height) row("Dimensions", `${meta.width} x ${meta.height} px`);
+
+      const width = meta.displayWidth ?? meta.width;
+      const height = meta.displayHeight ?? meta.height;
+
+      if (width && height) {
+        const turned = meta.width !== width || meta.height !== height;
+        row(
+          "Dimensions",
+          `${width} x ${height} px${turned ? ` (stored ${meta.width} x ${meta.height}, rotated on display)` : ""}`,
+        );
+      }
+
       if (meta.format) row("Format", meta.format);
       row(
         "Declared type",
@@ -127,12 +140,67 @@ function describeFiles(media: MediaDescriptor[]): string[] {
       if (meta.colour) row("Colour", meta.colour);
       if (meta.bitDepth) row("Bit depth", `${meta.bitDepth}-bit`);
       if (meta.subsampling) row("Chroma subsampling", meta.subsampling);
+      if (meta.dpi) row("Resolution", `${meta.dpi} dpi as declared`);
+      if (meta.orientationLabel) row("Orientation", meta.orientationLabel);
       if (typeof meta.quality === "number") row("JPEG quality (est.)", `about ${meta.quality} of 100`);
       if (meta.progressive !== undefined) row("Encoding", meta.progressive ? "Progressive" : "Baseline");
       if (meta.interlaced !== undefined) row("Interlacing", meta.interlaced ? "Interlaced" : "None");
       row("Colour profile", meta.iccProfile ?? "none embedded");
       row("Metadata carried", meta.segments?.length ? meta.segments.join(", ") : "none");
+      if (meta.tagCounts) {
+        const t = meta.tagCounts;
+        row("Tags by block", `Exif ${t.exif}, GPS ${t.gps}, XMP ${t.xmp}, IPTC ${t.iptc}, ICC ${t.icc}`);
+      }
+      if (meta.author) row("Named author", meta.author);
+      if (meta.software) row("Written by", meta.software);
+      if (meta.copyright) row("Copyright", meta.copyright);
       if (meta.sha256) row("SHA-256", meta.sha256);
+
+      if (meta.container) {
+        const c = meta.container;
+        lines.push("", "  Document structure");
+        if (c.count !== undefined) row("  Contains", `${c.count} ${c.countLabel ?? "items"}`);
+        if (c.revisions !== undefined) {
+          row(
+            "  Times written",
+            c.revisions === 1
+              ? "once - this is the document as first produced"
+              : `${c.revisions}, so it changed after it was first produced`,
+          );
+        }
+        if (c.people.lastEditedBy) row("  Last saved by", c.people.lastEditedBy);
+        if (c.people.producer) row("  Produced by", c.people.producer);
+        if (c.people.company) row("  Organisation", c.people.company);
+        if (c.created) row("  Created", c.created);
+        if (c.modified) row("  Modified", c.modified);
+
+        for (const finding of c.findings) {
+          lines.push(indent(`- ${finding.label} [${finding.weight}]`, 4));
+          lines.push(indent(wrap(finding.detail, 68), 6));
+          if (finding.evidence) lines.push(indent(`Evidence: ${finding.evidence}`, 6));
+        }
+      }
+
+      if (meta.hidden) {
+        lines.push("", "  Hidden content");
+        if (meta.hidden.findings.length === 0) {
+          lines.push(
+            indent(
+              wrap(
+                `Nothing hidden was found. Searched: ${meta.hidden.examined}. This does not rule out data concealed inside the picture itself, which needs a different kind of analysis.`,
+                70,
+              ),
+              4,
+            ),
+          );
+        } else {
+          for (const finding of meta.hidden.findings) {
+            lines.push(indent(`- ${finding.label} [${finding.weight}]`, 4));
+            lines.push(indent(wrap(finding.detail, 68), 6));
+            if (finding.evidence) lines.push(indent(`Evidence: ${finding.evidence}`, 6));
+          }
+        }
+      }
 
       lines.push("", "  Camera record (EXIF)");
 
@@ -141,8 +209,12 @@ function describeFiles(media: MediaDescriptor[]): string[] {
         row("  Tags found", String(e.fields));
         if (e.make || e.model) row("  Camera", [e.make, e.model].filter(Boolean).join(" "));
         if (e.lens) row("  Lens", e.lens);
+        if (e.serial) row("  Serial number", e.serial);
+        if (e.exposure) row("  Exposure", e.exposure);
         if (e.software) row("  Software", e.software);
-        if (e.taken) row("  Taken", e.taken);
+        if (e.taken) row("  Taken", `${e.taken}${e.offset ? ` (camera set to ${e.offset})` : ""}`);
+        if (e.digitised && e.digitised !== e.taken) row("  Digitised", e.digitised);
+        if (e.changed) row("  Last written", e.changed);
         if (e.capturedWidth && e.capturedHeight) row("  Captured at", `${e.capturedWidth} x ${e.capturedHeight} px`);
         row("  Location", e.gps ? `${e.gps.lat.toFixed(5)}, ${e.gps.lon.toFixed(5)}` : "not recorded");
 
@@ -158,13 +230,40 @@ function describeFiles(media: MediaDescriptor[]): string[] {
       lines.push("", "  Origin", indent(wrap(file.provenance.detail, 70), 4));
     }
 
+    const origin = file.origin ?? assessOrigin(file);
+
+    if (origin) {
+      lines.push(
+        "",
+        "  Is this AI-generated?",
+        indent(`${origin.headline} - estimated ${Math.round(origin.probability * 100)}% generated, ${origin.confidence} confidence`, 4),
+        indent(wrap(origin.detail, 68), 4),
+      );
+
+      if (origin.towardsGenerated.length > 0) {
+        lines.push(indent("Points to generated:", 4));
+        for (const reason of origin.towardsGenerated) {
+          lines.push(indent(wrap(`- ${reason.text} (${reason.kind}, weight ${Math.abs(reason.weight).toFixed(1)})`, 66), 6));
+        }
+      }
+
+      if (origin.towardsCaptured.length > 0) {
+        lines.push(indent("Points to photographed:", 4));
+        for (const reason of origin.towardsCaptured) {
+          lines.push(indent(wrap(`- ${reason.text} (${reason.kind}, weight ${Math.abs(reason.weight).toFixed(1)})`, 66), 6));
+        }
+      }
+
+      lines.push(indent(wrap(origin.limits, 68), 4));
+    }
+
     if (file.synthetic) {
       lines.push(
         "",
-        "  AI-image check",
+        "  AI-image model, raw reading",
         indent(
           file.synthetic.unavailable ??
-            `Assessed on this device at ${Math.round(file.synthetic.probability * 100)}% likely to be AI-generated (${file.synthetic.model}).`,
+            `${Math.round(file.synthetic.probability * 100)}% generated, from ${file.synthetic.model}, before this service weighed it against everything else.`,
           4,
         ),
       );
@@ -195,6 +294,64 @@ function describeFiles(media: MediaDescriptor[]): string[] {
   }
 
   return sections;
+}
+
+/**
+ * Each link, its destination, and how the report got there.
+ *
+ * The destination leads and the address as written comes last, because the
+ * address as written is the part designed to mislead and a reader scanning a
+ * printout should meet the answer before the bait.
+ */
+function describeLinks(links: LinkReport[]): string[] {
+  return links.map((link) => {
+    const lines: string[] = [indent(wrap(link.summary, 72), 2), ""];
+    const row = (label: string, value: string) => lines.push(`  ${(label + ":").padEnd(24)}${value}`);
+
+    row("As written", link.raw);
+    if (link.domain) row("Domain that owns it", link.domain);
+
+    const resolution = link.resolution;
+
+    if (resolution && !resolution.error) {
+      row("Ends at", resolution.finalUrl);
+      row(
+        "Answered with",
+        `HTTP ${resolution.status}${resolution.contentType ? ` · ${resolution.contentType}` : ""}`,
+      );
+      if (resolution.server) row("Served by", resolution.server);
+      if (resolution.ip) row("Address", resolution.ip);
+      if (resolution.tls?.issuer) {
+        row(
+          "Certificate",
+          `issued by ${resolution.tls.issuer}${
+            typeof resolution.tls.daysOld === "number" ? `, ${resolution.tls.daysOld} days ago` : ""
+          }`,
+        );
+      }
+
+      if (resolution.hops.length > 1) {
+        lines.push("", "  The chain, in order");
+        for (const hop of resolution.hops) {
+          lines.push(indent(`${hop.status || "no reply"}  ${hop.url}`, 4));
+        }
+      }
+    }
+
+    if (link.notFollowed) {
+      lines.push("", indent(wrap(link.notFollowed, 70), 2));
+    }
+
+    if (link.findings.length > 0) {
+      lines.push("");
+      for (const finding of link.findings) {
+        lines.push(indent(`- ${finding.label} [${finding.weight}]`, 2));
+        lines.push(indent(wrap(finding.detail, 68), 4));
+      }
+    }
+
+    return lines.join("\n");
+  });
 }
 
 export function formatReport({ analysis, submission, generatedAt }: ReportInput): string {
@@ -254,11 +411,19 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     sections.push(["WHY", "", "  No indicators from the checked rule set were found."].join("\n"));
   }
 
-  const extracted: string[] = [];
-
-  if (analysis.extracted.urls.length > 0) {
-    extracted.push(`  Links            ${analysis.extracted.urls.join("\n                   ")}`);
+  if (analysis.links.length > 0) {
+    sections.push(
+      [
+        analysis.links.length === 1
+          ? "WHERE THE LINK GOES"
+          : `WHERE EACH OF THE ${analysis.links.length} LINKS GOES`,
+        "",
+        ...describeLinks(analysis.links),
+      ].join("\n"),
+    );
   }
+
+  const extracted: string[] = [];
 
   if (analysis.extracted.emails.length > 0) {
     extracted.push(`  Email addresses  ${analysis.extracted.emails.join("\n                   ")}`);
@@ -269,7 +434,7 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
   }
 
   if (extracted.length > 0) {
-    sections.push(["PULLED OUT OF THE MESSAGE", "", ...extracted].join("\n"));
+    sections.push(["ALSO PULLED OUT OF THE MESSAGE", "", ...extracted].join("\n"));
   }
 
   const files = submission.media ?? [];
@@ -294,7 +459,7 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
     [
       rule,
       wrap(
-        `Checked on the reader's own device by ${SITE.name}. Nothing submitted — message or file — was sent to ${SITE.owner} or stored. To report it, visit the service and choose "Report a scam".`,
+        `Checked on the reader's own device by ${SITE.name}. No message and no file was sent to ${SITE.owner} or stored. Where a link was followed, its address alone was sent to the service so the destination could be opened from there rather than from the reader's own phone. To report it, visit the service and choose "Report a scam".`,
       ),
       rule,
     ].join("\n"),

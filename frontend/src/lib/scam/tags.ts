@@ -309,7 +309,11 @@ function rawIccDescription(bytes: Uint8Array): string | undefined {
 
     if (type === "desc") {
       const length = u32be(bytes, at + 8);
-      return ascii(bytes, at + 12, Math.min(length, 128)).replace(/\0.*$/, "").trim() || undefined;
+      /* The payload is NUL-padded to its declared length, so the first NUL
+         terminates the name. Split rather than matched, to keep a control
+         character out of this source file. */
+      const name = ascii(bytes, at + 12, Math.min(length, 128)).split(String.fromCharCode(0))[0];
+      return name?.trim() || undefined;
     }
 
     if (type === "mluc") {

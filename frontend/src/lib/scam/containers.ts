@@ -271,9 +271,16 @@ function fromUtf16OrLatin1(codes: number[]): string | undefined {
   return clean(codes.map((code) => String.fromCharCode(code)).join(""));
 }
 
-/** Trims a recovered string, dropping the control bytes padding leaves behind. */
+/**
+ * Trims a recovered string, dropping the control bytes padding leaves behind.
+ *
+ * Stripping the control class is the point: these strings come out of a binary
+ * container, where a field is NUL-padded or newline-terminated and the
+ * remainder is not text at all. Matched by Unicode category rather than by a
+ * literal range, so nothing in this source file is itself a control character.
+ */
 function clean(value: string): string | undefined {
-  const trimmed = value.replace(/[\u0000-\u001f]+/g, " ").trim();
+  const trimmed = value.replace(/\p{Cc}+/gu, " ").trim();
   return trimmed.length > 0 && trimmed.length < 200 ? trimmed : undefined;
 }
 

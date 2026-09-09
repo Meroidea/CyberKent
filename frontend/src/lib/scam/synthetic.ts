@@ -5,7 +5,7 @@ import type { SyntheticRead } from "@/lib/scam/types";
  *
  * The obvious implementation was to POST the image to a hosted inference API.
  * It is rejected here on purpose. The checker tells people "Checked on your own
- * device. Nothing is sent to Council or stored", and the images it is handed
+ * device", and the images it is handed
  * are screenshots of banking apps, family messages and identity documents. A
  * classifier is not worth breaking that sentence for, so the model comes to the
  * image rather than the image going to the model.

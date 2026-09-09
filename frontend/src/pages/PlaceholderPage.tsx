@@ -105,7 +105,7 @@ export function PlaceholderPage({
 
       <SettingsGroup
         title="What you can do now"
-        footer="The scam checker is finished and needs no account. It runs entirely on your device, so nothing you paste into it is transmitted."
+        footer="The scam checker is finished and needs no account. Your message and your files are examined on your own device and never transmitted; a link is the one exception, because seeing where one goes means opening it, and CyberKent does that instead of you."
       >
         <SettingsRows>
           <SettingsRow

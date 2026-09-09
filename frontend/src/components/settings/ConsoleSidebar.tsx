@@ -128,7 +128,8 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <p className="flex items-start gap-2 px-3 pb-2 text-[0.75rem] leading-snug text-ui-label-3">
         <ShieldCheck aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-        Checking runs on your device. Nothing you paste is sent anywhere.
+        Checking runs on your device. Your message and your files stay on it; only a link
+        you ask to be checked is opened by CyberKent rather than by you.
       </p>
     </div>
   );

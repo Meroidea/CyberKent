@@ -146,6 +146,32 @@ async function safeAddress(hostname: string): Promise<string> {
 
 /* ──────────────────────────────── one hop ───────────────────────────────── */
 
+/** The peer certificate, while the socket is still attached to the response. */
+function peerCertificate(res: IncomingMessage): Resolution["tls"] | undefined {
+  const socket = res.socket as TLSSocket | undefined;
+
+  if (!socket || typeof socket.getPeerCertificate !== "function") {
+    return undefined;
+  }
+
+  const cert = socket.getPeerCertificate();
+
+  if (!cert || !cert.subject) {
+    return undefined;
+  }
+
+  const from = cert.valid_from ? new Date(cert.valid_from) : undefined;
+  const dated = from && !Number.isNaN(from.getTime());
+
+  return {
+    issuer: cert.issuer?.O ?? cert.issuer?.CN,
+    subject: cert.subject.CN,
+    validFrom: dated ? from.toISOString() : undefined,
+    validTo: cert.valid_to,
+    daysOld: dated ? Math.floor((Date.now() - from.getTime()) / 86_400_000) : undefined,
+  };
+}
+
 interface HopResult {
   status: number;
   headers: Record<string, string | string[] | undefined>;
@@ -162,7 +188,7 @@ interface HopResult {
  * and the ability to stop reading at a byte count rather than after the body
  * has already arrived.
  */
-function fetchOnce(target: URL, address: string): Promise<HopResult> {
+function fetchOnce(target: URL, connectTo: string): Promise<HopResult> {
   const secure = target.protocol === "https:";
   const send = secure ? httpsRequest : httpRequest;
 
@@ -173,7 +199,7 @@ function fetchOnce(target: URL, address: string): Promise<HopResult> {
         /* Connect to the address that was checked, and carry the real name in
            the Host header and SNI so virtual hosting and TLS still work. This
            is what closes the window between resolving a name and using it. */
-        host: address,
+        host: connectTo,
         servername: secure ? target.hostname : undefined,
         port: target.port || (secure ? 443 : 80),
         path: `${target.pathname}${target.search}`,
@@ -190,6 +216,16 @@ function fetchOnce(target: URL, address: string): Promise<HopResult> {
         const chunks: Buffer[] = [];
         let read = 0;
 
+        /*
+         * Read here rather than when the response finishes. Node releases the
+         * socket from the message as soon as the body is done, so by the time
+         * `end` fires `res.socket` is null and the certificate is gone — which
+         * silently cost every report its "issued N days ago" line, the one
+         * signal that separates a bank from a domain registered on Tuesday.
+         */
+        const address = res.socket?.remoteAddress;
+        const certificate = secure ? peerCertificate(res) : undefined;
+
         res.on("data", (chunk: Buffer) => {
           read += chunk.length;
 
@@ -200,34 +236,21 @@ function fetchOnce(target: URL, address: string): Promise<HopResult> {
           }
         });
 
+        let settled = false;
+
         const finish = () => {
-          const socket = res.socket as TLSSocket | undefined;
-          let tls: Resolution["tls"];
-
-          if (secure && socket && typeof socket.getPeerCertificate === "function") {
-            const cert = socket.getPeerCertificate();
-
-            if (cert && cert.subject) {
-              const from = cert.valid_from ? new Date(cert.valid_from) : undefined;
-              tls = {
-                issuer: cert.issuer?.O ?? cert.issuer?.CN,
-                subject: cert.subject.CN,
-                validFrom: from && !Number.isNaN(from.getTime()) ? from.toISOString() : undefined,
-                validTo: cert.valid_to,
-                daysOld:
-                  from && !Number.isNaN(from.getTime())
-                    ? Math.floor((Date.now() - from.getTime()) / 86_400_000)
-                    : undefined,
-              };
-            }
+          if (settled) {
+            return;
           }
+
+          settled = true;
 
           resolve({
             status: res.statusCode ?? 0,
             headers: res.headers,
             body: Buffer.concat(chunks).toString("utf8"),
-            ip: res.socket?.remoteAddress ?? address,
-            tls,
+            ip: address ?? connectTo,
+            tls: certificate,
           });
         };
 
