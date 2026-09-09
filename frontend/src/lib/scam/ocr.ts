@@ -27,7 +27,29 @@ import { assessOrigin } from "@/lib/scam/origin";
  */
 async function recogniser() {
   const { createWorker } = await import("tesseract.js");
-  return createWorker("eng");
+
+  /*
+   * The worker and its core are loaded from this origin, and that is the
+   * difference between a screenshot being read and not being read at all.
+   *
+   * `tesseract.js` loads both with `importScripts` from a public CDN by
+   * default. That is a script load, this site's Content-Security-Policy allows
+   * scripts from its own origin only, and so on the deployed site the worker
+   * never started and the report came back "This image could not be read on
+   * this device" — for the single most common thing a resident submits, a
+   * screenshot of a scam text. `scripts/fetch-model.mjs` copies the files at
+   * build time; these paths point at them.
+   *
+   * The language data is served from here too. It was the last thing this
+   * service fetched from a third party at check time, and while the policy
+   * permitted it — data rather than script — it still told that host, on every
+   * check, that somebody was reading a screenshot.
+   */
+  return createWorker("eng", undefined, {
+    workerPath: "/tesseract/worker.min.js",
+    corePath: "/tesseract/",
+    langPath: "/tesseract/",
+  });
 }
 
 /**

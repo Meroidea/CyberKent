@@ -199,10 +199,22 @@ async function copyRuntime() {
   const from = join(ROOT, "node_modules", "onnxruntime-web", "dist");
   const to = join(ROOT, "public", "ort");
 
+  /*
+   * Only the builds the loader actually asks for.
+   *
+   * The package ships four variants and copying all of them put 74 MB into
+   * the deployment. Instrumenting a real browser run showed the classifier
+   * requesting `asyncify` and nothing else; the plain build is kept beside it
+   * as the fallback for a browser without the threading the asyncify build
+   * expects. The WebGPU (`jsep`, 26 MB) and JS-promise-integration (`jspi`,
+   * 14 MB) builds are for a backend this service does not select.
+   */
+  const NEEDED = /^ort-wasm-simd-threaded(\.asyncify)?\.(wasm|mjs)$/;
+
   let files;
 
   try {
-    files = (await readdir(from)).filter((name) => /^ort-wasm.*\.(wasm|mjs)$/.test(name));
+    files = (await readdir(from)).filter((name) => NEEDED.test(name));
   } catch {
     process.stdout.write("  onnxruntime-web is not installed; the AI-image check will not run\n");
     return;
@@ -222,7 +234,87 @@ async function copyRuntime() {
   process.stdout.write(`  onnx runtime      ${files.length} files copied to public/ort/\n`);
 }
 
+/**
+ * Copies the text-recognition runtime into `public/tesseract/`.
+ *
+ * Same fault as the ONNX runtime, same cause. `tesseract.js` loads its worker
+ * and its WebAssembly core with `importScripts` from a public CDN, that is a
+ * script load, and this site's Content-Security-Policy allows scripts from its
+ * own origin only. On the deployed site the worker never starts, and the
+ * report says "This image could not be read on this device" — so the single
+ * most common thing a resident submits, a screenshot of a scam text, has not
+ * actually been read.
+ *
+ * Only the LSTM cores are copied. The package ships six variants totalling
+ * forty-odd megabytes; the LSTM pair is what `eng` recognition uses, and the
+ * SIMD build is chosen at runtime where the browser supports it.
+ */
+async function copyRecogniser() {
+  const to = join(ROOT, "public", "tesseract");
+
+  const wanted = [
+    [join(ROOT, "node_modules", "tesseract.js", "dist"), "worker.min.js"],
+    [join(ROOT, "node_modules", "tesseract.js-core"), "tesseract-core-simd-lstm.wasm.js"],
+    [join(ROOT, "node_modules", "tesseract.js-core"), "tesseract-core-lstm.wasm.js"],
+  ];
+
+  await mkdir(to, { recursive: true });
+
+  for (const [from, name] of wanted) {
+    try {
+      await copyFile(join(from, name), join(to, name));
+    } catch {
+      process.stdout.write(`  tesseract        ${name} missing; text recognition will not run\n`);
+      return;
+    }
+  }
+
+  process.stdout.write(`  tesseract         ${wanted.length} files copied to public/tesseract/\n`);
+}
+
+/**
+ * Fetches the English language data into `public/tesseract/`.
+ *
+ * The last third-party runtime dependency. `tesseract.js` fetches this from a
+ * public CDN by default, which the policy permitted because it is data rather
+ * than script — but it still told that host, on every check, that somebody was
+ * reading a screenshot. Eleven megabytes fetched once at build time removes
+ * both the disclosure and the runtime dependency, and lets the
+ * Content-Security-Policy drop to `connect-src 'self' blob:`.
+ *
+ * Non-fatal, like the model fetch: a build that cannot reach the host still
+ * produces a working site whose text recognition reports itself unavailable.
+ */
+async function fetchLanguage() {
+  const to = join(ROOT, "public", "tesseract", "eng.traineddata.gz");
+
+  try {
+    await access(to);
+    process.stdout.write("  tesseract         eng.traineddata.gz already present\n");
+    return;
+  } catch {
+    /* Not there yet; fetch it. */
+  }
+
+  const response = await fetch("https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz");
+
+  if (!response.ok) {
+    throw new Error(`language data responded ${response.status}`);
+  }
+
+  const body = new Uint8Array(await response.arrayBuffer());
+
+  if (body.length < 1024 * 1024) {
+    throw new Error(`language data was only ${body.length} bytes`);
+  }
+
+  await writeFile(to, body);
+  process.stdout.write(`  tesseract         eng.traineddata.gz ${(body.length / 1048576).toFixed(1)} MB\n`);
+}
+
 try {
+  await copyRecogniser();
+  await fetchLanguage();
   await copyRuntime();
   await main();
 } catch (error) {

@@ -28,6 +28,7 @@ backend/uploads/
 # Tens of megabytes of binary that would otherwise live in every clone; the
 # README beside them is the instructions and is kept.
 frontend/public/ort/
+frontend/public/tesseract/
 frontend/public/models/*
 !frontend/public/models/README.md
 
