@@ -1,11 +1,6 @@
-import { extractEmails, extractPhones, extractUrls, hostOf } from "@/lib/scam/extract";
-import {
-  IMPERSONATED_BRANDS,
-  OFFICIAL_SUFFIXES,
-  SUSPICIOUS_TLDS,
-  TEXT_RULES,
-  URL_SHORTENERS,
-} from "@/lib/scam/patterns";
+import { extractEmails, extractPhones, extractUrls, proseOf } from "@/lib/scam/extract";
+import { TEXT_RULES } from "@/lib/scam/patterns";
+import { analyseLinks, analyseSenderDomains } from "@/lib/scam/links";
 import { analyseMedia } from "@/lib/scam/media";
 import type {
   Analysis,
@@ -30,6 +25,9 @@ const WEIGHT_POINTS: Record<IndicatorWeight, number> = {
  * slowly. Tuned so one high indicator lands mid-band and two clear it.
  */
 const SATURATION = 45;
+
+/** Score a single decisive finding is lifted to — the bottom of the HIGH band plus margin. */
+const DECISIVE_FLOOR = 70;
 
 /** FR17 — band thresholds. */
 const BAND_THRESHOLDS: { band: RiskBand; min: number }[] = [
@@ -64,6 +62,12 @@ const BAND_COPY: Record<RiskBand, { headline: string; summary: string }> = {
   },
 };
 
+const DECISIVE_COPY = {
+  headline: "Very likely a scam",
+  summary:
+    "One finding here is conclusive on its own — something is disguised as what it is not. Do not open, click or reply to it, and delete it once you have reported it.",
+};
+
 /**
  * Rules that only make sense on some channels.
  *
@@ -74,15 +78,27 @@ const CHANNEL_EXEMPT_RULES: Partial<Record<Channel, string[]>> = {
   phone: ["link-bait"],
 };
 
-function runTextRules(text: string, channel: Channel): Indicator[] {
+/** The sentence a match sits in, so a rule's `unless` can see its context. */
+function sentenceAround(text: string, index: number): string {
+  const start = Math.max(0, text.lastIndexOf(".", index) + 1, text.lastIndexOf("\n", index) + 1);
+  const ends = [text.indexOf(".", index), text.indexOf("\n", index)].filter((at) => at >= 0);
+  return text.slice(start, ends.length > 0 ? Math.min(...ends) : text.length);
+}
+
+/**
+ * FR15 — runs the wording rules over the message's prose.
+ *
+ * `prose` has had its links and addresses blanked out already; see `proseOf`.
+ */
+function runTextRules(prose: string, channel: Channel): Indicator[] {
   const exempt = CHANNEL_EXEMPT_RULES[channel] ?? [];
 
   return TEXT_RULES.filter((rule) => !exempt.includes(rule.id)).flatMap((rule) => {
-    /* Reset because the patterns are global and therefore stateful. */
-    rule.pattern.lastIndex = 0;
-    const matches = text.match(rule.pattern);
+    const matches = [...prose.matchAll(rule.pattern)].filter(
+      (match) => !rule.unless || !rule.unless.test(sentenceAround(prose, match.index ?? 0)),
+    );
 
-    if (!matches || matches.length === 0) {
+    if (matches.length === 0) {
       return [];
     }
 
@@ -92,97 +108,10 @@ function runTextRules(text: string, channel: Channel): Indicator[] {
         label: rule.label,
         detail: rule.detail,
         weight: rule.weight,
-        evidence: [...new Set(matches.map((match) => match.trim()))].slice(0, 3).join(", "),
+        evidence: [...new Set(matches.map((match) => match[0].trim()))].slice(0, 3).join(", "),
       },
     ];
   });
-}
-
-/** FR20, FR21 — validate the shape of each URL, then inspect the host. */
-function runUrlRules(urls: string[]): Indicator[] {
-  const indicators: Indicator[] = [];
-
-  for (const url of urls) {
-    const host = hostOf(url);
-
-    if (!host) {
-      indicators.push({
-        id: `url-malformed-${url}`,
-        label: "Link is malformed",
-        detail: "The address could not be parsed, which is itself unusual in a genuine message.",
-        weight: "medium",
-        evidence: url,
-      });
-      continue;
-    }
-
-    /* An official Australian domain cannot be registered by a scammer, so it
-       clears the host-shape rules below rather than being scored by them. */
-    if (OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      continue;
-    }
-
-    const tld = host.split(".").pop() ?? "";
-
-    if (SUSPICIOUS_TLDS.includes(tld)) {
-      indicators.push({
-        id: `url-tld-${host}`,
-        label: "Uncommon top-level domain",
-        detail: `".${tld}" is cheap to register and carries a high share of abuse.`,
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    if (URL_SHORTENERS.includes(host)) {
-      indicators.push({
-        id: `url-shortener-${host}`,
-        label: "Shortened link",
-        detail: "A shortener hides the real destination until you have already opened it.",
-        weight: "medium",
-        evidence: host,
-      });
-    }
-
-    /*
-     * Lookalike test: the host names a brand but is not that brand's own
-     * domain. "hume-rates-refund.online" contains "hume" without being
-     * anything hume.vic.gov.au controls.
-     */
-    const brand = IMPERSONATED_BRANDS.find((candidate) => host.includes(candidate));
-
-    if (brand && !OFFICIAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
-      indicators.push({
-        id: `url-lookalike-${host}`,
-        label: "Lookalike domain",
-        detail: `Contains "${brand}" but is not an official address for it.`,
-        weight: "high",
-        evidence: host,
-      });
-    }
-
-    if (host.split(".").length > 3) {
-      indicators.push({
-        id: `url-depth-${host}`,
-        label: "Deeply nested subdomain",
-        detail: "Stacking subdomains pushes the real domain out of view on a phone.",
-        weight: "low",
-        evidence: host,
-      });
-    }
-
-    if (/\d{1,3}(\.\d{1,3}){3}/.test(host)) {
-      indicators.push({
-        id: `url-ip-${host}`,
-        label: "Link points to a raw IP address",
-        detail: "Genuine services publish a domain name, not a bare address.",
-        weight: "high",
-        evidence: host,
-      });
-    }
-  }
-
-  return indicators;
 }
 
 /**
@@ -202,7 +131,10 @@ function runUrlRules(urls: string[]): Indicator[] {
  */
 function scoreIndicators(indicators: Indicator[]): number {
   const evidence = indicators.reduce((total, item) => total + WEIGHT_POINTS[item.weight], 0);
-  return Math.round(100 * (1 - Math.exp(-evidence / SATURATION)));
+  const curve = Math.round(100 * (1 - Math.exp(-evidence / SATURATION)));
+
+  /* A decisive finding is enough by itself; the floor sits just inside HIGH. */
+  return indicators.some((item) => item.decisive) ? Math.max(curve, DECISIVE_FLOOR) : curve;
 }
 
 function bandFor(score: number): RiskBand {
@@ -261,8 +193,15 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
 
   const corpus = [typed, ...readFromMedia].filter((value) => value.length > 0).join("\n\n");
 
+  /*
+   * A QR code is a link that cannot be read by eye, which makes it the most
+   * link-like thing a message can carry. Its destination is judged exactly as
+   * a typed URL is.
+   */
+  const qrLinks = media.flatMap((file) => file.qrCodes ?? []).filter((value) => /^[a-z]+:|\./i.test(value));
+
   const extracted = {
-    urls: extractUrls(corpus),
+    urls: [...new Set([...extractUrls(corpus), ...qrLinks])],
     emails: extractEmails(corpus),
     phones: extractPhones(corpus),
   };
@@ -270,14 +209,16 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
   const examined = describeSources(typed, media);
   /* Envelope rules stand on their own: they need no text to have been read. */
   const fileIndicators = analyseMedia(media);
+  const { links, indicators: linkIndicators } = analyseLinks(extracted.urls);
 
-  if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0) {
+  if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0 && linkIndicators.length === 0) {
     return {
       score: 0,
       band: "unclear",
       confidence: 0,
       ...BAND_COPY.unclear,
       indicators: [],
+      links,
       extracted,
       examined,
     };
@@ -285,22 +226,30 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
 
   const textIndicators =
     corpus.length >= MINIMUM_USEFUL_LENGTH
-      ? [...runTextRules(corpus, channel), ...runUrlRules(extracted.urls)]
+      ? [...runTextRules(proseOf(corpus), channel), ...analyseSenderDomains(extracted.emails)]
       : [];
 
-  const indicators = [...textIndicators, ...fileIndicators].sort(
+  const indicators = [...textIndicators, ...linkIndicators, ...fileIndicators].sort(
     (a, b) => WEIGHT_ORDER[a.weight] - WEIGHT_ORDER[b.weight],
   );
 
   const score = scoreIndicators(indicators);
   const band = bandFor(score);
 
+  /* "Several indicators appear together" is untrue of a verdict carried by one
+     decisive finding, and the copy has to say what actually happened. */
+  const copy =
+    band === "high" && indicators.filter((item) => item.weight === "high").length === 1 && indicators.some((item) => item.decisive)
+      ? DECISIVE_COPY
+      : BAND_COPY[band];
+
   return {
     score,
     band,
     confidence: confidenceFor(corpus, indicators.length, examined),
-    ...BAND_COPY[band],
+    ...copy,
     indicators,
+    links,
     extracted,
     examined,
   };
@@ -320,12 +269,15 @@ function describeSources(typed: string, media: MediaDescriptor[]): ExaminedSourc
 
   for (const file of media) {
     const read = file.extractedText?.trim() ?? "";
+    const qr = file.qrCodes?.length ? ` A QR code was decoded and its destination checked as a link.` : "";
+    const detected = file.metadata?.detected;
+    const identity = detected ? ` Content identified from its bytes as a ${detected.label}.` : "";
 
     if (read.length > 0) {
       sources.push({
         label: file.name,
         status: "read",
-        detail: `${read.length} characters of text read from this ${file.kind} and checked.`,
+        detail: `${read.length} characters of text read from this ${file.kind} and checked.${identity}${qr}`,
       });
       continue;
     }
@@ -333,9 +285,9 @@ function describeSources(typed: string, media: MediaDescriptor[]): ExaminedSourc
     sources.push({
       label: file.name,
       status: "not-read",
-      detail:
-        file.unreadable ??
-        `The contents of this ${file.kind} were not examined — only its name and type were.`,
+      detail: `${
+        file.unreadable ?? `The contents of this ${file.kind} were not examined — only its name and type were.`
+      }${identity}${qr}`,
     });
   }
 
