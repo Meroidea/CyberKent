@@ -1,0 +1,111 @@
+erDiagram
+  User {
+    string id PK
+    string email UK
+    string passwordHash 
+    string fullName 
+    string organisation "optional"
+    string phone "optional"
+    Role role 
+    datetime emailVerified "optional"
+    datetime lastLoginAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  Report {
+    string id PK
+    string reference UK
+    string authorId FK "optional"
+    string categoryId FK "optional"
+    string suburbId FK "optional"
+    Channel channel 
+    ReportStatus status 
+    Severity severity "optional"
+    string title 
+    string description 
+    int amountLostCents "optional"
+    datetime occurredAt "optional"
+    datetime submittedAt "optional"
+    datetime withdrawnAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+    string reviewerId FK "optional"
+  }
+  ScamCategory {
+    string id PK
+    string slug UK
+    string name 
+    string description "optional"
+    datetime archivedAt "optional"
+    datetime createdAt 
+  }
+  Suburb {
+    string id PK
+    string name UK
+    string postcode 
+  }
+  ReportRelation {
+    string id PK
+    string sourceId FK
+    string targetId FK
+    RelationKind kind 
+    float similarity "optional"
+    datetime createdAt 
+  }
+  Evidence {
+    string id PK
+    string reportId FK
+    string description "optional"
+    string originalName 
+    string mimeType 
+    int sizeBytes 
+    string sha256 
+    string storageKey UK
+    datetime metadataStrippedAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+  }
+  EvidenceAccessLog {
+    string id PK
+    string evidenceId FK
+    string userId FK "optional"
+    string action 
+    string ipAddress "optional"
+    datetime createdAt 
+  }
+  ReportReview {
+    string id PK
+    string reportId FK
+    string reviewerId FK "optional"
+    ReportStatus decision 
+    Severity severity "optional"
+    string notes "optional"
+    datetime createdAt 
+  }
+  InformationRequest {
+    string id PK
+    string reportId FK
+    string requestedById FK "optional"
+    string message 
+    datetime respondedAt "optional"
+    string response "optional"
+    datetime createdAt 
+  }
+  User |o--o{ Report : "authorId"
+  User |o--o{ Report : "reviewerId"
+  ScamCategory |o--o{ Report : "categoryId"
+  Suburb |o--o{ Report : "suburbId"
+  Report ||--o{ ReportRelation : "sourceId"
+  Report ||--o{ ReportRelation : "targetId"
+  Report ||--o{ Evidence : "reportId"
+  Evidence ||--o{ EvidenceAccessLog : "evidenceId"
+  User |o--o{ EvidenceAccessLog : "userId"
+  Report ||--o{ ReportReview : "reportId"
+  User |o--o{ ReportReview : "reviewerId"
+  Report ||--o{ InformationRequest : "reportId"
+  User |o--o{ InformationRequest : "requestedById"

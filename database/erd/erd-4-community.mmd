@@ -1,0 +1,140 @@
+erDiagram
+  User {
+    string id PK
+    string email UK
+    string passwordHash 
+    string fullName 
+    string organisation "optional"
+    string phone "optional"
+    Role role 
+    datetime emailVerified "optional"
+    datetime lastLoginAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  Alert {
+    string id PK
+    string reference UK
+    string sourceReportId FK "optional"
+    string categoryId FK "optional"
+    string suburbId FK "optional"
+    Channel channel 
+    AlertStatus status 
+    Severity severity 
+    string headline 
+    string specimen "optional"
+    string summary 
+    string authorId FK "optional"
+    string approvedById FK "optional"
+    datetime publishedAt "optional"
+    datetime archivedAt "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  Report {
+    string id PK
+    string reference UK
+    string authorId FK "optional"
+    string categoryId FK "optional"
+    string suburbId FK "optional"
+    Channel channel 
+    ReportStatus status 
+    Severity severity "optional"
+    string title 
+    string description 
+    int amountLostCents "optional"
+    datetime occurredAt "optional"
+    datetime submittedAt "optional"
+    datetime withdrawnAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+    string reviewerId FK "optional"
+  }
+  ScamCategory {
+    string id PK
+    string slug UK
+    string name 
+    string description "optional"
+    datetime archivedAt "optional"
+    datetime createdAt 
+  }
+  Suburb {
+    string id PK
+    string name UK
+    string postcode 
+  }
+  Subscription {
+    string id PK
+    string userId FK "optional"
+    string email 
+    SubscriptionScope scope 
+    string categoryId FK "optional"
+    string suburbId FK "optional"
+    datetime confirmedAt "optional"
+    datetime unsubscribedAt "optional"
+    string unsubscribeTokenHash UK
+    datetime createdAt 
+  }
+  Notification {
+    string id PK
+    string userId FK
+    NotificationKind kind 
+    string title 
+    string body 
+    string linkPath "optional"
+    datetime readAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+  }
+  AwarenessResource {
+    string id PK
+    string slug UK
+    string title 
+    string category 
+    string summary 
+    string body 
+    string readingTime 
+    datetime archivedAt "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  RecoveryChecklist {
+    string id PK
+    string slug UK
+    string title 
+    string situation 
+    datetime createdAt 
+  }
+  RecoveryStep {
+    string id PK
+    string checklistId FK
+    int position 
+    string title 
+    string detail 
+  }
+  RecoveryProgress {
+    string id PK
+    string userId FK
+    string stepId FK
+    datetime completedAt 
+  }
+  User |o--o{ Report : "authorId"
+  User |o--o{ Report : "reviewerId"
+  ScamCategory |o--o{ Report : "categoryId"
+  Suburb |o--o{ Report : "suburbId"
+  Report |o--o{ Alert : "sourceReportId"
+  ScamCategory |o--o{ Alert : "categoryId"
+  Suburb |o--o{ Alert : "suburbId"
+  User |o--o{ Alert : "authorId"
+  User |o--o{ Alert : "approvedById"
+  RecoveryChecklist ||--o{ RecoveryStep : "checklistId"
+  User ||--o{ RecoveryProgress : "userId"
+  RecoveryStep ||--o{ RecoveryProgress : "stepId"
+  User ||--o{ Notification : "userId"
+  User |o--o{ Subscription : "userId"
+  ScamCategory |o--o{ Subscription : "categoryId"
+  Suburb |o--o{ Subscription : "suburbId"

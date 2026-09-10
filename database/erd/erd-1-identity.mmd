@@ -1,0 +1,63 @@
+erDiagram
+  User {
+    string id PK
+    string email UK
+    string passwordHash 
+    string fullName 
+    string organisation "optional"
+    string phone "optional"
+    Role role 
+    datetime emailVerified "optional"
+    datetime lastLoginAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  EmailVerificationToken {
+    string id PK
+    string userId FK
+    string tokenHash UK
+    datetime expiresAt 
+    datetime usedAt "optional"
+    datetime createdAt 
+  }
+  PasswordResetToken {
+    string id PK
+    string userId FK
+    string tokenHash UK
+    datetime expiresAt 
+    datetime usedAt "optional"
+    datetime createdAt 
+  }
+  NotificationPreference {
+    string id PK
+    string userId FK,UK
+    boolean emailOnStatus 
+    boolean emailOnAlerts 
+    boolean emailOnRequest 
+    datetime updatedAt 
+  }
+  AccountDeletionRequest {
+    string id PK
+    string userId FK,UK
+    string reason "optional"
+    datetime requestedAt 
+    datetime processedAt "optional"
+  }
+  AuditLog {
+    string id PK
+    string userId FK "optional"
+    string action 
+    string entityType 
+    string entityId "optional"
+    json metadata "optional"
+    string ipAddress "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+  }
+  User ||--o{ EmailVerificationToken : "userId"
+  User ||--o{ PasswordResetToken : "userId"
+  User ||--o| NotificationPreference : "userId"
+  User ||--o| AccountDeletionRequest : "userId"
+  User |o--o{ AuditLog : "userId"

@@ -1,0 +1,75 @@
+erDiagram
+  User {
+    string id PK
+    string email UK
+    string passwordHash 
+    string fullName 
+    string organisation "optional"
+    string phone "optional"
+    Role role 
+    datetime emailVerified "optional"
+    datetime lastLoginAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  ScamCheck {
+    string id PK
+    string userId FK "optional"
+    Channel channel 
+    string content 
+    int score 
+    RiskBand band 
+    float confidence 
+    string ruleSetVersion "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+  }
+  ScamCheckIndicator {
+    string id PK
+    string checkId FK
+    string ruleId 
+    string label 
+    string detail 
+    IndicatorWeight weight 
+    string evidence "optional"
+  }
+  Indicator {
+    string id PK
+    IndicatorType type 
+    string value 
+    int reportCount 
+    datetime firstSeenAt 
+    datetime lastSeenAt 
+    IndicatorStatus verificationStatus 
+    float confidence "optional"
+    datetime expiresAt "optional"
+  }
+  ReportIndicator {
+    string reportId PK,FK
+    string indicatorId PK,FK
+  }
+  AiInteraction {
+    string id PK
+    string userId FK "optional"
+    AiFeature feature 
+    AiOutcome outcome 
+    string provider 
+    string model 
+    string promptVersion 
+    string inputSha256 
+    int inputChars 
+    int redactions 
+    string verdict "optional"
+    int riskScore "optional"
+    float confidence "optional"
+    int latencyMs "optional"
+    int inputTokens "optional"
+    int outputTokens "optional"
+    datetime createdAt 
+  }
+  User |o--o{ ScamCheck : "userId"
+  ScamCheck ||--o{ ScamCheckIndicator : "checkId"
+  User |o--o{ AiInteraction : "userId"
+  Indicator ||--o{ ReportIndicator : "indicatorId"

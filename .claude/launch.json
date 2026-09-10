@@ -13,6 +13,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "backend"],
       "port": 4000
+    },
+    {
+      "name": "ai-service",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd ai-service && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"],
+      "port": 8000
     }
   ]
 }

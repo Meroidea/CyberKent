@@ -1,0 +1,88 @@
+erDiagram
+  User {
+  }
+  EmailVerificationToken {
+  }
+  PasswordResetToken {
+  }
+  NotificationPreference {
+  }
+  AccountDeletionRequest {
+  }
+  ScamCategory {
+  }
+  Suburb {
+  }
+  ScamCheck {
+  }
+  ScamCheckIndicator {
+  }
+  Indicator {
+  }
+  AiInteraction {
+  }
+  Report {
+  }
+  ReportIndicator {
+  }
+  ReportRelation {
+  }
+  Evidence {
+  }
+  EvidenceAccessLog {
+  }
+  ReportReview {
+  }
+  InformationRequest {
+  }
+  Alert {
+  }
+  AwarenessResource {
+  }
+  RecoveryChecklist {
+  }
+  RecoveryStep {
+  }
+  RecoveryProgress {
+  }
+  Notification {
+  }
+  Subscription {
+  }
+  AuditLog {
+  }
+  User ||--o{ EmailVerificationToken : "userId"
+  User ||--o{ PasswordResetToken : "userId"
+  User ||--o| NotificationPreference : "userId"
+  User ||--o| AccountDeletionRequest : "userId"
+  User |o--o{ ScamCheck : "userId"
+  ScamCheck ||--o{ ScamCheckIndicator : "checkId"
+  User |o--o{ AiInteraction : "userId"
+  User |o--o{ Report : "authorId"
+  User |o--o{ Report : "reviewerId"
+  ScamCategory |o--o{ Report : "categoryId"
+  Suburb |o--o{ Report : "suburbId"
+  Report ||--o{ ReportIndicator : "reportId"
+  Indicator ||--o{ ReportIndicator : "indicatorId"
+  Report ||--o{ ReportRelation : "sourceId"
+  Report ||--o{ ReportRelation : "targetId"
+  Report ||--o{ Evidence : "reportId"
+  Evidence ||--o{ EvidenceAccessLog : "evidenceId"
+  User |o--o{ EvidenceAccessLog : "userId"
+  Report ||--o{ ReportReview : "reportId"
+  User |o--o{ ReportReview : "reviewerId"
+  Report ||--o{ InformationRequest : "reportId"
+  User |o--o{ InformationRequest : "requestedById"
+  Report |o--o{ Alert : "sourceReportId"
+  ScamCategory |o--o{ Alert : "categoryId"
+  Suburb |o--o{ Alert : "suburbId"
+  User |o--o{ Alert : "authorId"
+  User |o--o{ Alert : "approvedById"
+  RecoveryChecklist ||--o{ RecoveryStep : "checklistId"
+  User ||--o{ RecoveryProgress : "userId"
+  RecoveryStep ||--o{ RecoveryProgress : "stepId"
+  User ||--o{ Notification : "userId"
+  User |o--o{ Subscription : "userId"
+  ScamCategory |o--o{ Subscription : "categoryId"
+  Suburb |o--o{ Subscription : "suburbId"
+  User |o--o{ AuditLog : "userId"
