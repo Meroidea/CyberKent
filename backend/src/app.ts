@@ -6,7 +6,10 @@ import { env } from "@/config/env";
 import { errorHandler, notFoundHandler } from "@/middleware/error";
 import { authRoutes } from "@/modules/auth/auth.routes";
 import { healthRoutes } from "@/modules/health/health.routes";
+import { aiRoutes } from "@/modules/ai/ai.routes";
 import { sendOk } from "@/lib/http";
+
+const IMAGE_ROUTE = "/api/ai/analyse-image";
 
 /**
  * Builds the Express application.
@@ -42,8 +45,10 @@ export function createApp() {
   );
 
   /* A scam report with a pasted email thread is legitimately long, but the
-     limit exists so a body cannot be used to exhaust memory. */
-  app.use(express.json({ limit: "256kb" }));
+     limit exists so a body cannot be used to exhaust memory. The one route that
+     carries an image parses its own body with its own, larger limit. */
+  const defaultBody = express.json({ limit: "256kb" });
+  app.use((req, res, next) => (req.path === IMAGE_ROUTE ? next() : defaultBody(req, res, next)));
 
   app.use(
     rateLimit({
@@ -59,12 +64,13 @@ export function createApp() {
       service: "CyberKent API",
       description: "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System",
       version: "0.1.0",
-      endpoints: ["/api/health", "/api/health/ready", "/api/auth"],
+      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/ai"],
     });
   });
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/ai", aiRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

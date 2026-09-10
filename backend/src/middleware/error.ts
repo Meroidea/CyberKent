@@ -25,6 +25,16 @@ export function errorHandler(
     return;
   }
 
+  /* Body-parser rejections: malformed JSON and oversized bodies are the
+     caller's mistake, and answering them as 500s would both mislead the
+     client and page an operator for nothing. */
+  const status = (error as { status?: number; type?: string } | null)?.status;
+
+  if (status === 400 || status === 413) {
+    sendFail(res, status, status === 413 ? "That request is too large." : "The request body is not valid JSON.");
+    return;
+  }
+
   /* Deliberately not sent to the client. */
   console.error("[unhandled]", error);
 

@@ -18,6 +18,16 @@ const schema = z.object({
   JWT_EXPIRES_IN: z.string().default("2h"),
   /* Comma-separated so more than one origin can be allowed in staging. */
   CLIENT_ORIGIN: z.string().default("http://localhost:5173"),
+
+  /* The FastAPI AI service behind the AI Gateway (Rule 8.1). Optional in the
+     sense that the API runs without it: AI features then answer "unavailable"
+     and nothing else is affected (constraint C3). */
+  AI_SERVICE_URL: z.string().url().default("http://127.0.0.1:8000"),
+  AI_SERVICE_TOKEN: z.string().min(16).optional(),
+  AI_TIMEOUT_MS: z.coerce.number().int().positive().default(45_000),
+  /* Requests per client per 15 minutes. AI calls cost money per request, so
+     they are limited far more tightly than ordinary browsing. */
+  AI_RATE_LIMIT: z.coerce.number().int().positive().default(30),
 });
 
 const parsed = schema.safeParse(process.env);
