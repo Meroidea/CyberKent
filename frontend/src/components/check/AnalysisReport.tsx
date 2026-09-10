@@ -1,8 +1,11 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, AtSign, Link2, Phone, ShieldCheck, ShieldQuestion } from "lucide-react";
+import { AlertTriangle, AtSign, Phone, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { ROUTES } from "@/config/site";
 import { ReportActions } from "@/components/check/ReportActions";
+import { LinkBreakdown } from "@/components/check/LinkBreakdown";
+import { FileDetails } from "@/components/check/FileDetails";
+import { AiSecondOpinion } from "@/components/ai/AiSecondOpinion";
 import type { Analysis, RiskBand, Submission } from "@/lib/scam/types";
 import { EASE_OUT_EXPO, fadeUp, staggerParent } from "@/lib/motion";
 import { cn } from "@/lib/cn";
@@ -87,9 +90,12 @@ export function ScoreGauge({ analysis }: { analysis: Analysis }) {
   );
 }
 
-/** The three kinds of thing the extractor pulls out, and how to label each. */
+/**
+ * The contact details the extractor pulls out. Links are not listed here: they
+ * are taken apart in `LinkBreakdown`, because a link is a structure and not a
+ * string.
+ */
 const EXTRACTED_GROUPS = [
-  { key: "urls", label: "Links", Icon: Link2 },
   { key: "emails", label: "Email addresses", Icon: AtSign },
   { key: "phones", label: "Phone numbers", Icon: Phone },
 ] as const;
@@ -148,6 +154,8 @@ interface AnalysisReportProps {
   submission: Submission;
   /** Offered where there is somewhere to go back to, i.e. the modal. */
   onCheckAnother?: () => void;
+  /** The original uploads, for the optional AI image analysis. */
+  files?: File[];
   className?: string;
 }
 
@@ -163,6 +171,7 @@ export function AnalysisReport({
   analysis,
   submission,
   onCheckAnother,
+  files = [],
   className,
 }: AnalysisReportProps) {
   const style = BAND_STYLES[analysis.band];
@@ -241,8 +250,37 @@ export function AnalysisReport({
         </motion.div>
       ) : null}
 
+      {/* Each section is only laid out when it has something in it, so an empty
+          one does not leave a gap the size of the column's spacing. */}
+      {analysis.links.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <LinkBreakdown
+            links={analysis.links}
+            qrCodes={(submission.media ?? []).flatMap((file) => file.qrCodes ?? [])}
+          />
+        </motion.div>
+      ) : null}
+
+      {analysis.extracted.emails.length + analysis.extracted.phones.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <ExtractedEntities analysis={analysis} />
+        </motion.div>
+      ) : null}
+
+      {(submission.media ?? []).some((file) => file.metadata) ? (
+        <motion.div variants={fadeUp}>
+          <FileDetails media={submission.media ?? []} />
+        </motion.div>
+      ) : null}
+
+      {/*
+       * The OpenAI second opinion. Offered after the rule-based verdict rather
+       * than instead of it: the rules are explainable line by line and run
+       * with nothing leaving the device, so they are the result; the model is
+       * a second reader the person can choose to ask.
+       */}
       <motion.div variants={fadeUp}>
-        <ExtractedEntities analysis={analysis} />
+        <AiSecondOpinion analysis={analysis} submission={submission} files={files} />
       </motion.div>
 
       {/*

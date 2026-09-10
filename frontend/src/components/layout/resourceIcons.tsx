@@ -1,6 +1,7 @@
 import {
   Bell,
   BookOpen,
+  Bot,
   ClipboardList,
   FileCheck2,
   Flag,
@@ -21,6 +22,7 @@ export const RESOURCE_ICONS: Record<NavResource["icon"], LucideIcon> = {
   bell: Bell,
   map: MapPinned,
   book: BookOpen,
+  bot: Bot,
 };
 
 /** The same arrangement for the published project documents. */

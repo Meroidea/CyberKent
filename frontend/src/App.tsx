@@ -18,6 +18,7 @@ import { DocumentsPage } from "@/pages/DocumentsPage";
 import { DocumentPage } from "@/pages/DocumentPage";
 import { LearnPage } from "@/pages/LearnPage";
 import { LearnArticlePage } from "@/pages/LearnArticlePage";
+import { AssistantPage } from "@/pages/AssistantPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { ROUTES } from "@/config/site";
@@ -215,6 +216,9 @@ export default function App() {
                     path={`${ROUTES.learn}/:slug`}
                     element={<LearnArticlePage />}
                   />
+
+                  {/* The OpenAI-backed CyberSafe Assistant. */}
+                  <Route path={ROUTES.assistant} element={<AssistantPage />} />
 
                   {PLACEHOLDERS.map((page) => (
                     <Route

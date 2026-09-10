@@ -28,6 +28,7 @@ export const ROUTES = {
   alerts: "/alerts",
   scamMap: "/map",
   learn: "/learn",
+  assistant: "/assistant",
   recover: "/recover",
   documents: "/documents",
   signIn: "/sign-in",
@@ -54,7 +55,7 @@ export interface NavLink {
 export interface NavResource extends NavLink {
   description: string;
   /** Key into RESOURCE_ICONS so config stays free of JSX. */
-  icon: "scan" | "flag" | "bell" | "map" | "book";
+  icon: "scan" | "flag" | "bell" | "map" | "book" | "bot";
 }
 
 /**
@@ -75,6 +76,12 @@ export const NAV_RESOURCES: NavResource[] = [
     href: ROUTES.checkMessage,
     description: "Paste a text, link or number for an instant risk read.",
     icon: "scan",
+  },
+  {
+    label: "CyberSafe Assistant",
+    href: ROUTES.assistant,
+    description: "Ask the AI assistant what to do about a scam.",
+    icon: "bot",
   },
   {
     label: "Report a scam",
@@ -107,6 +114,7 @@ export const FOOTER_COLUMNS: { title: string; links: NavLink[] }[] = [
     title: "Use the service",
     links: [
       { label: "Check a message", href: ROUTES.checkMessage },
+      { label: "Ask the AI assistant", href: ROUTES.assistant },
       { label: "Report a scam", href: ROUTES.reportScam },
       { label: "Track a report", href: ROUTES.signIn },
       { label: "Scam map", href: ROUTES.scamMap },

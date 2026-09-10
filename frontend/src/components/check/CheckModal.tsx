@@ -286,8 +286,14 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
            * The top padding is the masthead's 4rem plus room, so the panel is
            * bounded by space the header does not occupy rather than merely
            * starting below it.
+           *
+           * On a phone the panel is a bottom sheet instead of a centred card —
+           * the Lecturer asked for the interface to be mobile friendly, and a
+           * floating card on a 390px screen spent a sixth of it on a gap above
+           * the dialog. Anchored to the bottom edge, the form sits where the
+           * thumb already is and the keyboard pushes it up rather than over it.
            */
-          className="fixed inset-0 z-[80] flex items-center justify-center px-4 pb-5 pt-24 sm:px-6 sm:pb-8 sm:pt-28 bg-slate-900/40 backdrop-blur-xl dark:bg-black/60"
+          className="fixed inset-0 z-[80] flex items-end justify-center px-0 pb-0 pt-14 sm:items-center sm:px-6 sm:pb-8 sm:pt-28 bg-slate-900/40 backdrop-blur-xl dark:bg-black/60"
         >
           <motion.div
             ref={panelRef}
@@ -299,8 +305,11 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
             exit={{ opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.2 } }}
             transition={springSoft}
             onClick={(event) => event.stopPropagation()}
-            className="glass-surface flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-3xl shadow-2xl"
+            className="glass-surface flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:rounded-3xl"
           >
+            {/* The sheet's grab handle — a phone convention that says "this is a
+                layer over the page", shown only where the panel is a sheet. */}
+            <span aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-slate-900/15 sm:hidden dark:bg-white/20" />
             <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-900/[0.06] px-5 py-4 sm:px-7 sm:py-5 dark:border-white/10">
               <div className="min-w-0">
                 <p className="font-mono text-caption uppercase tracking-[0.2em] text-indigo-600 dark:text-cyan-400">
@@ -523,6 +532,7 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
                   <AnalysisReport
                     analysis={analysis}
                     submission={{ text, channel: channel ?? "other", media }}
+                    files={files}
                     onCheckAnother={checkAnother}
                   />
                 </motion.div>
@@ -542,7 +552,7 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
              * what lets the layout be a column of three fixed regions.
              */}
             {phase === "form" ? (
-              <div className="shrink-0 border-t border-slate-900/[0.06] px-5 py-4 sm:px-7 dark:border-white/10">
+              <div className="shrink-0 border-t border-slate-900/[0.06] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-7 sm:pb-4 dark:border-white/10">
                 <button
                   type="submit"
                   form="check-modal-form"
