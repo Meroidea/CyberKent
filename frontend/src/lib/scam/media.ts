@@ -1,5 +1,6 @@
-import type { DetectedType } from "@/lib/scam/metadata";
 import type { Indicator, MediaDescriptor, MediaKind } from "@/lib/scam/types";
+import { SYNTHETIC_ABOVE } from "@/lib/scam/synthetic";
+import { fileTypeMismatch, signatureOf, type Signature } from "@/lib/scam/metadata";
 
 /**
  * Rules that read a file's envelope rather than its contents.
@@ -52,7 +53,7 @@ export function extensionOf(name: string): string {
  * the same screenshot is an image whether it is called `sms.png`, `sms.pdf` or
  * nothing at all, and whether or not the browser supplied a type for it.
  */
-export function kindOf(type: string, name: string, detected?: DetectedType | null): MediaKind {
+export function kindOf(type: string, name: string, detected?: Signature | null): MediaKind {
   if (detected) {
     if (detected.family === "image" || detected.family === "audio" || detected.family === "video") {
       return detected.family;
@@ -101,7 +102,7 @@ const HARMLESS_CLAIMS = ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp", "pd
  * first two bytes ("MZ") give it away.
  */
 function contentRules(file: MediaDescriptor, extension: string): Indicator[] {
-  const detected = file.metadata?.detected ?? null;
+  const detected = signatureOf(file.metadata);
   const found: Indicator[] = [];
   const add = (id: string, label: string, detail: string, weight: Indicator["weight"], decisive = false) =>
     found.push({ id: `file-${id}-${file.name}`, label, detail, weight, decisive, evidence: `${file.name} → ${detected?.label ?? "unrecognised content"}` });
@@ -131,7 +132,7 @@ function contentRules(file: MediaDescriptor, extension: string): Indicator[] {
     );
   }
 
-  if (detected.mime === "text/html") {
+  if (detected.type === "text/html") {
     add(
       "html",
       "Attachment is a web page",
@@ -140,7 +141,7 @@ function contentRules(file: MediaDescriptor, extension: string): Indicator[] {
     );
   }
 
-  if (detected.mime === "image/svg+xml") {
+  if (detected.type === "image/svg+xml") {
     add(
       "svg",
       "Image format that can carry code",
@@ -189,6 +190,30 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
 
   for (const file of media) {
     const extension = extensionOf(file.name);
+
+    /*
+     * The bytes disagree with the name. Read from the metadata pass rather than
+     * re-sniffed here, because there should be exactly one answer in the report
+     * to "what is this file", and two sniffers eventually give two.
+     *
+     * The content rules name the specific disguise — a program, a web page, an
+     * archive — and the generic mismatch below is the fallback for anything
+     * they do not name, so one disguise is never counted twice.
+     */
+    const content = file.metadata ? contentRules(file, extension) : [];
+    indicators.push(...content);
+
+    const mismatch = file.metadata && content.length === 0 ? fileTypeMismatch(file.metadata) : null;
+
+    if (mismatch) {
+      indicators.push({
+        id: `file-bytes-mismatch-${file.name}`,
+        label: "File is not the type it claims",
+        detail: `${mismatch} A file that is one thing and announces itself as another is the oldest way of getting something opened that would not be opened otherwise.`,
+        weight: "high",
+        evidence: file.name,
+      });
+    }
 
     if (BIDI_OVERRIDE.test(file.name)) {
       indicators.push({
@@ -251,9 +276,7 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
       });
     }
 
-    if (file.metadata) {
-      indicators.push(...contentRules(file, extension));
-    } else if (file.type && extension) {
+    if (!file.metadata && file.type && extension) {
       /* Without the bytes, the declared type is the only second opinion. */
       const declared = familyOf(file.type);
       const named = kindOf("", file.name);
@@ -279,6 +302,108 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
         evidence: file.name,
       });
     }
+
+    indicators.push(...imageOriginIndicators(file));
+  }
+
+  return indicators;
+}
+
+/**
+ * Indicators drawn from how an image says — or appears — to have been made.
+ *
+ * Two things this function does not do, both on purpose.
+ *
+ * It never scores an absence. An image with no Content Credentials is the
+ * overwhelmingly normal case, because every mainstream platform strips metadata
+ * on upload; treating that as suspicion would raise a flag on nearly every
+ * genuine screenshot the service is sent.
+ *
+ * And it never lets the classifier alone reach the top weight. A signed
+ * declaration is close to proof and is weighted as such; a statistical read of
+ * the pixels is a guess from a model that was trained before whichever
+ * generator made this image existed. Telling a resident their photograph is
+ * fake on that basis is a harm the service has no business risking, so the
+ * strongest thing the model can do by itself is ask for a second opinion.
+ */
+function imageOriginIndicators(file: MediaDescriptor): Indicator[] {
+  if (file.kind !== "image") {
+    return [];
+  }
+
+  const indicators: Indicator[] = [];
+  const { provenance, synthetic } = file;
+
+  if (provenance?.status === "declared-ai") {
+    indicators.push({
+      id: `image-declared-ai-${file.name}`,
+      label: "Image declares itself AI-generated",
+      detail: provenance.detail,
+      weight: "high",
+      evidence: provenance.generator ?? file.name,
+    });
+  }
+
+  if (provenance?.status === "hinted-ai") {
+    indicators.push({
+      id: `image-hinted-ai-${file.name}`,
+      label: "Metadata names an image generator",
+      detail: provenance.detail,
+      weight: "low",
+      evidence: provenance.generator ?? file.name,
+    });
+  }
+
+  if (provenance?.status === "untrusted") {
+    indicators.push({
+      id: `image-untrusted-manifest-${file.name}`,
+      label: "Content Credentials do not validate",
+      detail: provenance.detail,
+      weight: "medium",
+      evidence: file.name,
+    });
+  }
+
+  /*
+   * The classifier is only raised where it is confident and where the signed
+   * evidence has not already settled the question — repeating "this is AI" as
+   * a second indicator would double-count one finding and push the score into
+   * a band on the strength of a single fact.
+   */
+  const alreadyDeclared = provenance?.status === "declared-ai";
+
+  if (
+    !alreadyDeclared &&
+    synthetic &&
+    !synthetic.unavailable &&
+    synthetic.probability >= SYNTHETIC_ABOVE
+  ) {
+    indicators.push({
+      id: `image-synthetic-${file.name}`,
+      label: "Image looks generated rather than photographed",
+      detail: `An on-device model put this at ${Math.round(synthetic.probability * 100)}% likely to be AI-generated. Detectors are trained on the generators that existed when they were built and are regularly wrong about newer ones, so treat this as a reason to check rather than as a finding.`,
+      weight: "medium",
+      evidence: file.name,
+    });
+  }
+
+  /*
+   * Edit findings carry their own weights and are passed through as they are.
+   *
+   * Deliberately not folded into the origin verdict above. "Where did this come
+   * from" and "has it been altered since" are separate questions with separate
+   * answers, and the case that matters most to this service — a real photograph
+   * of a real document with one number painted over — scores nothing at all on
+   * the first and is the whole finding on the second.
+   */
+  for (const finding of file.edits?.findings ?? []) {
+    indicators.push({
+      id: `image-edit-${finding.id}-${file.name}`,
+      label: finding.label,
+      detail: finding.detail,
+      weight: finding.weight,
+      evidence: finding.evidence ?? file.name,
+    });
   }
 
   return indicators;

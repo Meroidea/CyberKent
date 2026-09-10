@@ -4,7 +4,7 @@ import { humanise, VERDICT_STYLE } from "@/components/ai/aiStyles";
 import { cn } from "@/lib/cn";
 
 const SECTION_HEADING =
-  "text-caption font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400";
+  "text-[0.8125rem] font-semibold text-ui-label-2";
 
 /**
  * The vision second opinion on one image: what it is, which brands appear in

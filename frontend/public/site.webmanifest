@@ -1,0 +1,24 @@
+{
+  "name": "CyberKent — Hume City Council CyberSafe Services",
+  "short_name": "CyberKent",
+  "description": "Check a suspicious message, link, phone number or email, report a scam to Hume City Council, and follow community scam alerts across the municipality.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "lang": "en-AU",
+  "categories": ["government", "security", "utilities"],
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    {
+      "src": "/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

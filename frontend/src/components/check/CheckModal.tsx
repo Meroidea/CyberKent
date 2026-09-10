@@ -529,11 +529,19 @@ export function CheckModal({ open, onClose }: { open: boolean; onClose: () => vo
                   exit={{ opacity: 0, transition: { duration: 0.18 } }}
                   aria-live="polite"
                 >
+                  {/*
+                   * The report paints its own grouped ground, bled back out to
+                   * the panel's edges. Its cards are white, and a white card on
+                   * the panel's own frosted white is not a card — the ground is
+                   * what makes the grouping visible, so the report brings it
+                   * with it rather than depending on wherever it is shown.
+                   */}
                   <AnalysisReport
                     analysis={analysis}
                     submission={{ text, channel: channel ?? "other", media }}
                     files={files}
                     onCheckAnother={checkAnother}
+                    className="-mx-5 -my-5 bg-ui-grouped px-5 py-6 sm:-mx-7 sm:px-7"
                   />
                 </motion.div>
               ) : null}

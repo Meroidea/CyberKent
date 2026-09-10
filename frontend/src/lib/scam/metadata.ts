@@ -1,508 +1,429 @@
+import type { FileMetadata } from "@/lib/scam/types";
+
 /**
- * Reads what a file actually is, from its bytes.
+ * Everything the file will say about itself.
  *
- * The first version of the checker decided what an upload was from two things
- * the sender controls: the name and the MIME type the browser derives from the
- * name. The Lecturer's feedback was that image metadata must be read reliably
- * and consistently, and neither source is either. A HEIC photo arrives with an
- * empty type on most browsers; a program renamed `invoice.jpg` arrives declared
- * as `image/jpeg`; the same screenshot saved twice under different names was
- * treated as two different files.
+ * The other passes each answer a judgement question — was this generated, was
+ * it altered, does it read like a scam. This one answers none of them. It
+ * describes: how big, what shape, written by what, in what colour space, with
+ * what camera, carrying what. Description is not a lesser thing than judgement
+ * here. A reader handed "not enough to assess" and nothing else has been told
+ * their file was ignored, and a person deciding whether to forward a photograph
+ * needs to know it carries the coordinates of the house it was taken in,
+ * whatever the risk score says.
  *
- * This module reads the file itself. The first bytes of every common format are
- * a fixed signature, the dimensions sit at fixed offsets, and camera metadata is
- * a documented structure (EXIF/TIFF). Reading them gives the same answer for the
- * same file every time, whatever it is called — which is the definition of
- * consistent the feedback asked for.
+ * So this runs on every image, its result is shown whether or not anything was
+ * found, and it is not allowed to raise or lower a score. Two exceptions reach
+ * the rule set through {@link fileTypeMismatch}, because a file whose bytes
+ * disagree with its name is a finding rather than a description.
  *
- * Nothing here throws. A structure that cannot be parsed yields fewer fields,
- * not an error, because a malformed file is exactly what a scam sends.
+ * All of it is parsed from the bytes on the reader's own device.
  */
 
-/** What the bytes say the file is. */
+/* ─────────────────────────────── signatures ─────────────────────────────── */
+
+/** What the bytes say a file is, at the level the rule set reasons about. */
 export type ContentFamily = "image" | "audio" | "video" | "document" | "archive" | "executable" | "web";
 
-export interface DetectedType {
-  mime: string;
-  /** Human name for the report, e.g. "PNG image". */
+export interface Signature {
+  type: string;
   label: string;
   family: ContentFamily;
   /** Extensions a file of this type legitimately carries. */
   extensions: string[];
+  test: (b: Uint8Array) => boolean;
 }
-
-export interface ExifSummary {
-  make?: string;
-  model?: string;
-  software?: string;
-  /** As recorded — EXIF dates carry no time zone. */
-  takenAt?: string;
-  orientation?: number;
-  /** Whether the file records where it was taken. Never the coordinates. */
-  hasLocation: boolean;
-}
-
-export interface FileMetadata {
-  /** Hex SHA-256 of the whole file. Identity by content, not by name. */
-  sha256: string;
-  sizeBytes: number;
-  declaredType: string;
-  extension: string;
-  detected: DetectedType | null;
-  width?: number;
-  height?: number;
-  exif?: ExifSummary;
-}
-
-/** Enough of the file for every header this module reads, including a large EXIF block. */
-const HEADER_BYTES = 256 * 1024;
-
-const ascii = (bytes: Uint8Array, start: number, length: number) =>
-  String.fromCharCode(...bytes.subarray(start, start + length));
-
-const startsWith = (bytes: Uint8Array, signature: number[], offset = 0) =>
-  signature.every((value, index) => bytes[offset + index] === value);
-
-const type = (
-  mime: string,
-  label: string,
-  family: ContentFamily,
-  extensions: string[],
-): DetectedType => ({ mime, label, family, extensions });
 
 /**
- * File signatures, checked in order.
+ * Magic-byte signatures, so the file's own bytes settle what it is.
  *
- * Only the families the checker has a reason to distinguish are listed. The
- * point is not to identify every format that exists; it is to catch the file
- * that is not what its name says.
+ * Each carries its family and the extensions it may legitimately wear. That is
+ * what lets the rule set tell a re-save (a PNG named `.jpg`) from a disguise (a
+ * program named `.jpg`) — the Lecturer's feedback asked for metadata to be read
+ * reliably and consistently, and a signature table that only named formats
+ * could say what a file was but not whether its name was lying about it.
+ *
+ * Order matters where signatures overlap: the ISO-media brands are checked
+ * before the generic MP4 fallback, and the markup sniffers run last.
  */
-export function detectType(bytes: Uint8Array): DetectedType | null {
-  if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
-    return type("image/png", "PNG image", "image", ["png"]);
-  }
-
-  if (startsWith(bytes, [0xff, 0xd8, 0xff])) {
-    return type("image/jpeg", "JPEG image", "image", ["jpg", "jpeg", "jfif"]);
-  }
-
-  if (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a") {
-    return type("image/gif", "GIF image", "image", ["gif"]);
-  }
-
-  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") {
-    return type("image/webp", "WebP image", "image", ["webp"]);
-  }
-
-  if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WAVE") {
-    return type("audio/wav", "WAV audio", "audio", ["wav"]);
-  }
-
-  if (ascii(bytes, 0, 2) === "BM" && bytes.length > 26) {
-    return type("image/bmp", "BMP image", "image", ["bmp"]);
-  }
-
-  /* ISO base media: the brand after `ftyp` separates a phone photo from a video. */
-  if (ascii(bytes, 4, 4) === "ftyp") {
-    const brand = ascii(bytes, 8, 4);
-
-    if (["heic", "heix", "hevc", "heim", "heis", "mif1", "msf1"].includes(brand)) {
-      return type("image/heic", "HEIC photo", "image", ["heic", "heif"]);
-    }
-
-    if (brand === "avif") {
-      return type("image/avif", "AVIF image", "image", ["avif"]);
-    }
-
-    if (brand.startsWith("M4A")) {
-      return type("audio/mp4", "M4A audio", "audio", ["m4a", "mp4"]);
-    }
-
-    if (brand === "qt  ") {
-      return type("video/quicktime", "QuickTime video", "video", ["mov", "mp4"]);
-    }
-
-    return type("video/mp4", "MP4 video", "video", ["mp4", "m4v", "mov"]);
-  }
-
-  if (ascii(bytes, 0, 4) === "%PDF") {
-    return type("application/pdf", "PDF document", "document", ["pdf"]);
-  }
-
-  /* ZIP is also the container for every modern Office format. */
-  if (startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])) {
-    return type("application/zip", "ZIP container", "archive", [
-      "zip", "docx", "xlsx", "pptx", "docm", "xlsm", "pptm", "odt", "ods", "jar", "apk",
-    ]);
-  }
-
-  if (startsWith(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) {
-    return type("application/x-ole-storage", "Legacy Office document", "document", ["doc", "xls", "ppt", "msg"]);
-  }
-
-  if (ascii(bytes, 0, 4) === "Rar!") {
-    return type("application/vnd.rar", "RAR archive", "archive", ["rar"]);
-  }
-
-  if (startsWith(bytes, [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c])) {
-    return type("application/x-7z-compressed", "7-Zip archive", "archive", ["7z"]);
-  }
-
-  if (startsWith(bytes, [0x1f, 0x8b])) {
-    return type("application/gzip", "GZIP archive", "archive", ["gz", "tgz"]);
-  }
-
-  if (ascii(bytes, 0, 2) === "MZ") {
-    return type("application/x-msdownload", "Windows program", "executable", ["exe", "dll", "scr", "com", "msi", "sys"]);
-  }
-
-  if (startsWith(bytes, [0x7f, 0x45, 0x4c, 0x46])) {
-    return type("application/x-elf", "Linux or Android program", "executable", ["so", "elf", "bin"]);
-  }
-
-  if (
-    startsWith(bytes, [0xcf, 0xfa, 0xed, 0xfe]) ||
-    startsWith(bytes, [0xce, 0xfa, 0xed, 0xfe]) ||
-    startsWith(bytes, [0xfe, 0xed, 0xfa, 0xcf])
-  ) {
-    return type("application/x-mach-binary", "macOS program", "executable", ["app", "dylib", "bin"]);
-  }
-
-  if (ascii(bytes, 0, 3) === "ID3" || startsWith(bytes, [0xff, 0xfb]) || startsWith(bytes, [0xff, 0xf3])) {
-    return type("audio/mpeg", "MP3 audio", "audio", ["mp3"]);
-  }
-
-  if (ascii(bytes, 0, 4) === "OggS") {
-    return type("audio/ogg", "Ogg audio", "audio", ["ogg", "oga", "opus"]);
-  }
-
-  if (ascii(bytes, 0, 5) === "#!AMR") {
-    return type("audio/amr", "AMR voice recording", "audio", ["amr"]);
-  }
-
-  if (ascii(bytes, 0, 5) === "{\\rtf") {
-    return type("application/rtf", "RTF document", "document", ["rtf", "doc"]);
-  }
-
+const SIGNATURES: Signature[] = [
+  { type: "image/jpeg", label: "JPEG", family: "image", extensions: ["jpg", "jpeg", "jfif"], test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { type: "image/png", label: "PNG", family: "image", extensions: ["png"], test: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
+  { type: "image/gif", label: "GIF", family: "image", extensions: ["gif"], test: (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 },
+  { type: "image/webp", label: "WebP", family: "image", extensions: ["webp"], test: (b) => ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 4) === "WEBP" },
+  { type: "audio/wav", label: "WAV audio", family: "audio", extensions: ["wav"], test: (b) => ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 4) === "WAVE" },
+  { type: "image/heic", label: "HEIC/HEIF", family: "image", extensions: ["heic", "heif"], test: (b) => ascii(b, 4, 4) === "ftyp" && /hei|mif1|msf1/.test(ascii(b, 8, 4)) },
+  { type: "image/avif", label: "AVIF", family: "image", extensions: ["avif"], test: (b) => ascii(b, 4, 4) === "ftyp" && ascii(b, 8, 4) === "avif" },
+  { type: "audio/mp4", label: "M4A audio", family: "audio", extensions: ["m4a", "mp4"], test: (b) => ascii(b, 4, 4) === "ftyp" && ascii(b, 8, 3) === "M4A" },
+  { type: "video/mp4", label: "MP4/MOV video", family: "video", extensions: ["mp4", "m4v", "mov"], test: (b) => ascii(b, 4, 4) === "ftyp" },
+  { type: "image/bmp", label: "BMP", family: "image", extensions: ["bmp"], test: (b) => b[0] === 0x42 && b[1] === 0x4d && b.length > 26 },
+  { type: "image/tiff", label: "TIFF", family: "image", extensions: ["tif", "tiff"], test: (b) => (b[0] === 0x49 && b[1] === 0x49 && b[2] === 0x2a) || (b[0] === 0x4d && b[1] === 0x4d && b[2] === 0x00) },
+  { type: "application/pdf", label: "PDF", family: "document", extensions: ["pdf"], test: (b) => ascii(b, 0, 4) === "%PDF" },
+  /* ZIP is also the container of every modern Office document and every Android app. */
+  { type: "application/zip", label: "ZIP container", family: "archive", extensions: ["zip", "docx", "xlsx", "pptx", "docm", "xlsm", "pptm", "odt", "ods", "jar", "apk"], test: (b) => b[0] === 0x50 && b[1] === 0x4b && (b[2] === 0x03 || b[2] === 0x05) },
+  { type: "application/x-ole-storage", label: "Legacy Office document", family: "document", extensions: ["doc", "xls", "ppt", "msg"], test: (b) => b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0 },
+  { type: "application/vnd.rar", label: "RAR archive", family: "archive", extensions: ["rar"], test: (b) => ascii(b, 0, 4) === "Rar!" },
+  { type: "application/x-7z-compressed", label: "7-Zip archive", family: "archive", extensions: ["7z"], test: (b) => b[0] === 0x37 && b[1] === 0x7a && b[2] === 0xbc && b[3] === 0xaf },
+  { type: "application/gzip", label: "GZIP archive", family: "archive", extensions: ["gz", "tgz"], test: (b) => b[0] === 0x1f && b[1] === 0x8b },
+  { type: "application/x-msdownload", label: "Windows executable", family: "executable", extensions: ["exe", "dll", "scr", "com", "msi", "sys"], test: (b) => b[0] === 0x4d && b[1] === 0x5a },
+  { type: "application/x-elf", label: "Linux executable", family: "executable", extensions: ["so", "elf", "bin"], test: (b) => b[0] === 0x7f && ascii(b, 1, 3) === "ELF" },
+  { type: "application/x-mach-binary", label: "macOS executable", family: "executable", extensions: ["app", "dylib", "bin"], test: (b) => (b[0] === 0xcf || b[0] === 0xce) && b[1] === 0xfa && b[2] === 0xed && b[3] === 0xfe },
+  { type: "audio/mpeg", label: "MP3 audio", family: "audio", extensions: ["mp3"], test: (b) => ascii(b, 0, 3) === "ID3" || (b[0] === 0xff && (b[1] === 0xfb || b[1] === 0xf3)) },
+  { type: "audio/ogg", label: "Ogg audio", family: "audio", extensions: ["ogg", "oga", "opus"], test: (b) => ascii(b, 0, 4) === "OggS" },
+  { type: "audio/amr", label: "AMR voice recording", family: "audio", extensions: ["amr"], test: (b) => ascii(b, 0, 5) === "#!AMR" },
+  { type: "application/rtf", label: "RTF document", family: "document", extensions: ["rtf", "doc"], test: (b) => ascii(b, 0, 5) === "{\\rtf" },
   /* Text formats have no signature; the opening of the markup is the tell. */
-  const head = ascii(bytes, 0, 512).replace(/^﻿/, "").trimStart().toLowerCase();
+  { type: "image/svg+xml", label: "SVG image", family: "web", extensions: ["svg"], test: (b) => /^(\ufeff)?\s*(<svg|<\?xml[\s\S]*<svg)/i.test(ascii(b, 0, 512)) },
+  { type: "text/html", label: "Web page (HTML)", family: "web", extensions: ["html", "htm", "shtml"], test: (b) => /^(\ufeff)?\s*(<!doctype html|<html|<head|<script)/i.test(ascii(b, 0, 512)) },
+];
 
-  if (head.startsWith("<svg") || (head.startsWith("<?xml") && head.includes("<svg"))) {
-    return type("image/svg+xml", "SVG image", "web", ["svg"]);
-  }
-
-  if (head.startsWith("<!doctype html") || head.startsWith("<html") || head.startsWith("<head") || head.startsWith("<script")) {
-    return type("text/html", "Web page (HTML)", "web", ["html", "htm", "shtml"]);
-  }
-
-  return null;
+/** The signature a described file matched, for the rules that reason about families. */
+export function signatureOf(meta: FileMetadata | undefined): Signature | null {
+  return SIGNATURES.find((candidate) => candidate.type === meta?.sniffedType) ?? null;
 }
 
-/* ── Dimensions ─────────────────────────────────────────────────────────── */
-
-function view(bytes: Uint8Array): DataView {
-  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+function ascii(bytes: Uint8Array, at: number, length: number): string {
+  let out = "";
+  for (let i = at; i < Math.min(at + length, bytes.length); i += 1) {
+    out += String.fromCharCode(bytes[i]!);
+  }
+  return out;
 }
 
-/** Width and height from the header of each image format, without decoding it. */
-export function readDimensions(bytes: Uint8Array, mime: string): { width: number; height: number } | undefined {
-  const data = view(bytes);
+function u16(b: Uint8Array, at: number): number {
+  return (b[at]! << 8) | b[at + 1]!;
+}
 
-  try {
-    switch (mime) {
-      case "image/png":
-        return { width: data.getUint32(16), height: data.getUint32(20) };
+function u32(b: Uint8Array, at: number): number {
+  return ((b[at]! << 24) | (b[at + 1]! << 16) | (b[at + 2]! << 8) | b[at + 3]!) >>> 0;
+}
 
-      case "image/gif":
-        return { width: data.getUint16(6, true), height: data.getUint16(8, true) };
+/* ──────────────────────────────── JPEG ──────────────────────────────────── */
 
-      case "image/bmp":
-        return { width: data.getInt32(18, true), height: Math.abs(data.getInt32(22, true)) };
+/**
+ * The standard luminance quantisation table from the JPEG specification.
+ *
+ * Every encoder scales this by a quality factor, so comparing a file's table
+ * against it recovers roughly what quality it was saved at. Roughly is the
+ * honest word: encoders differ, and a table that matches nothing standard is
+ * reported as a custom table rather than forced onto the scale.
+ */
+const STANDARD_LUMA = [
+  16, 11, 10, 16, 24, 40, 51, 61, 12, 12, 14, 19, 26, 58, 60, 55,
+  14, 13, 16, 24, 40, 57, 69, 56, 14, 17, 22, 29, 51, 87, 80, 62,
+  18, 22, 37, 56, 68, 109, 103, 77, 24, 35, 55, 64, 81, 104, 113, 92,
+  49, 64, 78, 87, 103, 121, 120, 101, 72, 92, 95, 98, 112, 100, 103, 99,
+];
 
-      case "image/webp": {
-        const chunk = ascii(bytes, 12, 4);
+const SOF_NAMES: Record<number, string> = {
+  0xc0: "baseline", 0xc1: "extended sequential", 0xc2: "progressive",
+  0xc3: "lossless", 0xc5: "differential sequential", 0xc6: "differential progressive",
+  0xc9: "arithmetic sequential", 0xca: "arithmetic progressive",
+};
 
-        if (chunk === "VP8 ") {
-          return { width: data.getUint16(26, true) & 0x3fff, height: data.getUint16(28, true) & 0x3fff };
-        }
+const COMPONENTS: Record<number, string> = { 1: "greyscale", 3: "YCbCr colour", 4: "CMYK / YCCK" };
 
-        if (chunk === "VP8L") {
-          const bits = data.getUint32(21, true);
-          return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-        }
+function subsampling(h: number, v: number): string {
+  if (h === 1 && v === 1) return "4:4:4 (no chroma subsampling)";
+  if (h === 2 && v === 1) return "4:2:2";
+  if (h === 2 && v === 2) return "4:2:0";
+  if (h === 1 && v === 2) return "4:4:0";
+  return `${h}×${v}`;
+}
 
-        if (chunk === "VP8X") {
-          const width = 1 + (bytes[24]! | (bytes[25]! << 8) | (bytes[26]! << 16));
-          const height = 1 + (bytes[27]! | (bytes[28]! << 8) | (bytes[29]! << 16));
-          return { width, height };
-        }
+function readJpeg(bytes: Uint8Array, out: FileMetadata): void {
+  const segments = new Set<string>();
+  let at = 2;
+  let luma: number[] | null = null;
 
-        return undefined;
+  while (at < bytes.length - 1) {
+    if (bytes[at] !== 0xff) { at += 1; continue; }
+    const marker = bytes[at + 1]!;
+
+    if (marker === 0xff || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) { at += 2; continue; }
+
+    const length = u16(bytes, at + 2);
+    if (length < 2 || at + 2 + length > bytes.length) break;
+    const body = at + 4;
+
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      out.format = `JPEG, ${SOF_NAMES[marker] ?? "unknown mode"}`;
+      out.progressive = marker === 0xc2 || marker === 0xc6 || marker === 0xca;
+      out.bitDepth = bytes[body];
+      out.height = u16(bytes, body + 1);
+      out.width = u16(bytes, body + 3);
+
+      const count = bytes[body + 5]!;
+      out.colour = COMPONENTS[count] ?? `${count} components`;
+
+      if (count > 0) {
+        const sampling = bytes[body + 7]!;
+        out.subsampling = subsampling(sampling >> 4, sampling & 0x0f);
       }
-
-      case "image/jpeg":
-        return jpegDimensions(bytes);
-
-      default:
-        return undefined;
+    } else if (marker === 0xdb && !luma) {
+      const precision = bytes[body]! >> 4;
+      luma = [];
+      for (let i = 0; i < 64; i += 1) {
+        luma.push(precision === 0 ? bytes[body + 1 + i]! : u16(bytes, body + 1 + i * 2));
+      }
+    } else if (marker >= 0xe0 && marker <= 0xef) {
+      const id = ascii(bytes, body, 12).split("\0")[0]!.trim();
+      const n = marker - 0xe0;
+      if (/^Exif/.test(id)) segments.add("Exif (APP1)");
+      else if (/^http|^XMP|ns\.adobe/.test(id)) segments.add("XMP (APP1)");
+      else if (/^ICC_PROFILE/.test(id)) { segments.add("ICC colour profile (APP2)"); out.iccProfile = "embedded"; }
+      else if (/^Photoshop/.test(id)) segments.add("Photoshop resources (APP13)");
+      else if (/^Adobe/.test(id)) segments.add("Adobe (APP14)");
+      else if (/^JFIF/.test(id)) segments.add("JFIF (APP0)");
+      else if (/^Ducky/.test(id)) segments.add("Ducky (APP12)");
+      else if (n === 11) segments.add("JUMBF / C2PA (APP11)");
+      else segments.add(`APP${n}`);
+    } else if (marker === 0xfe) {
+      segments.add("Comment");
+    } else if (marker === 0xda) {
+      break;
     }
+
+    at += 2 + length;
+  }
+
+  if (luma) {
+    /* Scale factor recovered against the standard table, then the conventional
+       inverse of the IJG quality curve. Only reported where the table actually
+       resembles a scaled standard one. */
+    let total = 0;
+    for (let i = 0; i < 64; i += 1) total += (luma[i]! * 100) / STANDARD_LUMA[i]!;
+    const scale = total / 64;
+    const quality = scale <= 100 ? Math.round((200 - scale) / 2) : Math.round(5000 / scale);
+    out.quality = quality > 0 && quality <= 100 ? quality : null;
+  }
+
+  out.segments = [...segments];
+}
+
+/* ───────────────────────────────── PNG ──────────────────────────────────── */
+
+const PNG_COLOUR: Record<number, string> = {
+  0: "greyscale", 2: "RGB", 3: "indexed palette", 4: "greyscale + alpha", 6: "RGB + alpha",
+};
+
+function readPng(bytes: Uint8Array, out: FileMetadata): void {
+  const chunks = new Set<string>();
+  let at = 8;
+
+  while (at + 8 < bytes.length) {
+    const length = u32(bytes, at);
+    const type = ascii(bytes, at + 4, 4);
+
+    if (type === "IHDR") {
+      out.width = u32(bytes, at + 8);
+      out.height = u32(bytes, at + 12);
+      out.bitDepth = bytes[at + 16];
+      out.colour = PNG_COLOUR[bytes[at + 17]!] ?? `type ${bytes[at + 17]}`;
+      out.interlaced = bytes[at + 20] === 1;
+      out.format = "PNG";
+    } else if (type === "iCCP") {
+      chunks.add("ICC colour profile");
+      out.iccProfile = "embedded";
+    } else if (type === "sRGB") {
+      chunks.add("sRGB declaration");
+      out.iccProfile ??= "sRGB (declared)";
+    } else if (type === "tEXt" || type === "iTXt" || type === "zTXt") {
+      chunks.add("Text metadata");
+    } else if (type === "eXIf") {
+      chunks.add("Exif");
+    } else if (type === "tIME") {
+      chunks.add("Modification time");
+    } else if (type === "acTL") {
+      chunks.add("Animation (APNG)");
+    }
+
+    if (type === "IDAT" || type === "IEND") break;
+    at += 12 + length;
+    if (length < 0 || at <= 0) break;
+  }
+
+  out.segments = [...chunks];
+}
+
+/* ──────────────────────────────── EXIF ──────────────────────────────────── */
+
+/**
+ * Loads `exifr` and hands back the object that actually carries `parse`.
+ *
+ * `exifr` ships a single default export. `await import("exifr")` therefore
+ * resolves to a namespace whose only key is `default`, so `namespace.parse` is
+ * `undefined` and calling it throws. Every EXIF read in this codebase was
+ * written that way and every one of them was failing into its own catch block
+ * and reporting "no metadata" — silently, on files that had plenty.
+ *
+ * That is the failure mode a `try`/`catch` around an optional pass is worst at:
+ * the pass reports the state it is designed to report when it cannot run, and
+ * nothing distinguishes that from the same state honestly reached. Hence one
+ * loader, shared by all three callers, defensive in both directions so a
+ * bundler that does add named exports still works.
+ */
+export async function loadExifr(): Promise<{
+  parse: (input: unknown, options?: unknown) => Promise<Record<string, unknown> | undefined>;
+}> {
+  const module = await import("exifr");
+  const candidate = (module as unknown as { default?: unknown }).default ?? module;
+
+  if (typeof (candidate as { parse?: unknown }).parse !== "function") {
+    throw new Error("exifr exposes no parse function");
+  }
+
+  return candidate as { parse: (input: unknown, options?: unknown) => Promise<Record<string, unknown> | undefined> };
+}
+
+
+/**
+ * The camera's own record, where one survives.
+ *
+ * Most images arriving at this service carry none: every messaging app and
+ * social network strips it. That absence is reported as absence and never as
+ * suspicion — treating a stripped screenshot as a red flag would flag almost
+ * every genuine submission.
+ *
+ * Location is read and shown deliberately. It is the reader's own file on the
+ * reader's own device, nothing is transmitted, and someone about to forward a
+ * photograph is entitled to know it carries the coordinates of where it was
+ * taken. Warning them is the privacy-preserving act, not hiding it from them.
+ */
+async function readExif(bytes: Uint8Array, out: FileMetadata): Promise<void> {
+  try {
+    const exifr = await loadExifr();
+    /* Handed the bytes this module already read rather than the File. exifr's
+       File path goes through FileReader, which costs a second read of the whole
+       file and only exists in a browser — the bytes work everywhere. */
+    const tags = (await exifr.parse(bytes, {
+      tiff: true, exif: true, gps: true, xmp: false, iptc: false,
+    })) as Record<string, unknown> | undefined;
+
+    if (!tags || Object.keys(tags).length === 0) {
+      out.exif = { present: false, fields: 0 };
+      return;
+    }
+
+    const text = (key: string) => (typeof tags[key] === "string" ? (tags[key] as string).trim() : undefined);
+    const num = (key: string) => (typeof tags[key] === "number" ? (tags[key] as number) : undefined);
+    const date = tags.DateTimeOriginal ?? tags.CreateDate ?? tags.ModifyDate;
+
+    const lat = num("latitude");
+    const lon = num("longitude");
+
+    out.exif = {
+      present: true,
+      fields: Object.keys(tags).length,
+      make: text("Make"),
+      model: text("Model"),
+      lens: text("LensModel"),
+      software: text("Software"),
+      taken: date instanceof Date ? localStamp(date) : typeof date === "string" ? date : undefined,
+      orientation: num("Orientation"),
+      capturedWidth: num("ExifImageWidth"),
+      capturedHeight: num("ExifImageHeight"),
+      gps: typeof lat === "number" && typeof lon === "number" ? { lat, lon } : null,
+    };
   } catch {
-    return undefined;
+    out.exif = { present: false, fields: 0 };
   }
-}
-
-/** Walks JPEG segments to the start-of-frame marker, which carries the size. */
-function jpegDimensions(bytes: Uint8Array): { width: number; height: number } | undefined {
-  const data = view(bytes);
-  let offset = 2;
-
-  while (offset + 9 < bytes.length) {
-    if (bytes[offset] !== 0xff) {
-      return undefined;
-    }
-
-    const marker = bytes[offset + 1]!;
-
-    /* SOF0–SOF15, excluding DHT (C4), JPG (C8) and DAC (CC), which share the range. */
-    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-      return { height: data.getUint16(offset + 5), width: data.getUint16(offset + 7) };
-    }
-
-    offset += 2 + data.getUint16(offset + 2);
-  }
-
-  return undefined;
-}
-
-/* ── EXIF ───────────────────────────────────────────────────────────────── */
-
-const TAG = {
-  make: 0x010f,
-  model: 0x0110,
-  orientation: 0x0112,
-  software: 0x0131,
-  dateTime: 0x0132,
-  exifPointer: 0x8769,
-  gpsPointer: 0x8825,
-  dateTimeOriginal: 0x9003,
-} as const;
-
-interface IfdEntry {
-  tag: number;
-  type: number;
-  count: number;
-  valueOffset: number;
 }
 
 /**
- * Reads the TIFF structure EXIF is stored in.
+ * An EXIF timestamp, written as the camera recorded it.
  *
- * Only the handful of tags a reviewer would want are read: what made the image,
- * what edited it, when, and whether it records a location. Coordinates are
- * never read at all — the service has no use for them, so it does not hold them
- * even transiently (data minimisation, ETH-6).
+ * EXIF dates carry no time zone, and exifr hands them back as local-time
+ * `Date`s. Formatting those with `toISOString()` converted them to UTC, so a
+ * photo taken at 9:31 am on 1 September read as 31 August for anyone east of
+ * Greenwich — the same file showing a different date depending on where it was
+ * opened. Found while verifying the Lecturer's point that metadata be read
+ * consistently; the clock the camera wrote is the only honest answer.
  */
-export function readExif(tiff: Uint8Array): ExifSummary | undefined {
-  if (tiff.length < 8) {
-    return undefined;
-  }
+function localStamp(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
 
-  const order = ascii(tiff, 0, 2);
+/* ──────────────────────────────── the pass ──────────────────────────────── */
 
-  if (order !== "II" && order !== "MM") {
-    return undefined;
-  }
-
-  const little = order === "II";
-  const data = view(tiff);
-  const u16 = (at: number) => data.getUint16(at, little);
-  const u32 = (at: number) => data.getUint32(at, little);
-
-  const entriesAt = (ifdOffset: number): IfdEntry[] => {
-    if (ifdOffset <= 0 || ifdOffset + 2 > tiff.length) {
-      return [];
-    }
-
-    const count = Math.min(u16(ifdOffset), 256);
-    const entries: IfdEntry[] = [];
-
-    for (let index = 0; index < count; index += 1) {
-      const at = ifdOffset + 2 + index * 12;
-
-      if (at + 12 > tiff.length) {
-        break;
-      }
-
-      entries.push({ tag: u16(at), type: u16(at + 2), count: u32(at + 4), valueOffset: at + 8 });
-    }
-
-    return entries;
-  };
-
-  const text = (entry: IfdEntry | undefined): string | undefined => {
-    if (!entry || entry.type !== 2 || entry.count === 0) {
-      return undefined;
-    }
-
-    const start = entry.count <= 4 ? entry.valueOffset : u32(entry.valueOffset);
-
-    if (start + entry.count > tiff.length) {
-      return undefined;
-    }
-
-    /* EXIF strings are NUL-terminated; cut at the first terminator. */
-    const raw = ascii(tiff, start, entry.count);
-    const end = raw.indexOf(String.fromCharCode(0));
-    const value = (end >= 0 ? raw.slice(0, end) : raw).trim();
-    return value.length > 0 ? value.slice(0, 80) : undefined;
-  };
-
+/** SHA-256 of the file, so a reader can quote it or match it elsewhere. */
+async function digest(buffer: ArrayBuffer): Promise<string | undefined> {
   try {
-    const ifd0 = entriesAt(u32(4));
-    const find = (entries: IfdEntry[], tag: number) => entries.find((entry) => entry.tag === tag);
-
-    const exifPointer = find(ifd0, TAG.exifPointer);
-    const exifIfd = exifPointer ? entriesAt(u32(exifPointer.valueOffset)) : [];
-
-    const gpsPointer = find(ifd0, TAG.gpsPointer);
-    const gpsIfd = gpsPointer ? entriesAt(u32(gpsPointer.valueOffset)) : [];
-
-    const orientation = find(ifd0, TAG.orientation);
-
-    const summary: ExifSummary = {
-      make: text(find(ifd0, TAG.make)),
-      model: text(find(ifd0, TAG.model)),
-      software: text(find(ifd0, TAG.software)),
-      takenAt: text(find(exifIfd, TAG.dateTimeOriginal)) ?? text(find(ifd0, TAG.dateTime)),
-      orientation: orientation ? u16(orientation.valueOffset) : undefined,
-      /* A GPS directory with a latitude tag in it (tag 2) records a position. */
-      hasLocation: gpsIfd.some((entry) => entry.tag === 2),
-    };
-
-    return Object.values(summary).some((value) => value !== undefined && value !== false)
-      ? summary
-      : undefined;
+    if (typeof crypto === "undefined" || !crypto.subtle) return undefined;
+    const hash = await crypto.subtle.digest("SHA-256", buffer);
+    return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
   } catch {
     return undefined;
   }
 }
 
-/** The TIFF block inside a JPEG (APP1 "Exif") or a PNG (`eXIf` chunk). */
-function exifBlock(bytes: Uint8Array, mime: string): Uint8Array | undefined {
-  const data = view(bytes);
-
-  try {
-    if (mime === "image/jpeg") {
-      let offset = 2;
-
-      while (offset + 4 < bytes.length && bytes[offset] === 0xff) {
-        const marker = bytes[offset + 1]!;
-        const length = data.getUint16(offset + 2);
-
-        if (marker === 0xe1 && ascii(bytes, offset + 4, 6) === "Exif\0\0") {
-          return bytes.subarray(offset + 10, offset + 2 + length);
-        }
-
-        /* Start of scan: image data follows, and no metadata comes after it. */
-        if (marker === 0xda) {
-          return undefined;
-        }
-
-        offset += 2 + length;
-      }
-    }
-
-    if (mime === "image/png") {
-      let offset = 8;
-
-      while (offset + 12 <= bytes.length) {
-        const length = data.getUint32(offset);
-        const chunk = ascii(bytes, offset + 4, 4);
-
-        if (chunk === "eXIf") {
-          return bytes.subarray(offset + 8, offset + 8 + length);
-        }
-
-        if (chunk === "IDAT" || chunk === "IEND") {
-          return undefined;
-        }
-
-        offset += 12 + length;
-      }
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
-}
-
-/** PNG `tEXt` Software, which is where screenshot tools sign their output. */
-function pngSoftware(bytes: Uint8Array): string | undefined {
-  const data = view(bytes);
-  let offset = 8;
-
-  try {
-    while (offset + 12 <= bytes.length) {
-      const length = data.getUint32(offset);
-      const chunk = ascii(bytes, offset + 4, 4);
-
-      if (chunk === "tEXt") {
-        const body = ascii(bytes, offset + 8, Math.min(length, 200));
-        const [keyword, value] = body.split("\0");
-
-        if (keyword === "Software" && value) {
-          return value.slice(0, 80);
-        }
-      }
-
-      if (chunk === "IDAT") {
-        return undefined;
-      }
-
-      offset += 12 + length;
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
-}
-
-async function sha256(file: Blob): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function extensionOf(name: string): string {
-  const match = /\.([a-z0-9]+)$/i.exec(name.trim());
-  return match ? match[1]!.toLowerCase() : "";
-}
-
-/** Everything this module can establish about one file. */
+/** Describes one file. Never throws; an unreadable file returns what is known. */
 export async function readMetadata(file: File): Promise<FileMetadata> {
-  const bytes = new Uint8Array(await file.slice(0, HEADER_BYTES).arrayBuffer());
-  const detected = detectType(bytes);
-
-  const metadata: FileMetadata = {
-    sha256: await sha256(file),
+  const out: FileMetadata = {
+    name: file.name,
+    declaredType: file.type || "not declared",
     sizeBytes: file.size,
-    declaredType: file.type,
-    extension: extensionOf(file.name),
-    detected,
+    lastModified: file.lastModified || undefined,
   };
 
-  if (detected?.family === "image") {
-    Object.assign(metadata, readDimensions(bytes, detected.mime) ?? {});
+  let buffer: ArrayBuffer;
 
-    const block = exifBlock(bytes, detected.mime);
-    const exif = block ? readExif(block) : undefined;
-    const software = detected.mime === "image/png" ? pngSoftware(bytes) : undefined;
-
-    if (exif || software) {
-      metadata.exif = { hasLocation: false, ...exif, software: exif?.software ?? software };
-    }
+  try {
+    buffer = await file.arrayBuffer();
+  } catch {
+    return out;
   }
 
-  return metadata;
+  const bytes = new Uint8Array(buffer);
+  const signature = SIGNATURES.find((candidate) => candidate.test(bytes));
+
+  out.sniffedType = signature?.type;
+  out.sniffedLabel = signature?.label;
+  out.sha256 = await digest(buffer);
+
+  /*
+   * Declared and actual are compared on the family, not the exact type: a JPEG
+   * served as `image/jpg` is a spelling difference, a JPEG served as `image/png`
+   * is a re-save, and an executable named `.jpg` is the thing worth catching.
+   *
+   * The comment always said family; the comparison used to be exact, which
+   * reported every re-saved screenshot as "not the type it claims". Fixed while
+   * addressing the Lecturer's point that metadata be read consistently.
+   */
+  if (signature && file.type) {
+    const declaredFamily = file.type.split("/")[0];
+    const sniffedFamily = signature.type.split("/")[0];
+    out.typeMatches = signature.type === file.type
+      || (signature.family === "image" && declaredFamily === "image" && sniffedFamily === "image")
+      || (signature.family === "archive" && /officedocument|msword|ms-excel|ms-powerpoint|opendocument|zip|android/.test(file.type));
+  }
+
+  if (signature?.type === "image/jpeg") {
+    readJpeg(bytes, out);
+    await readExif(bytes, out);
+  } else if (signature?.type === "image/png") {
+    readPng(bytes, out);
+    await readExif(bytes, out);
+  } else if (signature?.type.startsWith("image/")) {
+    out.format = signature.label;
+    await readExif(bytes, out);
+  }
+
+  return out;
+}
+
+/**
+ * The one thing in this module the rule set is allowed to see.
+ *
+ * Everything else here describes. This judges, because a file whose bytes are
+ * one thing and whose name and declared type are another is not a description,
+ * it is the oldest trick there is.
+ */
+export function fileTypeMismatch(meta: FileMetadata): string | null {
+  if (!meta.sniffedType || meta.typeMatches !== false) {
+    return null;
+  }
+
+  return `The name and type say ${meta.declaredType}, but the file's own bytes are ${meta.sniffedLabel}.`;
 }

@@ -3,12 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Lock, RefreshCw, Sparkles, WifiOff } from "lucide-react";
 import { requestImageAnalysis, requestTextAnalysis } from "@/lib/ai/api";
 import { toStrippedDataUrl } from "@/lib/ai/image";
+import { signatureOf } from "@/lib/scam/metadata";
 import type { AiImageAnalysis, AiResult, AiTextAnalysis } from "@/lib/ai/types";
 import type { Analysis, Submission } from "@/lib/scam/types";
 import { ApiError } from "@/lib/api/client";
 import { AiTextResult } from "@/components/ai/AiTextResult";
 import { AiImageResult } from "@/components/ai/AiImageResult";
 import { useAiStatus } from "@/components/ai/useAiStatus";
+import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
 /** Images sent per check. Each is a paid vision call; two covers a conversation screenshot pair. */
 const MAX_IMAGES = 2;
@@ -55,7 +57,7 @@ export function AiSecondOpinion({
     .join("\n\n");
 
   const imageFiles = files
-    .filter((_, index) => submission.media?.[index]?.metadata?.detected?.family === "image")
+    .filter((_, index) => signatureOf(submission.media?.[index]?.metadata)?.family === "image")
     .slice(0, MAX_IMAGES);
 
   const canAnalyseText = corpus.length >= 12;
@@ -119,21 +121,20 @@ export function AiSecondOpinion({
   const unavailable = status !== null && !status.available;
 
   return (
-    <section
-      aria-labelledby="ai-second-opinion-title"
-      className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.06] via-transparent to-cyan-500/[0.06] p-4 sm:p-5 dark:border-cyan-400/20"
+    <SettingsGroup
+      title={<span id="ai-second-opinion-title">AI second opinion</span>}
+      footer="Optional. The rule-based result above stands on its own; the AI is a second reader you can choose to ask."
     >
+    <section aria-labelledby="ai-second-opinion-title" className="relative p-4">
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-cyan-500 text-white shadow-md shadow-indigo-600/20">
           <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 id="ai-second-opinion-title" className="text-sm font-semibold text-slate-900 dark:text-white">
-            AI second opinion
-          </h3>
-          <p className="mt-0.5 text-caption text-slate-600 dark:text-slate-400">
-            A second reader, powered by OpenAI, that looks for manipulation tactics and emotional pressure
-            {imageFiles.length > 0 ? " and examines your screenshots" : ""}.
+          <p className="text-[0.9375rem] font-semibold text-ui-label">Powered by OpenAI</p>
+          <p className="mt-0.5 text-[0.8125rem] leading-snug text-ui-label-2">
+            Looks for manipulation tactics and emotional pressure
+            {imageFiles.length > 0 ? ", and examines your screenshots" : ""}.
           </p>
         </div>
       </div>
@@ -201,7 +202,7 @@ export function AiSecondOpinion({
 
             {images.length > 0 ? (
               <div className="flex flex-col gap-2.5">
-                <h4 className="text-caption font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                <h4 className="text-[0.8125rem] font-semibold text-ui-label-2">
                   What the AI sees in your screenshots
                 </h4>
                 {images.map((outcome) =>
@@ -241,5 +242,6 @@ export function AiSecondOpinion({
         ) : null}
       </AnimatePresence>
     </section>
+    </SettingsGroup>
   );
 }

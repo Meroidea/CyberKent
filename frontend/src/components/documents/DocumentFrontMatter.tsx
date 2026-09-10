@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Calendar, Check, Clock, FileText, Hash } from "lucide-react";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { SITE } from "@/config/site";
 import type { DocumentStatus, ProjectDocument } from "@/content/documents";
 import { cn } from "@/lib/cn";
@@ -65,11 +66,14 @@ export function DocumentFrontMatter({ document: doc, subtitle, minutes }: Docume
       <p className="mx-auto mt-4 max-w-xl text-lede text-slate-600 dark:text-slate-400">{subtitle}</p>
 
       <div className="mt-7 flex items-center justify-center gap-3">
+        {/* The mark rather than the initials it used to stand in for: a
+            document carries the identity of the group that issued it, and
+            "CK" was only ever a placeholder for a mark that did not exist. */}
         <span
           aria-hidden="true"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-cyan-500 text-[0.6875rem] font-bold text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/90 bg-white/70 dark:border-white/10 dark:bg-white/5"
         >
-          CK
+          <LogoMark className="h-[1.3rem] w-auto" glint={false} />
         </span>
         <span className="text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-slate-900 dark:text-white">
           Group CyberKent

@@ -25,8 +25,76 @@
     --ring: 243 75% 59%;
     --radius: 0.5rem;
 
+    /*
+     * The grouped-list surface.
+     *
+     * A second, quieter palette for everything behind the landing page: the
+     * portal, the checker's report, the reading lists. Those screens are
+     * settings and records rather than a pitch, and the marketing palette —
+     * glass over a moving backdrop — makes a form harder to fill in and a
+     * verdict harder to trust.
+     *
+     * The values are Apple's grouped-table system colours, because that is the
+     * idiom being borrowed and approximating it by eye is what makes a
+     * lookalike look like one. Two exceptions, both deliberate: `--ui-tint` is
+     * the CyberKent accent rather than system blue, so the interface stays this
+     * service's; and the dark card sits at #111 to match the surfaces the rest
+     * of the site already uses rather than Apple's #1C1C1E.
+     */
+    --ui-grouped: #f2f2f7;
+    --ui-card: #ffffff;
+    --ui-card-hover: #f7f7fa;
+    --ui-separator: rgba(60, 60, 67, 0.18);
+    --ui-label: #111113;
+    --ui-label-2: rgba(60, 60, 67, 0.62);
+    --ui-label-3: rgba(60, 60, 67, 0.4);
+    --ui-fill: rgba(118, 118, 128, 0.12);
+    --ui-fill-strong: rgba(118, 118, 128, 0.2);
+    --ui-tint: #4f46e5;
+    --ui-sidebar: rgba(255, 255, 255, 0.72);
+    --ui-selected: rgba(118, 118, 128, 0.14);
+
     /* Hover fill for the decorative background grid. */
     --tile: rgba(99, 102, 241, 0.15);
+
+    /*
+     * The logo mark's shading, upper blade then lower.
+     *
+     * Tokens rather than literals inside the SVG, because the mark is drawn
+     * once and rendered against every surface the site has — a white header,
+     * a glass panel, a near-black page — and only the theme knows which part
+     * of the accent ramp keeps it lit. `mid` is the mark's stated colour and
+     * is the same cyan-500 and indigo-600 the accent gradient uses, so the
+     * mark and the wordmark beside it are demonstrably the same two colours
+     * rather than approximately so; the rest of each ramp is that colour lit
+     * and shaded, never a different hue.
+     *
+     * `light` is the face turned toward the key light, `deep` the face turned
+     * away and the occlusion in the curl, and the `facet` pair the ribbon's
+     * reverse side where the blade folds over. The key light is above, so the
+     * lower blade's fold catches it and the upper blade's is in shadow — the
+     * two facet pairs are opposite on purpose, and swapping them would light
+     * the mark from two places at once.
+     */
+    --mark-upper-light: #67e8f9;
+    --mark-upper-mid: #06b6d4;
+    --mark-upper-deep: #0e7490;
+    --mark-upper-facet-from: #1b6b83;
+    --mark-upper-facet-to: #0d4a5c;
+    --mark-upper-crease: #0b3f4e;
+    --mark-upper-crease-opacity: 0.5;
+
+    --mark-lower-light: #818cf8;
+    --mark-lower-mid: #4f46e5;
+    --mark-lower-deep: #3730a3;
+    --mark-lower-facet-from: #c7d2fe;
+    --mark-lower-facet-to: #8f9cf9;
+    --mark-lower-crease: #eef2ff;
+    --mark-lower-crease-opacity: 0.85;
+
+    /* A real cast shadow: the page is white and the mark sits on it. */
+    --mark-cast: #1e293b;
+    --mark-cast-opacity: 0.32;
   }
 
   .dark {
@@ -48,7 +116,48 @@
     --input: 0 0% 100% / 0.14;
     --ring: 187 92% 60%;
 
+    --ui-grouped: #0a0a0a;
+    --ui-card: #141416;
+    --ui-card-hover: #1b1b1e;
+    --ui-separator: rgba(84, 84, 88, 0.55);
+    --ui-label: #ffffff;
+    --ui-label-2: rgba(235, 235, 245, 0.58);
+    --ui-label-3: rgba(235, 235, 245, 0.36);
+    --ui-fill: rgba(118, 118, 128, 0.24);
+    --ui-fill-strong: rgba(118, 118, 128, 0.36);
+    --ui-tint: #22d3ee;
+    --ui-sidebar: rgba(22, 22, 24, 0.72);
+    --ui-selected: rgba(118, 118, 128, 0.28);
+
     --tile: rgba(6, 182, 212, 0.12);
+
+    /* The same ramp lifted a step: over near-black the light values read as
+       two dark silhouettes rather than as a mark. */
+    --mark-upper-light: #a5f3fc;
+    --mark-upper-mid: #22d3ee;
+    --mark-upper-deep: #0e7490;
+    --mark-upper-facet-from: #1b6b83;
+    --mark-upper-facet-to: #0d4a5c;
+    --mark-upper-crease: #0b3f4e;
+    --mark-upper-crease-opacity: 0.55;
+
+    --mark-lower-light: #a5b4fc;
+    --mark-lower-mid: #6366f1;
+    --mark-lower-deep: #3730a3;
+    --mark-lower-facet-from: #dbe1ff;
+    --mark-lower-facet-to: #a5b4fc;
+    --mark-lower-crease: #eef2ff;
+    --mark-lower-crease-opacity: 0.9;
+
+    /*
+     * A cast shadow over #0A0A0A is a shadow no one can see, so the mark would
+     * sit flat on the page with its own modelling and nothing under it. What
+     * the eye reads as contact on a dark surface is bounced light, not
+     * darkness — so the same filter carries a faint bloom of the mark's own
+     * indigo instead, at the offset the shadow would have had.
+     */
+    --mark-cast: #4338ca;
+    --mark-cast-opacity: 0.5;
   }
 
   * {
@@ -511,6 +620,112 @@
   100% {
     --sf-fill: 1;
     --sf-edge: 0;
+  }
+}
+
+/*
+ * The mark's ambient sweep.
+ *
+ * A band of light travelling across both blades, clipped to them, once every
+ * eight seconds — the same ambient register as the wordmark's shine, so the
+ * two read as one lockup catching the light rather than as two things
+ * animating near each other.
+ *
+ * The band idles off the left of the drawing and spends most of the cycle
+ * there, which is what makes it a glint rather than a strobe. Its resting
+ * position is off-shape too, so a browser that never runs the animation —
+ * reduced motion collapses the duration and stops after one pass — is left
+ * with a mark and no band rather than a band frozen across it.
+ */
+@keyframes mark-glint {
+  0%,
+  58% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(142px);
+  }
+}
+
+/*
+ * The mark assembling.
+ *
+ * The two blades arrive from opposite sides of the diagonal they are stacked
+ * on and counter-rotate into place, so what the eye sees resolve is the
+ * interlock — the one idea the drawing carries. A single rotation applied to
+ * both would be a rigid turn of the whole mark: the halves are the same path a
+ * half turn apart, so they would never appear to move relative to each other,
+ * and the gesture would say nothing about what the mark is.
+ *
+ * The upper blade is held back a moment. Two halves landing together read as
+ * one shape fading in; landing in sequence reads as one being brought to the
+ * other.
+ */
+@keyframes mark-blade-in-lower {
+  from {
+    opacity: 0;
+    transform: translate(-7px, 9px) rotate(11deg);
+  }
+}
+
+@keyframes mark-blade-in-upper {
+  from {
+    opacity: 0;
+    transform: translate(7px, -9px) rotate(-11deg);
+  }
+}
+
+@layer components {
+  .mark-glint {
+    animation: mark-glint 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /*
+   * The mark under a pointer.
+   *
+   * A shaded object should answer a pointer the way an object would, so the
+   * whole mark takes a small turn about its vertical axis and the two blades
+   * ease apart along the diagonal they are stacked on — the gesture the mark
+   * is built from, played once. `transform-box: view-box` is what puts the
+   * origin at the centre of rotation: without it the percentages resolve
+   * against each blade's own bounding box, and the two halves pivot about
+   * different points. The view box is padded symmetrically about the drawing
+   * for exactly this reason — its centre and the mark's are the same point.
+   */
+  .logo-mark {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .logo-mark__blade {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* `backwards`, never `forwards`: the delay on the upper blade needs the
+     opening state held before it starts, but a filled end state would outrank
+     the hover rule in the cascade and leave the mark unable to answer a
+     pointer for the rest of the session. */
+  .logo-mark__blade--lower {
+    animation: mark-blade-in-lower 820ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .logo-mark__blade--upper {
+    animation: mark-blade-in-upper 820ms cubic-bezier(0.22, 1, 0.36, 1) 110ms backwards;
+  }
+
+  .group:hover .logo-mark {
+    transform: perspective(240px) rotateY(-18deg) rotateX(4deg);
+  }
+
+  .group:hover .logo-mark__blade--lower {
+    transform: translate(-1.4px, 1.4px) rotate(-2.5deg);
+  }
+
+  .group:hover .logo-mark__blade--upper {
+    transform: translate(1.4px, -1.4px) rotate(-2.5deg);
   }
 }
 

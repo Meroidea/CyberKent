@@ -212,11 +212,34 @@ export function analyse({ text, channel, media = [] }: Submission): Analysis {
   const { links, indicators: linkIndicators } = analyseLinks(extracted.urls);
 
   if (corpus.length < MINIMUM_USEFUL_LENGTH && fileIndicators.length === 0 && linkIndicators.length === 0) {
+    /*
+     * Nothing scored — but that is not the same as nothing examined.
+     *
+     * The copy used to tell every reader to "paste the full message", which is
+     * the wrong sentence to show someone who attached an image and had it read
+     * end to end. An image that raises no indicator is the ordinary case: most
+     * pictures are neither generated nor doctored, and a checker that could
+     * only speak when it had bad news would be silent on almost every genuine
+     * submission. So where files were examined the verdict says what was
+     * looked at and points at the detail, and only a genuinely empty
+     * submission is told to paste more.
+     */
+    const examinedFiles = media.filter((file) => file.metadata || file.provenance || file.edits);
+
     return {
       score: 0,
       band: "unclear",
       confidence: 0,
-      ...BAND_COPY.unclear,
+      ...(examinedFiles.length > 0
+        ? {
+            headline: "Nothing here scores as a scam",
+            summary: `${
+              examinedFiles.length === 1 ? "The file was" : "The files were"
+            } examined and no scam indicator was raised — no signed declaration of AI generation, no sign of editing, and nothing in the wording. That is the ordinary result for an ordinary picture, and it is not a guarantee: a careful fake trips none of these checks either. Everything read from ${
+              examinedFiles.length === 1 ? "the file" : "each file"
+            } is set out below. If a message came with it, paste that too — the wording is where most scams give themselves away.`,
+          }
+        : BAND_COPY.unclear),
       indicators: [],
       links,
       extracted,
@@ -270,8 +293,8 @@ function describeSources(typed: string, media: MediaDescriptor[]): ExaminedSourc
   for (const file of media) {
     const read = file.extractedText?.trim() ?? "";
     const qr = file.qrCodes?.length ? ` A QR code was decoded and its destination checked as a link.` : "";
-    const detected = file.metadata?.detected;
-    const identity = detected ? ` Content identified from its bytes as a ${detected.label}.` : "";
+    const detected = file.metadata?.sniffedLabel;
+    const identity = detected ? ` Content identified from its bytes as ${detected}.` : "";
 
     if (read.length > 0) {
       sources.push({
@@ -279,16 +302,64 @@ function describeSources(typed: string, media: MediaDescriptor[]): ExaminedSourc
         status: "read",
         detail: `${read.length} characters of text read from this ${file.kind} and checked.${identity}${qr}`,
       });
-      continue;
+    } else {
+      sources.push({
+        label: file.name,
+        status: "not-read",
+        detail: `${
+          file.unreadable ?? `The contents of this ${file.kind} were not examined — only its name and type were.`
+        }${identity}${qr}`,
+      });
     }
 
-    sources.push({
-      label: file.name,
-      status: "not-read",
-      detail: `${
-        file.unreadable ?? `The contents of this ${file.kind} were not examined — only its name and type were.`
-      }${identity}${qr}`,
-    });
+    /*
+     * The origin passes are listed separately from the text pass because they
+     * answer a different question and can succeed where it failed — a photo
+     * with no readable text still has metadata worth reporting.
+     *
+     * Provenance always counts as read, including when it finds nothing: it
+     * looked, and "no credentials" is its answer rather than its failure. The
+     * classifier counts as not-read when it could not run, so a report whose
+     * image check never happened says so and carries the confidence penalty
+     * for it rather than passing the image off as cleared.
+     */
+    if (file.provenance) {
+      sources.push({
+        label: `${file.name} — origin metadata`,
+        status: "read",
+        detail: file.provenance.detail,
+      });
+    }
+
+    if (file.synthetic?.unavailable) {
+      sources.push({
+        label: `${file.name} — AI-image check`,
+        status: "not-read",
+        detail: file.synthetic.unavailable,
+      });
+    } else if (file.synthetic) {
+      sources.push({
+        label: `${file.name} — AI-image check`,
+        status: "read",
+        detail: `Assessed on this device at ${Math.round(file.synthetic.probability * 100)}% likely to be AI-generated.`,
+      });
+    }
+
+    if (file.edits?.unavailable) {
+      sources.push({
+        label: `${file.name} — edit check`,
+        status: "not-read",
+        detail: file.edits.unavailable,
+      });
+    } else if (file.edits) {
+      sources.push({
+        label: `${file.name} — edit check`,
+        status: "read",
+        detail: file.edits.findings.length
+          ? `${file.edits.examined ?? "The file"} examined; ${file.edits.findings.length} sign${file.edits.findings.length === 1 ? "" : "s"} of alteration found.`
+          : `${file.edits.examined ?? "The file"} examined; nothing indicating the image was altered. That is not the same as confirming it was not.`,
+      });
+    }
   }
 
   return sources;

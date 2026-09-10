@@ -5,6 +5,7 @@ import { PRIMARY_NAV, ROUTES } from "@/config/site";
 import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import type { NavDropdownItem } from "@/components/layout/NavDropdown";
 import { ActionLink } from "@/components/ui/ActionLink";
+import { MotionNavLink } from "@/components/layout/navMotion";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { springSnappy, springSoft } from "@/lib/motion";
 import { holdScroll } from "@/lib/smoothScroll";
@@ -111,20 +112,29 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             </motion.div>
 
             <nav className="mt-6 flex flex-col gap-1">
-              {PRIMARY_NAV.map((link) => (
-                <motion.a
-                  key={link.href}
-                  variants={rowVariants}
-                  href={link.href}
-                  onClick={onClose}
-                  whileHover={{ x: 6 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={springSnappy}
-                  className="rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
-                >
-                  {link.label}
-                </motion.a>
-              ))}
+              {PRIMARY_NAV.map((link) => {
+                /* As in the bar: a hash stays an anchor, a route goes through
+                   the router so the sheet closes onto a rendered page rather
+                   than onto a reload. */
+                const inPage = link.href.startsWith("#");
+
+                const shared = {
+                  variants: rowVariants,
+                  onClick: onClose,
+                  whileHover: { x: 6 },
+                  whileTap: { scale: 0.98 },
+                  transition: springSnappy,
+                  className:
+                    "rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300",
+                  children: link.label,
+                };
+
+                return inPage ? (
+                  <motion.a key={link.href} href={link.href} {...shared} />
+                ) : (
+                  <MotionNavLink key={link.href} to={link.href} {...shared} />
+                );
+              })}
 
               {MENUS.map((menu) => {
                 const isOpen = expanded === menu.label;

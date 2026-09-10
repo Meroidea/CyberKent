@@ -1,6 +1,8 @@
 import { type ReactElement } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Ban, Check, CheckCircle2, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ArrowRight, Ban, Check, CheckCircle2, TriangleAlert } from "lucide-react";
+import { MarkBody } from "@/components/brand/MarkBody";
+import { MARK_HEIGHT, MARK_WIDTH } from "@/components/brand/markGeometry";
 import {
   ARCHITECTURE,
   BUDGET,
@@ -45,13 +47,17 @@ import { cn } from "@/lib/cn";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** The mark's height inside the cover emblem, as a multiple of its own box. */
+const DECK_MARK_SCALE = 0.62;
+
 /* ── 1 · Cover ────────────────────────────────────────────────────────────── */
 
 /**
  * The emblem is the scanner's globe reduced to two dimensions: concentric rings
- * with one sweeping arm and four contacts on them, so the mark reads as a thing
- * that *looks* rather than a badge that certifies — the distinction ETH-1 spends
- * the rest of the document defending.
+ * with one sweeping arm and four contacts on them, so it reads as a thing that
+ * *looks* rather than a badge that certifies — the distinction ETH-1 spends the
+ * rest of the document defending. The brand mark sits at its centre, which is
+ * what makes the drawing this project's rather than any scanner's.
  */
 function CoverSlide() {
   return (
@@ -153,15 +159,14 @@ function CoverSlide() {
               className="origin-center motion-safe:animate-[hud-spin-reverse_14s_linear_infinite]"
             />
             <circle cx="150" cy="150" r="46" fill="url(#deck-emblem)" fillOpacity="0.12" />
-            <g transform="translate(150 150)">
-              <ShieldCheck
-                x="-28"
-                y="-28"
-                width="56"
-                height="56"
-                className="text-indigo-600 dark:text-cyan-400"
-                strokeWidth={1.3}
-              />
+            {/* The mark at the centre of the rings — the thing the scanner is
+                looking on behalf of. It replaced a generic shield: a badge that
+                certifies is exactly the claim ETH-1 spends the document
+                refusing to make. Shaded rather than flat, because the slide is
+                the one place the mark is seen large enough for the modelling to
+                be the point. Scaled to 62 units tall in a 92-unit well. */}
+            <g transform={`translate(${150 - (MARK_WIDTH * DECK_MARK_SCALE) / 2} ${150 - (MARK_HEIGHT * DECK_MARK_SCALE) / 2}) scale(${DECK_MARK_SCALE})`}>
+              <MarkBody uid="deck-mark" />
             </g>
             {[
               [246, 108],

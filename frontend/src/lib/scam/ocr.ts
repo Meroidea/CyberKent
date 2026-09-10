@@ -1,6 +1,10 @@
 import type { MediaDescriptor } from "@/lib/scam/types";
 import { kindOf } from "@/lib/scam/media";
-import { readMetadata, type FileMetadata } from "@/lib/scam/metadata";
+import { readProvenance } from "@/lib/scam/provenance";
+import { readSynthetic } from "@/lib/scam/synthetic";
+import { readEdits } from "@/lib/scam/forensics";
+import { readMetadata, signatureOf } from "@/lib/scam/metadata";
+import type { FileMetadata } from "@/lib/scam/types";
 
 /**
  * Reading an uploaded image, in the browser: its metadata, its text and any QR
@@ -152,7 +156,10 @@ async function readQrCodes(pixels: ImageData): Promise<string[]> {
 
 /** Reads one image. Never throws: a failure is a reported gap, not an error. */
 async function readImage(file: File, metadata: FileMetadata, worker: () => Promise<Recogniser>): Promise<ReadResult> {
-  const cached = readCache.get(metadata.sha256);
+  /* The digest where the browser could compute one; otherwise name and size,
+     which is weaker but still stable for the visit. */
+  const key = metadata.sha256 ?? `${file.name}:${file.size}:${file.lastModified}`;
+  const cached = readCache.get(key);
 
   if (cached) {
     return cached;
@@ -163,11 +170,11 @@ async function readImage(file: File, metadata: FileMetadata, worker: () => Promi
   if (!drawn) {
     const result: ReadResult = {
       unreadable:
-        metadata.detected?.mime === "image/heic"
+        metadata.sniffedType === "image/heic"
           ? "HEIC photos cannot be decoded in this browser. Take a screenshot of it (PNG) and attach that instead."
           : "This image could not be decoded on this device.",
     };
-    readCache.set(metadata.sha256, result);
+    readCache.set(key, result);
     return result;
   }
 
@@ -193,7 +200,7 @@ async function readImage(file: File, metadata: FileMetadata, worker: () => Promi
     result = { unreadable: "This image could not be read on this device.", qrCodes };
   }
 
-  readCache.set(metadata.sha256, result);
+  readCache.set(key, result);
   return result;
 }
 
@@ -228,15 +235,39 @@ export async function describeFiles(
     for (const [index, file] of files.entries()) {
       onProgress?.(index, file.name);
 
+      /*
+       * Read for every file, image or not. It is the one pass that always has
+       * something to say, and a submission that produced no verdict must still
+       * come back having described what it was handed. Its signature — not the
+       * name — then decides what kind of file this is.
+       */
       const metadata = await readMetadata(file);
-      const kind = kindOf(file.type, file.name, metadata.detected);
+      const signature = signatureOf(metadata);
+      const kind = kindOf(file.type, file.name, signature);
       const base = { name: file.name, size: file.size, type: file.type, kind, metadata };
 
       /* SVG is an image to the eye and a document to the checker: it is not
          rasterised, because rendering it is what would run anything inside. */
-      if (kind === "image" && metadata.detected?.family === "image") {
+      if (kind === "image" && signature?.family !== "web") {
+        /*
+         * Four passes over the same image, cheapest and most certain first.
+         * Provenance is metadata and costs nothing; the forensic pass reads the
+         * file's own structure and one canvas re-encode; the classifier is a
+         * model and costs a download; OCR is the one that feeds the existing
+         * rule set, and decodes any QR code on the way. None of them can fail
+         * the others — each returns its own gap.
+         *
+         * They answer three different questions, and keeping them apart is the
+         * point: where did this come from, has it been altered since, and what
+         * does it say. An image can be a real photograph, edited, and carrying
+         * a scam, and a reader is entitled to see all three answers separately.
+         */
+        const provenance = await readProvenance(file);
+        const edits = await readEdits(file);
+        const synthetic = await readSynthetic(file);
         const { text, unreadable, qrCodes } = await readImage(file, metadata, worker);
-        described.push({ ...base, extractedText: text, unreadable, qrCodes });
+
+        described.push({ ...base, extractedText: text, unreadable, qrCodes, provenance, synthetic, edits });
         continue;
       }
 

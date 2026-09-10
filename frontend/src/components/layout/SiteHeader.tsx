@@ -8,7 +8,7 @@ import { NavDropdown } from "@/components/layout/NavDropdown";
 import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { RollingText } from "@/components/ui/RollingText";
-import { UNDERLINE } from "@/components/layout/navMotion";
+import { MotionNavLink, UNDERLINE } from "@/components/layout/navMotion";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { useScrollThreshold } from "@/hooks/useScrollThreshold";
 import { springSnappy } from "@/lib/motion";
@@ -48,30 +48,44 @@ export function SiteHeader() {
             aria-label="Primary"
             className="hidden items-center gap-1 lg:flex"
           >
-            {PRIMARY_NAV.map((link) => (
-              <motion.a
-                key={link.href}
-                href={link.href}
-                initial="rest"
-                animate="rest"
-                whileHover="hover"
-                whileFocus="hover"
-                className="relative px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-cyan-300"
-              >
-                <RollingText text={link.label} />
+            {PRIMARY_NAV.map((link) => {
+              /* An anchor for an in-page hash, a router link for a route.
+                 Told apart by the leading `#` rather than by a flag on the
+                 config, because that is already what the href says. */
+              const inPage = link.href.startsWith("#");
 
-                {/* Sweeps out from the centre under the word it belongs to,
-                    rather than the shared pill that used to slide between
-                    links — the underline commits to one item, which is what a
-                    pointer travelling along a row of them needs it to do. */}
-                <motion.span
-                  aria-hidden="true"
-                  variants={UNDERLINE}
-                  transition={springSnappy}
-                  className="absolute inset-x-3 -bottom-0.5 h-[2px] origin-center rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 dark:from-indigo-400 dark:to-cyan-400"
-                />
-              </motion.a>
-            ))}
+              const shared = {
+                initial: "rest",
+                animate: "rest",
+                whileHover: "hover",
+                whileFocus: "hover",
+                className:
+                  "relative px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-cyan-300",
+                children: (
+                  <>
+                    <RollingText text={link.label} />
+
+                    {/* Sweeps out from the centre under the word it belongs
+                        to, rather than the shared pill that used to slide
+                        between links — the underline commits to one item,
+                        which is what a pointer travelling along a row of them
+                        needs it to do. */}
+                    <motion.span
+                      aria-hidden="true"
+                      variants={UNDERLINE}
+                      transition={springSnappy}
+                      className="absolute inset-x-3 -bottom-0.5 h-[2px] origin-center rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 dark:from-indigo-400 dark:to-cyan-400"
+                    />
+                  </>
+                ),
+              };
+
+              return inPage ? (
+                <motion.a key={link.href} href={link.href} {...shared} />
+              ) : (
+                <MotionNavLink key={link.href} to={link.href} {...shared} />
+              );
+            })}
 
             <NavDropdown label="Documents" items={DOCUMENT_MENU} />
             <NavDropdown label="Services" items={SERVICE_MENU} />

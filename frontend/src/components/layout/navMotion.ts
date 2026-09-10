@@ -1,4 +1,17 @@
+import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { Link } from "react-router-dom";
+
+/**
+ * A router link that framer can animate, built once at module scope.
+ *
+ * The primary nav is mostly in-page anchors, but `Home` is a route — and a
+ * plain `<a href="/">` there would reload the document, which on this site
+ * means sitting through the 3.4-second boot sequence again to reach a page
+ * that was one render away. Both the bar and the mobile sheet need it, so it
+ * is created here rather than twice.
+ */
+export const MotionNavLink = motion(Link);
 
 /**
  * The underline shared by every item in the bar.
