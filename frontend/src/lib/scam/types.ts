@@ -1,3 +1,6 @@
+import type { FileMetadata } from "@/lib/scam/metadata";
+import type { ParsedLink } from "@/lib/scam/links";
+
 /**
  * Shared vocabulary for scam analysis.
  *
@@ -29,6 +32,12 @@ export interface Indicator {
   detail: string;
   weight: IndicatorWeight;
   evidence?: string;
+  /**
+   * Conclusive on its own — a program disguised as a photo is not "one warning
+   * sign among several". A decisive finding puts the score in the high band
+   * however few other indicators accompany it.
+   */
+  decisive?: boolean;
 }
 
 /** The broad kinds of attachment a submission can carry. */
@@ -50,6 +59,13 @@ export interface MediaDescriptor {
   kind: MediaKind;
   extractedText?: string;
   unreadable?: string;
+  /**
+   * What the file's own bytes say it is — signature, dimensions, camera data
+   * and a content hash. Read from the file rather than taken from its name.
+   */
+  metadata?: FileMetadata;
+  /** Destinations of any QR codes found in an image, judged as links. */
+  qrCodes?: string[];
 }
 
 /** FR13, FR14, FR19, FR22, FR23 — everything a submission can carry. */
@@ -82,6 +98,12 @@ export interface Analysis {
   headline: string;
   summary: string;
   indicators: Indicator[];
+  /**
+   * Every link, taken apart — scheme, real registered domain, path. Shown to
+   * the reader so they can see where a link actually goes, not only whether it
+   * was flagged.
+   */
+  links: ParsedLink[];
   /** Anything extracted that is worth showing back: URLs, numbers, addresses. */
   extracted: {
     urls: string[];

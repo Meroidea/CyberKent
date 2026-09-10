@@ -1,3 +1,4 @@
+import type { DetectedType } from "@/lib/scam/metadata";
 import type { Indicator, MediaDescriptor, MediaKind } from "@/lib/scam/types";
 
 /**
@@ -43,8 +44,23 @@ export function extensionOf(name: string): string {
   return match ? match[1]!.toLowerCase() : "";
 }
 
-/** Which of the four broad kinds a file falls into. */
-export function kindOf(type: string, name: string): MediaKind {
+/**
+ * Which of the four broad kinds a file falls into.
+ *
+ * `detected` — what the file's bytes say — wins over both the declared type and
+ * the name whenever it is available. That is what makes the answer consistent:
+ * the same screenshot is an image whether it is called `sms.png`, `sms.pdf` or
+ * nothing at all, and whether or not the browser supplied a type for it.
+ */
+export function kindOf(type: string, name: string, detected?: DetectedType | null): MediaKind {
+  if (detected) {
+    if (detected.family === "image" || detected.family === "audio" || detected.family === "video") {
+      return detected.family;
+    }
+
+    return "document";
+  }
+
   const extension = extensionOf(name);
 
   if (type.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp", "bmp", "heic"].includes(extension)) {
@@ -74,6 +90,99 @@ function familyOf(type: string): string {
   return type.split("/")[0] ?? "";
 }
 
+/** Extensions that claim a harmless kind of file. */
+const HARMLESS_CLAIMS = ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp", "pdf", "txt", "mp3", "wav", "m4a", "mp4", "mov", "doc", "docx", "xls", "xlsx"];
+
+/**
+ * Rules that compare what a file *is* with what it is *called*.
+ *
+ * These are the rules the name-based checks could never be: a program renamed
+ * `receipt.jpg` has a harmless name and a harmless declared type, and only its
+ * first two bytes ("MZ") give it away.
+ */
+function contentRules(file: MediaDescriptor, extension: string): Indicator[] {
+  const detected = file.metadata?.detected ?? null;
+  const found: Indicator[] = [];
+  const add = (id: string, label: string, detail: string, weight: Indicator["weight"], decisive = false) =>
+    found.push({ id: `file-${id}-${file.name}`, label, detail, weight, decisive, evidence: `${file.name} → ${detected?.label ?? "unrecognised content"}` });
+
+  if (!detected) {
+    if (["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp"].includes(extension)) {
+      add(
+        "not-an-image",
+        "Named as an image, but is not one",
+        "The file's contents do not begin the way any image format does. Something has been given a picture's name.",
+        "medium",
+      );
+    }
+
+    return found;
+  }
+
+  const claimedByName = extension.length > 0 && !detected.extensions.includes(extension);
+
+  if (detected.family === "executable" && !EXECUTABLE_EXTENSIONS.includes(extension)) {
+    add(
+      "disguised-program",
+      "A program disguised as another kind of file",
+      `The name says ".${extension || "(none)"}", but the contents are a ${detected.label}. Opening it would run it.`,
+      "high",
+      true,
+    );
+  }
+
+  if (detected.mime === "text/html") {
+    add(
+      "html",
+      "Attachment is a web page",
+      "An HTML attachment opens a page on your own device, outside any warning your email provider shows. It is a common way of delivering a fake sign-in form.",
+      "high",
+    );
+  }
+
+  if (detected.mime === "image/svg+xml") {
+    add(
+      "svg",
+      "Image format that can carry code",
+      "SVG images can contain scripts and links. A genuine screenshot or photo is not sent in this format.",
+      "medium",
+    );
+  }
+
+  if (detected.family === "archive" && claimedByName && HARMLESS_CLAIMS.includes(extension)) {
+    add(
+      "disguised-archive",
+      "An archive disguised as a document or image",
+      `The name says ".${extension}", but the contents are a ${detected.label}, which can hold anything.`,
+      "high",
+    );
+  }
+
+  /*
+   * Everything else that disagrees across families — a PDF named `.jpg`, audio
+   * named `.pdf`. A PNG saved as `.jpg` is a re-save, not a disguise, so a
+   * disagreement inside the same family is deliberately not reported.
+   */
+  const namedKind = kindOf("", file.name);
+  const detectedKind = kindOf("", "", detected);
+
+  if (
+    claimedByName &&
+    found.length === 0 &&
+    detected.family !== "archive" &&
+    namedKind !== detectedKind
+  ) {
+    add(
+      "content-mismatch",
+      "Contents do not match the file name",
+      `Named as a ${namedKind} file, but the contents are a ${detected.label}.`,
+      "medium",
+    );
+  }
+
+  return found;
+}
+
 /** FR21 by analogy — the same evidence-first treatment, applied to files. */
 export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
   const indicators: Indicator[] = [];
@@ -89,6 +198,7 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
           "The name contains a character that reverses how the rest of it is displayed, so what you see is not what the file is. This is only ever done deliberately.",
         weight: "high",
         evidence: file.name.replace(BIDI_OVERRIDE, "␣"),
+        decisive: true,
       });
     }
 
@@ -141,7 +251,10 @@ export function analyseMedia(media: MediaDescriptor[]): Indicator[] {
       });
     }
 
-    if (file.type && extension) {
+    if (file.metadata) {
+      indicators.push(...contentRules(file, extension));
+    } else if (file.type && extension) {
+      /* Without the bytes, the declared type is the only second opinion. */
       const declared = familyOf(file.type);
       const named = kindOf("", file.name);
       const namedFamily = named === "document" ? "application" : named;

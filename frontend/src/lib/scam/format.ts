@@ -142,8 +142,14 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
 
   const extracted: string[] = [];
 
-  if (analysis.extracted.urls.length > 0) {
-    extracted.push(`  Links            ${analysis.extracted.urls.join("\n                   ")}`);
+  /* Links go out defanged and with the domain that owns them, so a copy of the
+     report pasted into an email cannot turn back into something clickable. */
+  if (analysis.links.length > 0) {
+    extracted.push(
+      `  Links            ${analysis.links
+        .map((link) => `${link.defanged}\n                     registered to ${link.registrableDomain}`)
+        .join("\n                   ")}`,
+    );
   }
 
   if (analysis.extracted.emails.length > 0) {
@@ -156,6 +162,22 @@ export function formatReport({ analysis, submission, generatedAt }: ReportInput)
 
   if (extracted.length > 0) {
     sections.push(["PULLED OUT OF THE MESSAGE", "", ...extracted].join("\n"));
+  }
+
+  const files = (submission.media ?? []).filter((file) => file.metadata);
+
+  if (files.length > 0) {
+    sections.push(
+      [
+        "ATTACHMENTS, AS READ FROM THEIR CONTENTS",
+        "",
+        ...files.map((file) => {
+          const meta = file.metadata!;
+          const size = meta.width && meta.height ? `, ${meta.width}×${meta.height}px` : "";
+          return `  ${file.name}\n    ${meta.detected?.label ?? "Unrecognised content"}${size}\n    SHA-256 ${meta.sha256}`;
+        }),
+      ].join("\n"),
+    );
   }
 
   sections.push(["THE MESSAGE AS SUBMITTED", "", indent(submission.text.trim(), 2)].join("\n"));
