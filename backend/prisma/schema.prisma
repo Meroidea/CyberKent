@@ -65,6 +65,16 @@ enum IndicatorType {
   BANK_ACCOUNT
 }
 
+/// ER-13, FR92 — whether an artefact named in reports has been confirmed.
+/// A number reported fifty times by mistake must be distinguishable from one an
+/// officer has verified, because the person it belongs to may be innocent.
+enum IndicatorStatus {
+  UNVERIFIED
+  VERIFIED
+  DISPUTED
+  REJECTED
+}
+
 /// FR25–FR30, FR42 — lifecycle of a scam report.
 enum ReportStatus {
   DRAFT
@@ -112,6 +122,23 @@ enum SubscriptionScope {
   ALL
 }
 
+/// The OpenAI-backed capability an interaction used.
+enum AiFeature {
+  TEXT_ANALYSIS
+  IMAGE_ANALYSIS
+  ASSISTANT
+}
+
+/// How an AI interaction ended. UNAVAILABLE is the degraded path of
+/// constraint C3 — recorded so an outage is visible, not silent.
+enum AiOutcome {
+  SUCCEEDED
+  BLOCKED
+  REFUSED
+  UNAVAILABLE
+  FAILED
+}
+
 // ─────────────────────── module 1 & 2: identity ───────────────────────
 
 /// FR1–FR12. Authentication, profile and access control.
@@ -131,6 +158,8 @@ model User {
   lastLoginAt   DateTime?
   /// FR12 — soft deletion keeps the audit trail intact after a deletion request.
   deletedAt     DateTime?
+  /// ER-6, FR91 — when this row falls due for de-identification or purge.
+  retentionUntil DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -150,6 +179,7 @@ model User {
   subscriptions      Subscription[]
   recoveryProgress   RecoveryProgress[]
   auditEntries       AuditLog[]
+  aiInteractions     AiInteraction[]
 
   @@index([role])
   @@index([deletedAt])
@@ -259,6 +289,11 @@ model ScamCheck {
   /// 0-1. How much signal the submission carried; stored beside the score
   /// because the two answer different questions.
   confidence Float
+  /// ER-9, FR83 — the rule set that produced this score, so a past result can
+  /// be reproduced after the rules change.
+  ruleSetVersion String?
+  /// ER-6, FR91.
+  retentionUntil DateTime?
   createdAt  DateTime @default(now())
 
   user       User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -301,11 +336,52 @@ model Indicator {
   reportCount Int          @default(0)
   firstSeenAt DateTime     @default(now())
   lastSeenAt  DateTime     @default(now())
+  /// ER-13 — never treated as confirmed until an officer says so.
+  verificationStatus IndicatorStatus @default(UNVERIFIED)
+  /// 0-1, how sure the service is this artefact is used in scams.
+  confidence  Float?
+  /// ER-13 — an unverified indicator lapses rather than lingering forever.
+  expiresAt   DateTime?
 
   reports ReportIndicator[]
 
   @@unique([type, value])
   @@index([type])
+  @@index([verificationStatus])
+}
+
+/// Rule 8.3, FR72 — a record that an AI capability was used and what it
+/// concluded, for audit, cost monitoring and model-quality review.
+///
+/// Deliberately holds no submitted content. The message, image or chat text is
+/// never written here — only its SHA-256, which lets a repeat submission be
+/// recognised without the submission being kept (ETH-6, data minimisation).
+/// `redactions` counts how many sensitive numbers the gateway masked before
+/// anything was sent to the provider.
+model AiInteraction {
+  id            String    @id @default(cuid())
+  userId        String?
+  feature       AiFeature
+  outcome       AiOutcome
+  provider      String
+  model         String
+  promptVersion String
+  inputSha256   String
+  inputChars    Int
+  redactions    Int       @default(0)
+  verdict       String?
+  riskScore     Int?
+  confidence    Float?
+  latencyMs     Int?
+  inputTokens   Int?
+  outputTokens  Int?
+  createdAt     DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([feature, createdAt])
+  @@index([userId])
+  @@index([inputSha256])
 }
 
 // ─────────────── module 5 & 6: reports and evidence ───────────────
@@ -332,6 +408,8 @@ model Report {
   /// FR30 — withdrawal is a state, not a deletion.
   withdrawnAt DateTime?
   deletedAt   DateTime?
+  /// ER-6, FR91.
+  retentionUntil DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -409,7 +487,13 @@ model Evidence {
   /// Checksum, so a stored file can be shown to be the one that was uploaded.
   sha256      String
   storageKey  String    @unique
+  /// ER-5 — set when EXIF/location metadata was removed on ingest, so the
+  /// control is evidenced rather than assumed. The original is kept separately
+  /// (Avoid.md §9) and only the stripped copy is ever served.
+  metadataStrippedAt DateTime?
   deletedAt   DateTime?
+  /// ER-6, FR91.
+  retentionUntil DateTime?
   createdAt   DateTime  @default(now())
 
   report     Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -480,6 +564,10 @@ model InformationRequest {
 /// `sourceReportId` is nullable and deliberately severable: FR50 requires the
 /// published alert to carry nothing identifying the reporter, so an alert can
 /// outlive the report it came from without dragging that link behind it.
+///
+/// ER-2 — severance is enforced by the database, not left to application code:
+/// migration 20260910100000 adds a CHECK constraint that makes it impossible for
+/// a PUBLISHED alert to hold a `sourceReportId`.
 model Alert {
   id          String      @id @default(cuid())
   reference   String      @unique
@@ -584,6 +672,8 @@ model Notification {
   /// Where the notification points, if anywhere.
   linkPath  String?
   readAt    DateTime?
+  /// ER-6, FR91.
+  retentionUntil DateTime?
   createdAt DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -632,6 +722,8 @@ model AuditLog {
   /// Structured detail. Must never contain credentials or tokens (Rule 6.7).
   metadata   Json?
   ipAddress  String?
+  /// ER-6, FR91 — audit entries are retained longest, but not forever.
+  retentionUntil DateTime?
   createdAt  DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
