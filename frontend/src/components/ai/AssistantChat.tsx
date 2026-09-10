@@ -102,7 +102,7 @@ export function AssistantChat() {
   const shown = [GREETING, ...messages];
 
   return (
-    <div className="glass-surface flex h-[min(44rem,calc(100svh-9rem))] min-h-[28rem] flex-col overflow-hidden rounded-3xl shadow-xl">
+    <div className="flex h-[min(40rem,calc(100svh-10rem))] min-h-[26rem] flex-col overflow-hidden rounded-ui bg-ui-card">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-900/[0.06] px-4 py-3 sm:px-5 dark:border-white/10">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-cyan-500 text-white">

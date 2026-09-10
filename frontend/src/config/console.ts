@@ -17,6 +17,7 @@ import { ROUTES } from "@/config/site";
 
 export type ConsoleIcon =
   | "scan"
+  | "assistant"
   | "flag"
   | "bell"
   | "map"
@@ -58,6 +59,12 @@ export const CONSOLE_NAV: ConsoleSection[] = [
         href: ROUTES.checkMessage,
         icon: "scan",
         tint: "bg-indigo-500",
+      },
+      {
+        label: "CyberSafe Assistant",
+        href: ROUTES.assistant,
+        icon: "assistant",
+        tint: "bg-cyan-500",
       },
       {
         label: "Report a scam",

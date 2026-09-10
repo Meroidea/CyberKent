@@ -44,7 +44,17 @@ export function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("flex rounded-[0.625rem] bg-ui-fill p-[0.1875rem]", className)}
+      /*
+       * Scrolls sideways rather than widening the page. Five segments need
+       * ~465px, and on a phone that minimum pushed the whole document — and
+       * the fixed header with it — past the edge of the screen: the Learn page
+       * scrolled horizontally at every phone width. Found by the overflow audit
+       * run for the Lecturer's mobile-friendliness point.
+       */
+      className={cn(
+        "flex max-w-full overflow-x-auto overscroll-x-contain rounded-[0.625rem] bg-ui-fill p-[0.1875rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        className,
+      )}
     >
       {segments.map((segment) => {
         const selected = segment.value === value;
@@ -54,7 +64,7 @@ export function SegmentedControl<T extends string>({
           <label
             key={segment.value}
             className={cn(
-              "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[0.5rem] px-3 py-[0.4375rem] text-center transition-colors duration-200",
+              "relative flex flex-1 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-[0.5rem] px-3 py-[0.4375rem] text-center transition-colors duration-200",
               selected ? "text-ui-label" : "text-ui-label-2 hover:text-ui-label",
             )}
           >

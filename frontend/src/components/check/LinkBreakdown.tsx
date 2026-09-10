@@ -1,5 +1,6 @@
 import { Link2, Lock, LockOpen, QrCode } from "lucide-react";
 import { analyseLink, type ParsedLink } from "@/lib/scam/links";
+import { RowSeparator, SettingsGroup } from "@/components/settings/SettingsGroup";
 import { cn } from "@/lib/cn";
 
 /**
@@ -21,12 +22,12 @@ export function LinkBreakdown({ links, qrCodes }: { links: ParsedLink[]; qrCodes
   }
 
   return (
-    <div>
-      <h3 className="text-caption font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-        Where the links really go — {links.length}
-      </h3>
-      <ul className="mt-3 flex flex-col gap-2.5">
-        {links.map((link) => {
+    <SettingsGroup
+      title={`Where the links really go — ${links.length}`}
+      footer="Every address is taken apart by the browser's own URL parser. The domain shown in bold is the one that actually owns the link. Nothing here is clickable, and addresses are written hxxps / [.] so they cannot turn back into links when copied."
+    >
+      <ul className="flex flex-col">
+        {links.map((link, index) => {
           /* Each card shows what is wrong with *this* link, recomputed from the
              same pure rules rather than filtered out of the combined list. */
           const flags = analyseLink(link);
@@ -34,18 +35,16 @@ export function LinkBreakdown({ links, qrCodes }: { links: ParsedLink[]; qrCodes
           const secure = link.scheme === "https" && link.schemeGiven;
 
           return (
-            <li
-              key={link.href}
-              className="rounded-xl border border-slate-900/[0.08] bg-slate-900/[0.02] p-3 dark:border-white/10 dark:bg-black/20"
-            >
-              <div className="flex items-start gap-2.5">
+            <li key={link.href}>
+              {index > 0 ? <RowSeparator /> : null}
+              <div className="flex items-start gap-2.5 px-4 py-3">
                 {fromQr ? (
                   <QrCode className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-label="Found in a QR code" />
                 ) : (
                   <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+                  <p className="text-[0.75rem] text-ui-label-2">
                     {fromQr ? "QR code opens" : "Registered to"}
                   </p>
                   <p
@@ -53,16 +52,16 @@ export function LinkBreakdown({ links, qrCodes }: { links: ParsedLink[]; qrCodes
                       "break-all font-mono text-sm font-semibold",
                       flags.some((flag) => flag.weight === "high")
                         ? "text-rose-600 dark:text-rose-400"
-                        : "text-slate-900 dark:text-white",
+                        : "text-ui-label",
                     )}
                   >
                     {link.registrableDomain || link.scheme}
                   </p>
-                  <p className="mt-1 break-all font-mono text-[0.6875rem] leading-relaxed text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 break-all font-mono text-[0.6875rem] leading-relaxed text-ui-label-2">
                     {link.defanged}
                   </p>
 
-                  <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                  <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.6875rem] text-ui-label-2">
                     <div className="flex items-center gap-1">
                       {secure ? (
                         <Lock className="h-3 w-3" aria-hidden="true" />
@@ -118,6 +117,6 @@ export function LinkBreakdown({ links, qrCodes }: { links: ParsedLink[]; qrCodes
           );
         })}
       </ul>
-    </div>
+    </SettingsGroup>
   );
 }

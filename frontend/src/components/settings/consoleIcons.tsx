@@ -2,6 +2,7 @@ import {
   Accessibility,
   Bell,
   BookOpen,
+  Bot,
   FileText,
   Flag,
   LifeBuoy,
@@ -18,6 +19,7 @@ import type { ConsoleIcon } from "@/config/console";
 /** Maps the icon keys held in `config/console` to concrete components. */
 export const CONSOLE_ICONS: Record<ConsoleIcon, LucideIcon> = {
   scan: ScanSearch,
+  assistant: Bot,
   flag: Flag,
   bell: Bell,
   map: MapPinned,
