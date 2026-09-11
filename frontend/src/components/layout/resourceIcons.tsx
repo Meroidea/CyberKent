@@ -8,6 +8,7 @@ import {
   Layers,
   ListChecks,
   MapPinned,
+  Milestone,
   ScanSearch,
   ScrollText,
   type LucideIcon,
@@ -30,6 +31,7 @@ export const DOCUMENT_ICONS: Record<DocumentIcon, LucideIcon> = {
   requirements: ClipboardList,
   architecture: Layers,
   interim: ScrollText,
+  midproject: Milestone,
   srs: FileCheck2,
   features: ListChecks,
 };

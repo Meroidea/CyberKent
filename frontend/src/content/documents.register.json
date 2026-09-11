@@ -76,6 +76,29 @@
       }
     },
     {
+      "id": "mid-project-deliverables-report",
+      "title": "Mid-Project Deliverables Report",
+      "icon": "midproject",
+      "navDescription": "Systems design and implementation plan at iteration 6.",
+      "summary": "The mid-project formative submission: the systems design and implementation plan at the close of iteration 6 — how development is planned and managed, the architecture as it runs, the database and its ethics controls, the user interface, the OpenAI integration, the responses to lecturer feedback, and team and individual achievement against assigned work.",
+      "contents": [
+        "Planning, management and the requirements elicited from the client brief",
+        "The as-built architecture and how it meets the non-functional objectives",
+        "Database design, entity-relationship diagrams and ethical data management",
+        "User interface design, including the AI screens and their failure states",
+        "The OpenAI implementation — text, sentiment, vision and the assistant",
+        "Responses to lecturer feedback, iteration evaluation and individual achievement"
+      ],
+      "href": "/documents/mid-project-deliverables-report.pdf",
+      "format": "PDF",
+      "version": "1.0",
+      "date": "2026-09-11",
+      "status": "Published",
+      "build": {
+        "copy": "CyberKent-Mid-Project-Deliverables-Report.pdf"
+      }
+    },
+    {
       "id": "final-srs-report",
       "title": "Final SRS Report",
       "icon": "srs",

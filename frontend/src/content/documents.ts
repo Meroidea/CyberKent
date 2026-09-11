@@ -22,7 +22,7 @@ export type DocumentStatus = "Published" | "Superseded" | "Awaiting approval";
 export type DocumentFormat = "Web page" | "PDF";
 
 /** Key into `DOCUMENT_ICONS`, so this module stays free of JSX. */
-export type DocumentIcon = "requirements" | "architecture" | "interim" | "srs" | "features";
+export type DocumentIcon = "requirements" | "architecture" | "interim" | "midproject" | "srs" | "features";
 
 export interface ProjectDocument {
   id: string;
