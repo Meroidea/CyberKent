@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Flag, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { FormAlert } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -32,6 +33,7 @@ function greeting(): string {
 export function DashboardPage() {
   const { user, setUser, signOut } = useAuth();
   const { open: openChecker } = useCheckModal();
+  const emailDelivery = useEmailDelivery();
   const navigate = useNavigate();
   const location = useLocation();
   const notice = (location.state as { notice?: string } | null)?.notice;
@@ -104,7 +106,11 @@ export function DashboardPage() {
             icon={MailWarning}
             iconClassName="bg-amber-500"
             label="Confirm your email"
-            detail="Enter the six-digit code we sent. Needed before you can send a report."
+            detail={
+              emailDelivery === false
+                ? "Email isn't set up on this site yet, so confirmation codes can't be sent. Reporting opens once it is."
+                : "Enter the six-digit code we sent. Needed before you can send a report."
+            }
             to={`${ROUTES.verifyEmail}?next=${encodeURIComponent(ROUTES.account)}`}
           />
         </SettingsGroup>
