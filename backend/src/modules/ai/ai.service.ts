@@ -24,7 +24,14 @@ import type { AnalyseImageInput, AnalyseTextInput, AssistantInput } from "@/modu
 
 const PROVIDER = "openai";
 
-const UNAVAILABLE = "The AI second opinion is unavailable right now. The rule-based result is complete on its own.";
+/* Written per feature: the checker has a complete rule-based result to fall back
+   on and says so; the assistant has none, so it points somewhere that helps. */
+const UNAVAILABLE: Record<AiFeature, string> = {
+  TEXT_ANALYSIS: "The AI second opinion is unavailable right now. The rule-based result is complete on its own.",
+  IMAGE_ANALYSIS: "The AI image check is unavailable right now. Everything read on your device is still shown above.",
+  ASSISTANT:
+    "The assistant is unavailable right now. You can still check a message, and Scamwatch (scamwatch.gov.au) has guidance on every common scam.",
+};
 
 function digest(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -70,12 +77,12 @@ function outcomeOf(error: unknown): AiOutcome {
   return "FAILED";
 }
 
-function toAppError(error: unknown): AppError {
+function toAppError(error: unknown, feature: AiFeature): AppError {
   if (error instanceof AiUnavailableError && error.reason === "refused") {
-    return new AppError(422, "The AI could not assess this content. The rule-based result still stands.");
+    return new AppError(422, feature === "ASSISTANT" ? "The assistant could not answer that. Try asking it another way." : "The AI could not assess this content. The rule-based result still stands.");
   }
 
-  return new AppError(503, UNAVAILABLE);
+  return new AppError(503, UNAVAILABLE[feature]);
 }
 
 interface ScoredResult {
@@ -114,7 +121,7 @@ export const aiService = {
       return { ...response, redactions: count };
     } catch (error) {
       await account("TEXT_ANALYSIS", input.text, count, userId, { outcome: outcomeOf(error) });
-      throw toAppError(error);
+      throw toAppError(error, "TEXT_ANALYSIS");
     }
   },
 
@@ -137,7 +144,7 @@ export const aiService = {
       return { ...response, redactions: context.count };
     } catch (error) {
       await account("IMAGE_ANALYSIS", input.image, context.count, userId, { outcome: outcomeOf(error) });
-      throw toAppError(error);
+      throw toAppError(error, "IMAGE_ANALYSIS");
     }
   },
 
@@ -168,7 +175,7 @@ export const aiService = {
       return { reply: response.reply, blocked: response.blocked, model: response.usage.model, redactions };
     } catch (error) {
       await account("ASSISTANT", latest, redactions, userId, { outcome: outcomeOf(error) });
-      throw toAppError(error);
+      throw toAppError(error, "ASSISTANT");
     }
   },
 
