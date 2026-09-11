@@ -10,7 +10,7 @@ import { aiRoutes } from "@/modules/ai/ai.routes";
 import { accountRoutes } from "@/modules/account/account.routes";
 import { referenceRoutes } from "@/modules/reference/reference.routes";
 import { reportsRoutes } from "@/modules/reports/reports.routes";
-import { sendOk } from "@/lib/http";
+import { AppError, sendOk } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
 
@@ -41,7 +41,8 @@ export function createApp() {
           return;
         }
 
-        callback(new Error("Origin not allowed by CORS."));
+        /* A refusal, not a fault: answered as 403 rather than a generic 500. */
+        callback(new AppError(403, "This site is not allowed to call the CyberKent API."));
       },
       credentials: true,
     }),
