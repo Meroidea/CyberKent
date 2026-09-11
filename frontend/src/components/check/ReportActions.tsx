@@ -9,8 +9,12 @@ import {
   RotateCcw,
   Share2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/site";
 import { ActionLink } from "@/components/ui/ActionLink";
+import { useCheckModal } from "@/components/check/useCheckModal";
+import { useAuth } from "@/components/auth/useAuth";
+import { draftFromCheck, saveReportDraft } from "@/lib/report/draft";
 import type { Analysis, Submission } from "@/lib/scam/types";
 import {
   formatReport,
@@ -50,6 +54,9 @@ export function ReportActions({
   onCheckAnother,
 }: ReportActionsProps) {
   const [done, setDone] = useState<"copied" | "downloaded" | "shared" | null>(null);
+  const navigate = useNavigate();
+  const { close } = useCheckModal();
+  const { status } = useAuth();
   const [failed, setFailed] = useState<string | null>(null);
   const timerRef = useRef(0);
 
@@ -63,6 +70,25 @@ export function ReportActions({
   };
 
   const input = { analysis, submission, generatedAt };
+
+  /*
+   * Carries the check into a report. Everything the checker found — the
+   * channel, the message, every link and number — is written to a draft on
+   * this device before leaving, so the account step that reporting needs
+   * cannot cost the person what they have already given. Still a real link
+   * underneath, so a middle click opens the form in a new tab with the draft.
+   */
+  const onReport = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    saveReportDraft(draftFromCheck(analysis, submission));
+
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    close();
+    navigate(ROUTES.reportScam);
+  };
 
   const onDownload = () => {
     /*
@@ -141,7 +167,7 @@ export function ReportActions({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <ActionLink href={ROUTES.reportScam}>
+        <ActionLink href={ROUTES.reportScam} onClick={onReport}>
           <Megaphone className="h-4 w-4" aria-hidden="true" />
           Report this to Council
         </ActionLink>
@@ -153,6 +179,14 @@ export function ReportActions({
           </ActionLink>
         ) : null}
       </div>
+
+      {/* Said before the click, not after it: finding an account wall on the
+          far side of "Report" reads as a bait and switch. */}
+      {status === "guest" ? (
+        <p className="-mt-1 text-caption text-slate-500 dark:text-slate-400">
+          Reporting needs a free account. Everything from this check comes with you.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={onDownload} className={SECONDARY_BUTTON}>

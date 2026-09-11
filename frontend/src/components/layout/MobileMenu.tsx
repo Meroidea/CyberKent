@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/components/auth/useAuth";
+import { initials } from "@/lib/report/labels";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { ChevronDown, X } from "lucide-react";
 import { PRIMARY_NAV, ROUTES } from "@/config/site";
@@ -48,6 +51,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   /* Which menu is expanded, by label. One at a time: two open menus on a phone
      push the calls to action off the bottom of the card. */
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!open) {
@@ -185,7 +189,35 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               })}
             </nav>
 
-            <motion.div variants={rowVariants} className="mt-6 flex flex-col gap-3">
+            <motion.div variants={rowVariants} className="mt-4">
+              {user ? (
+                <Link
+                  to={ROUTES.account}
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors duration-200 hover:bg-indigo-50 dark:hover:bg-white/5"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white">
+                    {initials(user.fullName)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{user.fullName}</span>
+                    <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                      {user.emailVerified ? "Your dashboard" : "Confirm your email"}
+                    </span>
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  to={ROUTES.signIn}
+                  onClick={onClose}
+                  className="block rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-700 transition-colors duration-200 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300"
+                >
+                  Sign in or create a free account
+                </Link>
+              )}
+            </motion.div>
+
+            <motion.div variants={rowVariants} className="mt-4 flex flex-col gap-3">
               <ActionLink href={ROUTES.checkMessage} onClick={onClose}>
                 Check a message
               </ActionLink>

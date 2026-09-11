@@ -27,20 +27,47 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+
+  /** The message for one field, for showing beside the input it concerns. */
+  field(name: string): string | undefined {
+    return this.fields.find((entry) => entry.field === name)?.message;
+  }
 }
 
 const OFFLINE = "The service could not be reached. Check your connection and try again.";
 
+/**
+ * Where the session's token comes from, and what to do when the API says it is
+ * no longer good. Installed by `AuthProvider`, so this module stays free of
+ * React and of storage.
+ */
+let readToken: () => string | null = () => null;
+let onSessionEnded: () => void = () => {};
+
+export function connectSession(getToken: () => string | null, ended: () => void): void {
+  readToken = getToken;
+  onSessionEnded = ended;
+}
+
 export async function apiRequest<T>(
   path: string,
-  init: { method?: "GET" | "POST"; body?: unknown; signal?: AbortSignal } = {},
+  init: { method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE"; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<T> {
   let response: Response;
+  const token = readToken();
+  const headers: Record<string, string> = {};
+
+  if (init.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: init.method ?? "GET",
-      headers: init.body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers,
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
       signal: init.signal,
     });
@@ -58,6 +85,13 @@ export async function apiRequest<T>(
     envelope = (await response.json()) as Envelope<T>;
   } catch {
     envelope = null;
+  }
+
+  /* A token the API refuses is a session that has ended — expired, or its
+     account deleted. Said once, here, rather than by every screen that happens
+     to be the first to notice. */
+  if (response.status === 401 && token) {
+    onSessionEnded();
   }
 
   if (!response.ok || !envelope?.success || envelope.data === null) {

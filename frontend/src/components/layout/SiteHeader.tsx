@@ -7,6 +7,7 @@ import { MobileMenu } from "@/components/layout/MobileMenu";
 import { NavDropdown } from "@/components/layout/NavDropdown";
 import { DOCUMENT_MENU, SERVICE_MENU } from "@/components/layout/navMenus";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { AccountButton } from "@/components/layout/AccountButton";
 import { RollingText } from "@/components/ui/RollingText";
 import { MotionNavLink, UNDERLINE } from "@/components/layout/navMotion";
 import { Wordmark } from "@/components/layout/Wordmark";
@@ -93,6 +94,7 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle className="hidden sm:flex" />
+            <AccountButton className="hidden sm:flex" />
             <ActionLink
               href={ROUTES.reportScam}
               className="hidden px-5 py-2.5 text-xs font-bold uppercase tracking-[0.14em] md:inline-flex"

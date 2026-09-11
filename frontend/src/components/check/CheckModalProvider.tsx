@@ -5,6 +5,8 @@ import { ROUTES } from "@/config/site";
 export interface CheckModalValue {
   /** Opens the checker over whatever page the reader is on. */
   open: () => void;
+  /** Closes it — for an action inside the verdict that moves to another page. */
+  close: () => void;
 }
 
 export const CheckModalContext = createContext<CheckModalValue | null>(null);
@@ -23,8 +25,8 @@ export const CheckModalContext = createContext<CheckModalValue | null>(null);
 export function CheckModalProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
-  const value = useMemo<CheckModalValue>(() => ({ open: () => setOpen(true) }), []);
   const close = useCallback(() => setOpen(false), []);
+  const value = useMemo<CheckModalValue>(() => ({ open: () => setOpen(true), close }), [close]);
 
   /*
    * Every "check a message" call to action on the site is intercepted here

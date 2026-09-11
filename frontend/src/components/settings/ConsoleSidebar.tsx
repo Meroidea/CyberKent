@@ -6,6 +6,8 @@ import { CONSOLE_ICONS } from "@/components/settings/consoleIcons";
 import { LogoMark } from "@/components/brand/LogoMark";
 import { ROUTES, SITE } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { useAuth } from "@/components/auth/useAuth";
+import { initials } from "@/lib/report/labels";
 
 /**
  * The master column: the index of every screen the service has.
@@ -18,18 +20,20 @@ import { cn } from "@/lib/cn";
 export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [query, setQuery] = useState("");
   const { pathname } = useLocation();
+  const { status, user } = useAuth();
 
   const sections = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) {
-      return CONSOLE_NAV;
-    }
 
     return CONSOLE_NAV.map((section) => ({
       ...section,
-      items: section.items.filter((item) => item.label.toLowerCase().includes(needle)),
+      items: section.items.filter(
+        (item) =>
+          (!item.audience || item.audience === status) &&
+          (!needle || item.label.toLowerCase().includes(needle)),
+      ),
     })).filter((section) => section.items.length > 0);
-  }, [query]);
+  }, [query, status]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -68,6 +72,26 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
           </span>
         </span>
       </Link>
+
+      {/* The person, once there is one — the same card Settings opens with,
+          and the shortest way back to their own reports from any screen. */}
+      {user ? (
+        <Link
+          to={ROUTES.account}
+          onClick={onNavigate}
+          className="-mt-2 flex items-center gap-3 rounded-ui bg-ui-card px-3 py-2.5 transition-colors duration-150 hover:bg-ui-card-hover"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[0.8125rem] font-semibold text-white">
+            {initials(user.fullName)}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[0.9375rem] font-semibold leading-tight text-ui-label">{user.fullName}</span>
+            <span className="mt-0.5 block truncate text-[0.75rem] leading-tight text-ui-label-2">
+              {user.emailVerified ? "Your dashboard" : "Confirm your email"}
+            </span>
+          </span>
+        </Link>
+      ) : null}
 
       <nav aria-label="Service" className="flex flex-col gap-5">
         {sections.map((section, index) => (

@@ -26,6 +26,8 @@ export type ConsoleIcon =
   | "documents"
   | "signIn"
   | "register"
+  | "dashboard"
+  | "settings"
   | "privacy"
   | "accessibility"
   | "terms";
@@ -43,6 +45,11 @@ export interface ConsoleItem {
   tint: string;
   /** Right-aligned status, as a settings row shows a current value. */
   value?: string;
+  /**
+   * Who the row is for. Signed-out visitors are offered a way in; members are
+   * offered their own screens instead. Unset rows show to everyone.
+   */
+  audience?: "guest" | "member";
 }
 
 export interface ConsoleSection {
@@ -112,8 +119,10 @@ export const CONSOLE_NAV: ConsoleSection[] = [
   {
     title: "Account",
     items: [
-      { label: "Sign in", href: ROUTES.signIn, icon: "signIn", tint: "bg-blue-500" },
-      { label: "Create an account", href: ROUTES.register, icon: "register", tint: "bg-blue-500" },
+      { label: "Sign in", href: ROUTES.signIn, icon: "signIn", tint: "bg-blue-500", audience: "guest" },
+      { label: "Create a free account", href: ROUTES.register, icon: "register", tint: "bg-blue-500", audience: "guest" },
+      { label: "Your dashboard", href: ROUTES.account, icon: "dashboard", tint: "bg-blue-500", audience: "member" },
+      { label: "Settings", href: ROUTES.accountSettings, icon: "settings", tint: "bg-slate-500", audience: "member" },
     ],
   },
   {

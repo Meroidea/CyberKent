@@ -22,6 +22,17 @@ import { LearnArticlePage } from "@/pages/LearnArticlePage";
 import { AssistantPage } from "@/pages/AssistantPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { SignInPage } from "@/pages/auth/SignInPage";
+import { VerifyEmailPage } from "@/pages/auth/VerifyEmailPage";
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { ReportPage } from "@/pages/report/ReportPage";
+import { DashboardPage } from "@/pages/account/DashboardPage";
+import { ReportDetailPage } from "@/pages/account/ReportDetailPage";
+import { AccountDeletedPage, AccountSettingsPage } from "@/pages/account/AccountSettingsPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
@@ -74,13 +85,6 @@ const PLACEHOLDERS: {
   requirements: string;
 }[] = [
   {
-    path: ROUTES.reportScam,
-    title: "Report a scam to Council",
-    summary:
-      "Submit what happened with evidence attached, get a reference number, and track the report through review.",
-    requirements: "Modules 5–8 · FR25–FR48",
-  },
-  {
     path: ROUTES.alerts,
     title: "Community alerts",
     summary:
@@ -100,20 +104,6 @@ const PLACEHOLDERS: {
     summary:
       "Step-by-step actions ordered by what matters in the first hour, with your progress saved as you work through them.",
     requirements: "Module 10 · FR58–FR60",
-  },
-  {
-    path: ROUTES.signIn,
-    title: "Sign in",
-    summary:
-      "Track reports you have made and manage your alert subscriptions. An account is never required to check a message.",
-    requirements: "Modules 1–2 · FR1–FR12",
-  },
-  {
-    path: ROUTES.register,
-    title: "Create an account",
-    summary:
-      "Register to track reports and choose which alerts reach you. Checking a message stays open to everyone.",
-    requirements: "Modules 1–2 · FR1–FR12",
   },
   {
     path: ROUTES.privacy,
@@ -215,6 +205,20 @@ function AppShell({ booting }: { booting: boolean }) {
               {/* The OpenAI-backed CyberSafe Assistant. */}
               <Route path={ROUTES.assistant} element={<AssistantPage />} />
 
+              {/* Checking is free and anonymous; reporting needs a free
+                account. The report screen explains that to a guest itself,
+                so it is not behind the guard — the account screens are. */}
+              <Route path={ROUTES.reportScam} element={<ReportPage />} />
+              <Route path={ROUTES.register} element={<RegisterPage />} />
+              <Route path={ROUTES.signIn} element={<SignInPage />} />
+              <Route path={ROUTES.verifyEmail} element={<VerifyEmailPage />} />
+              <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+              <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+              <Route path={ROUTES.account} element={<RequireAuth><DashboardPage /></RequireAuth>} />
+              <Route path={ROUTES.accountSettings} element={<RequireAuth><AccountSettingsPage /></RequireAuth>} />
+              <Route path={`${ROUTES.accountReport}/:reference`} element={<RequireAuth><ReportDetailPage /></RequireAuth>} />
+              <Route path={`${ROUTES.account}/deleted`} element={<AccountDeletedPage />} />
+
               {PLACEHOLDERS.map((page) => (
                 <Route
                   key={page.path}
@@ -282,10 +286,12 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <CheckModalProvider>
-        <ScrollToTop />
-        <AppShell booting={booting} />
-      </CheckModalProvider>
+      <AuthProvider>
+        <CheckModalProvider>
+          <ScrollToTop />
+          <AppShell booting={booting} />
+        </CheckModalProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
