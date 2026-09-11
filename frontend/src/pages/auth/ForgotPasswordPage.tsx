@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { KeyRound, MailCheck } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -9,7 +10,7 @@ import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRows } from "@/components/settings/SettingsRow";
 import { authApi } from "@/lib/account/api";
 import { ApiError } from "@/lib/api/client";
-import { ROUTES } from "@/config/site";
+import { ROUTES, SITE } from "@/config/site";
 
 /**
  * FR6 — ask for a reset link.
@@ -20,6 +21,7 @@ import { ROUTES } from "@/config/site";
  */
 export function ForgotPasswordPage() {
   const { user } = useAuth();
+  const emailDelivery = useEmailDelivery();
   const [email, setEmail] = useState(user?.email ?? "");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -67,6 +69,14 @@ export function ForgotPasswordPage() {
         <p>Enter the email you signed up with and we will send you a link to choose a new password.</p>
       </ConsoleHero>
 
+      {emailDelivery === false ? (
+        <FormAlert tone="info">
+          Email isn't set up on this site yet, so a reset link can't be sent. If you are locked out, contact the CyberSafe
+          team at {SITE.supportEmail}.
+        </FormAlert>
+      ) : null}
+
+      {emailDelivery === false ? null : (
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         {error ? <FormAlert>{error.field("email") ?? error.message}</FormAlert> : null}
         <SettingsGroup>
@@ -88,6 +98,7 @@ export function ForgotPasswordPage() {
           Send reset link
         </SubmitButton>
       </form>
+      )}
 
       <p className="text-center text-[0.9375rem] text-ui-label-2">
         Remembered it? <Link to={ROUTES.signIn} className="font-semibold text-ui-tint hover:opacity-70">Sign in</Link>

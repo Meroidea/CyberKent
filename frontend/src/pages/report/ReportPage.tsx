@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { VerifyCodePanel } from "@/components/auth/VerifyCodePanel";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { FormAlert, SelectField, SubmitButton, TextAreaField, TextField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -155,6 +156,7 @@ function ReportForm() {
   const [newType, setNewType] = useState<IndicatorType>("URL");
   const [newValue, setNewValue] = useState("");
   const verifyRef = useRef<HTMLDivElement>(null);
+  const emailDelivery = useEmailDelivery();
 
   const verified = Boolean(user?.emailVerified);
   const restored = useMemo(() => draftHasContent(draft) && draft.savedAt > 0, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -285,10 +287,14 @@ function ReportForm() {
           <SettingsGroup
             title="Confirm your email to send this"
             footer={
-              <>
-                Enter the code we emailed to <strong className="font-medium text-ui-label">{user?.email}</strong>. You can keep
-                filling in the report while you wait — nothing is lost.
-              </>
+              emailDelivery === false ? (
+                "You can fill in the report now — it is saved on this device and will be ready to send."
+              ) : (
+                <>
+                  Enter the code we emailed to <strong className="font-medium text-ui-label">{user?.email}</strong>. You can keep
+                  filling in the report while you wait — nothing is lost.
+                </>
+              )
             }
           >
             <VerifyCodePanel compact justSent={false} onVerified={() => setFormError(null)} />

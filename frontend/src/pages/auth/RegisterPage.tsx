@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { BellRing, ClipboardList, FileCheck2, MessageSquareReply, ScanSearch, UserPlus } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { FormAlert, PasswordField, SubmitButton, TextField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -33,6 +34,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { open: openChecker } = useCheckModal();
+  const emailDelivery = useEmailDelivery();
   const next = safeNext(params.get("next"), ROUTES.account);
 
   const [fullName, setFullName] = useState("");
@@ -134,7 +136,7 @@ export function RegisterPage() {
               required
               placeholder="you@example.com"
               error={taken ? undefined : error?.field("email")}
-              hint="We will send a six-digit code to confirm it."
+              hint={emailDelivery === false ? "Email confirmation isn't live on this site yet — you can still create an account." : "We will send a six-digit code to confirm it."}
             />
             <PasswordField
               label="Password"

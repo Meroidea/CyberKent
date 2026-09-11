@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MailCheck, RotateCw } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { CodeInput } from "@/components/forms/CodeInput";
 import { FormAlert } from "@/components/forms/fields";
 import { authApi } from "@/lib/account/api";
@@ -37,6 +38,7 @@ export function VerifyCodePanel({
   justSent?: boolean;
 }) {
   const { user, setUser } = useAuth();
+  const emailDelivery = useEmailDelivery();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +96,15 @@ export function VerifyCodePanel({
     }
   };
 
+  /* No code can have been sent, so there is nothing to type. */
+  if (emailDelivery === false) {
+    return (
+      <div className={compact ? "px-4 py-4" : "px-4 py-5 sm:px-6"}>
+        <EmailUnavailableNotice />
+      </div>
+    );
+  }
+
   return (
     <div className={compact ? "flex flex-col gap-4 px-4 py-5" : "flex flex-col gap-5 px-4 py-6 sm:px-6"}>
       {!compact ? (
@@ -146,5 +157,15 @@ export function VerifyCodePanel({
         <span className="text-[0.8125rem] text-ui-label-3">Check your spam folder too.</span>
       </div>
     </div>
+  );
+}
+
+/** What the site says where it would otherwise promise an email. */
+export function EmailUnavailableNotice({ className }: { className?: string }) {
+  return (
+    <FormAlert tone="info" className={className}>
+      Email isn't set up on this site yet, so we can't send your confirmation code. Your account works and you can
+      look around; sending reports to Council opens as soon as email is live.
+    </FormAlert>
   );
 }

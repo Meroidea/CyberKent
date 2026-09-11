@@ -100,6 +100,19 @@ export const reportsApi = {
   },
 };
 
+/* Whether this deployment can send email. Asked once per page load. */
+let configCache: Promise<{ emailDelivery: boolean }> | null = null;
+
+export function fetchAuthConfig(): Promise<{ emailDelivery: boolean }> {
+  configCache ??= apiRequest<{ emailDelivery: boolean }>("/api/auth/config").catch(() => {
+    configCache = null;
+    /* Unknown is treated as available: the journey then reads as designed,
+       and a real failure surfaces where it happens. */
+    return { emailDelivery: true };
+  });
+  return configCache;
+}
+
 /* Reference data changes a few times a year; one fetch per page load is plenty. */
 let referenceCache: Promise<ReferenceData> | null = null;
 

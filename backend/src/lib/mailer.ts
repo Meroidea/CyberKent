@@ -21,6 +21,16 @@ export interface Mail {
   text: string;
 }
 
+/**
+ * Whether a message sent now would reach an inbox. In development the log is
+ * the inbox and the code is shown on screen, so that counts; a deployment
+ * without a key does not, and the interface says so rather than promising an
+ * email that will never arrive.
+ */
+export function emailDeliveryAvailable(): boolean {
+  return Boolean(env.RESEND_API_KEY) || !env.isProduction;
+}
+
 export async function sendMail(mail: Mail): Promise<boolean> {
   if (!env.RESEND_API_KEY) {
     if (env.isProduction) {

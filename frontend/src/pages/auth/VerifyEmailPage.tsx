@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react
 import { CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { VerifyCodePanel } from "@/components/auth/VerifyCodePanel";
+import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { FormAlert, SubmitButton } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -34,6 +35,7 @@ export function VerifyEmailPage() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
   const ranRef = useRef(false);
+  const emailDelivery = useEmailDelivery();
 
   /* The link is spent on first use, so it is followed once — StrictMode's
      second mount would otherwise spend it and then report the spent link. */
@@ -124,10 +126,14 @@ export function VerifyEmailPage() {
   return (
     <ConsoleLayout title="Confirm your email" subtitle={state.fresh ? "Account created — one last step." : "One quick step."}>
       <ConsoleHero icon={MailCheck} tint="bg-blue-500">
-        <p>
-          Enter the six-digit code we just emailed you. It lets Council reach you about what you report — and proves nobody
-          signed up with your address.
-        </p>
+        {emailDelivery === false ? (
+          <p>Confirming your address lets Council reach you about what you report — and proves nobody signed up with your address.</p>
+        ) : (
+          <p>
+            Enter the six-digit code we just emailed you. It lets Council reach you about what you report — and proves nobody
+            signed up with your address.
+          </p>
+        )}
       </ConsoleHero>
 
       <SettingsGroup>
