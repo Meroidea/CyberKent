@@ -7,6 +7,9 @@ import { errorHandler, notFoundHandler } from "@/middleware/error";
 import { authRoutes } from "@/modules/auth/auth.routes";
 import { healthRoutes } from "@/modules/health/health.routes";
 import { aiRoutes } from "@/modules/ai/ai.routes";
+import { accountRoutes } from "@/modules/account/account.routes";
+import { referenceRoutes } from "@/modules/reference/reference.routes";
+import { reportsRoutes } from "@/modules/reports/reports.routes";
 import { sendOk } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
@@ -33,7 +36,7 @@ export function createApp() {
       origin(origin, callback) {
         /* No Origin header: curl, server-to-server, same-origin. Nothing to
            enforce, since CORS only protects browser callers. */
-        if (!origin || env.allowedOrigins.includes(origin)) {
+        if (!origin || env.isAllowedOrigin(origin)) {
           callback(null, true);
           return;
         }
@@ -64,12 +67,15 @@ export function createApp() {
       service: "CyberKent API",
       description: "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System",
       version: "0.1.0",
-      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/ai"],
+      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai"],
     });
   });
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/account", accountRoutes);
+  app.use("/api/reports", reportsRoutes);
+  app.use("/api/reference", referenceRoutes);
   app.use("/api/ai", aiRoutes);
 
   app.use(notFoundHandler);
