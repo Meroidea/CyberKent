@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "bundle": "node scripts/bundle.mjs",
+    "vercel-build": "prisma generate && node scripts/bundle.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -38,6 +40,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.2",
+    "esbuild": "0.28.1",
     "prisma": "^7.9.1",
     "tsx": "^4.23.10",
     "typescript": "^7.0.2"
