@@ -165,7 +165,7 @@ export function EmailUnavailableNotice({ className }: { className?: string }) {
   return (
     <FormAlert tone="info" className={className}>
       Email isn't set up on this site yet, so we can't send your confirmation code. Your account works and you can
-      look around; sending reports to Council opens as soon as email is live.
+      still report scams to Council — an officer will reach you at the address you signed up with.
     </FormAlert>
   );
 }

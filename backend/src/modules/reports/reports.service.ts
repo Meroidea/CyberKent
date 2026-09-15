@@ -3,7 +3,7 @@ import type { ReportStatus } from "@prisma/client";
 import { env } from "@/config/env";
 import { audit } from "@/lib/audit";
 import { AppError } from "@/lib/http";
-import { mailTemplates, sendMail } from "@/lib/mailer";
+import { emailDeliveryAvailable, mailTemplates, sendMail } from "@/lib/mailer";
 import { authRepository } from "@/modules/auth/auth.repository";
 import { normaliseIndicator } from "@/modules/reports/reports.normalise";
 import { reportsRepository, type ReportDetailRow, type ReportListRow } from "@/modules/reports/reports.repository";
@@ -92,8 +92,17 @@ export const reportsService = {
      * The account exists so Council can come back to the person who reported.
      * An unconfirmed address is one they may not be able to reach, so the
      * report waits for the six-digit code — the form keeps everything typed.
+     *
+     * Only where a code can actually arrive. A deployment with no mail
+     * transport cannot confirm anybody's address, so this gate would not be a
+     * step on the way to reporting — it would be a closed door in front of the
+     * one thing the service exists to do (P2, PO-2), and a closed door that no
+     * resident could ever open. The account, its rate limit and the address on
+     * it are all still there; the audit entry below records that the address
+     * was unconfirmed, so an officer picking the report up knows how much the
+     * contact details are worth.
      */
-    if (!user.emailVerified) {
+    if (!user.emailVerified && emailDeliveryAvailable()) {
       throw new AppError(403, "Confirm your email address to send this report.", [
         { field: "emailVerified", message: "Enter the code we emailed you. Your report is kept while you do." },
       ]);
@@ -168,6 +177,8 @@ export const reportsService = {
       metadata: {
         indicators: indicators.length,
         fromCheck: input.fromCheck ? { score: input.fromCheck.score, band: input.fromCheck.band } : null,
+        /* Whether Council's contact address for this report has been proved. */
+        emailVerified: user.emailVerified !== null,
       },
     });
 

@@ -15,7 +15,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
-import { VerifyCodePanel } from "@/components/auth/VerifyCodePanel";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
+import { EmailUnavailableNotice, VerifyCodePanel } from "@/components/auth/VerifyCodePanel";
 import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { FormAlert, SelectField, SubmitButton, TextAreaField, TextField } from "@/components/forms/fields";
@@ -52,15 +53,21 @@ export function ReportPage() {
   return status === "member" ? <ReportForm /> : <ReportGate />;
 }
 
-const STEPS = [
-  { label: "Create a free account", detail: "Name, email and a password. Under a minute." },
-  { label: "Confirm your email", detail: "Type the six-digit code we send you." },
+const ACCOUNT_STEP = { label: "Create a free account", detail: "Name, email and a password. Under a minute." };
+const CONFIRM_STEP = { label: "Confirm your email", detail: "Type the six-digit code we send you." };
+const SEND_STEPS = [
   { label: "Send your report", detail: "Anything the checker found is already filled in." },
   { label: "Track it", detail: "Your dashboard shows each step, and any question Council asks." },
 ];
 
+/** The journey as this deployment can actually run it. */
+function steps(emailDelivery: boolean | null) {
+  return emailDelivery === false ? [ACCOUNT_STEP, ...SEND_STEPS] : [ACCOUNT_STEP, CONFIRM_STEP, ...SEND_STEPS];
+}
+
 function ReportGate() {
   const { open: openChecker } = useCheckModal();
+  const emailDelivery = useEmailDelivery();
   const draft = loadReportDraft();
   const next = encodeURIComponent(ROUTES.reportScam);
 
@@ -99,7 +106,7 @@ function ReportGate() {
 
       <SettingsGroup title="How reporting works">
         <SettingsRows inset={60}>
-          {STEPS.map((step, index) => (
+          {steps(emailDelivery).map((step, index) => (
             <div key={step.label} className="flex items-start gap-3 px-4 py-3">
               <span
                 aria-hidden="true"
@@ -156,9 +163,11 @@ function ReportForm() {
   const [newType, setNewType] = useState<IndicatorType>("URL");
   const [newValue, setNewValue] = useState("");
   const verifyRef = useRef<HTMLDivElement>(null);
-  const emailDelivery = useEmailDelivery();
 
-  const verified = Boolean(user?.emailVerified);
+  /* Whether the address has been proved, whether there is still a code to
+     type, and whether Council can be written to today — which on a deployment
+     that cannot email anybody is true without the first two. */
+  const { confirmed, pending: confirmationPending, canSendReport } = useEmailConfirmation();
   const restored = useMemo(() => draftHasContent(draft) && draft.savedAt > 0, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -212,7 +221,7 @@ function ReportForm() {
     event.preventDefault();
     setFormError(null);
 
-    if (!verified) {
+    if (!canSendReport) {
       verifyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       setFormError("Confirm your email with the code first — your report is saved while you do.");
       return;
@@ -282,19 +291,23 @@ function ReportForm() {
         </FormAlert>
       ) : null}
 
-      {!verified ? (
+      {/*
+        * Unconfirmed, but nothing is stopping the report: the site cannot send
+        * a code to anyone. Said plainly, and once — a "confirm your email"
+        * heading over a step that cannot be taken would read as the report
+        * being held back, which is exactly what it is not.
+        */}
+      {!confirmed && !confirmationPending ? <EmailUnavailableNotice /> : null}
+
+      {confirmationPending ? (
         <div ref={verifyRef}>
           <SettingsGroup
             title="Confirm your email to send this"
             footer={
-              emailDelivery === false ? (
-                "You can fill in the report now — it is saved on this device and will be ready to send."
-              ) : (
-                <>
-                  Enter the code we emailed to <strong className="font-medium text-ui-label">{user?.email}</strong>. You can keep
-                  filling in the report while you wait — nothing is lost.
-                </>
-              )
+              <>
+                Enter the code we emailed to <strong className="font-medium text-ui-label">{user?.email}</strong>. You can keep
+                filling in the report while you wait — nothing is lost.
+              </>
             }
           >
             <VerifyCodePanel compact justSent={false} onVerified={() => setFormError(null)} />
@@ -500,8 +513,8 @@ function ReportForm() {
 
         <div className="flex flex-col gap-3">
           {formError ? <FormAlert>{formError}</FormAlert> : null}
-          <SubmitButton busy={busy} icon={verified ? Send : MailCheck}>
-            {verified ? "Send report to Council" : "Confirm your email to send"}
+          <SubmitButton busy={busy} icon={canSendReport ? Send : MailCheck}>
+            {canSendReport ? "Send report to Council" : "Confirm your email to send"}
           </SubmitButton>
           <p className="flex items-start justify-center gap-1.5 text-center text-[0.8125rem] leading-snug text-ui-label-2">
             <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />

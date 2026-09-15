@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Flag, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
 import { useAuth } from "@/components/auth/useAuth";
-import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { FormAlert } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -33,7 +33,7 @@ function greeting(): string {
 export function DashboardPage() {
   const { user, setUser, signOut } = useAuth();
   const { open: openChecker } = useCheckModal();
-  const emailDelivery = useEmailDelivery();
+  const { confirmed, pending: confirmationPending } = useEmailConfirmation();
   const navigate = useNavigate();
   const location = useLocation();
   const notice = (location.state as { notice?: string } | null)?.notice;
@@ -100,18 +100,26 @@ export function DashboardPage() {
         </FormAlert>
       ) : null}
 
-      {user && !user.emailVerified ? (
-        <SettingsGroup footer="Council needs a confirmed address to follow up on what you report.">
+      {user && !confirmed ? (
+        <SettingsGroup
+          footer={
+            confirmationPending
+              ? "Council needs a confirmed address to follow up on what you report."
+              : "Council will use the address on your account to follow up on what you report."
+          }
+        >
+          {/* Nothing to tap where no code can be sent: a row that opens a
+              screen with no action on it is a job the reader cannot finish. */}
           <SettingsRow
             icon={MailWarning}
             iconClassName="bg-amber-500"
-            label="Confirm your email"
+            label={confirmationPending ? "Confirm your email" : "Your email is not confirmed"}
             detail={
-              emailDelivery === false
-                ? "Email isn't set up on this site yet, so confirmation codes can't be sent. Reporting opens once it is."
-                : "Enter the six-digit code we sent. Needed before you can send a report."
+              confirmationPending
+                ? "Enter the six-digit code we sent. Needed before you can send a report."
+                : "Email isn't set up on this site yet, so codes can't be sent. You can still report scams to Council."
             }
-            to={`${ROUTES.verifyEmail}?next=${encodeURIComponent(ROUTES.account)}`}
+            to={confirmationPending ? `${ROUTES.verifyEmail}?next=${encodeURIComponent(ROUTES.account)}` : undefined}
           />
         </SettingsGroup>
       ) : null}

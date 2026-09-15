@@ -1,16 +1,19 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { ROUTES } from "@/config/site";
 import { initials } from "@/lib/report/labels";
 import { cn } from "@/lib/cn";
 
 /**
  * The masthead's account control: "Sign in" for a visitor, their initials for
- * a member. A dot marks an unconfirmed email, the one account state that stops
- * a report from being sent.
+ * a member. A dot marks an email still waiting to be confirmed — the one
+ * account state that stops a report from being sent, and only where a code can
+ * actually be sent to clear it.
  */
 export function AccountButton({ className }: { className?: string }) {
   const { user } = useAuth();
+  const { pending } = useEmailConfirmation();
 
   if (!user) {
     return (
@@ -29,7 +32,7 @@ export function AccountButton({ className }: { className?: string }) {
   return (
     <Link
       to={ROUTES.account}
-      aria-label={`Your dashboard — signed in as ${user.fullName}${user.emailVerified ? "" : ", email not yet confirmed"}`}
+      aria-label={`Your dashboard — signed in as ${user.fullName}${pending ? ", email not yet confirmed" : ""}`}
       title={user.email}
       className={cn(
         "interactive relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[0.8125rem] font-semibold text-white shadow-md shadow-indigo-600/20",
@@ -37,7 +40,7 @@ export function AccountButton({ className }: { className?: string }) {
       )}
     >
       {initials(user.fullName)}
-      {!user.emailVerified ? (
+      {pending ? (
         <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-amber-500 dark:border-slate-900" />
       ) : null}
     </Link>

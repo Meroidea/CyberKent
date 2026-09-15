@@ -1166,7 +1166,7 @@ The diagram is the analysis-stage model; §7.1 and §7.2 are the specified model
 |---|---|
 | **Actor** | Resident or Organisation user |
 | **Goal** | Report a scam to Council with supporting evidence and obtain a trackable reference |
-| **Precondition** | The user is authenticated and their email is verified |
+| **Precondition** | The user is authenticated and their email is verified — except on a deployment with no mail transport, where no address can be verified and the requirement would make reporting unreachable rather than merely gated |
 | **Requirements** | FR25–FR36, FR61, ER-5, ER-10 |
 
 **Main flow**

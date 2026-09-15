@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, CheckCircle2, LogOut, MailWarning, Trash2, UserX } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { FormAlert, PasswordField, SubmitButton, TextAreaField, TextField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -17,6 +18,7 @@ import { ROUTES, SITE } from "@/config/site";
 /** FR7, FR8, FR11, FR12 — everything a person manages about their account, on one screen. */
 export function AccountSettingsPage() {
   const { user, signOut } = useAuth();
+  const { confirmed, pending: confirmationPending } = useEmailConfirmation();
   const navigate = useNavigate();
 
   return (
@@ -32,14 +34,20 @@ export function AccountSettingsPage() {
         <SettingsRow
           label={user?.email}
           trailing={
-            user?.emailVerified ? (
+            confirmed ? (
               <span className="inline-flex items-center gap-1 text-[0.9375rem] text-emerald-600 dark:text-emerald-400">
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Confirmed
               </span>
-            ) : (
+            ) : confirmationPending ? (
               <Link to={`${ROUTES.verifyEmail}?next=${encodeURIComponent(ROUTES.accountSettings)}`} className="inline-flex items-center gap-1 text-[0.9375rem] font-medium text-amber-600 hover:opacity-70 dark:text-amber-400">
                 <MailWarning className="h-4 w-4" aria-hidden="true" /> Confirm now
               </Link>
+            ) : (
+              /* Nothing to offer: this site cannot send a code to anyone. The
+                 state is still shown, because it is true of the address. */
+              <span className="inline-flex items-center gap-1 text-[0.9375rem] text-ui-label-2">
+                <MailWarning className="h-4 w-4" aria-hidden="true" /> Not confirmed
+              </span>
             )
           }
         />
