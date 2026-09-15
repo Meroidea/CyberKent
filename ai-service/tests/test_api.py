@@ -28,7 +28,7 @@ from app.schemas import (
     Usage,
 )
 
-USAGE = Usage(model="fake-model", prompt_version="test", latency_ms=1)
+USAGE = Usage(provider="fake", model="fake-model", prompt_version="test", latency_ms=1)
 PNG_1PX = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
         "89504e470d0a1a0a0000000d4948445200000001000000010806000000"

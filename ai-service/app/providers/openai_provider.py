@@ -11,6 +11,11 @@ Pydantic `text_format`), so every analysis comes back already validated against
   traced by OpenAI without Council disclosing who anyone is.
 - bounded `max_output_tokens` and a client timeout with limited retries, so one
   slow request cannot hold a gateway worker indefinitely (Avoid.md §10).
+
+The retry and breaker policy is shared with every other provider
+(`app/providers/policy`); only the reading of OpenAI's own exceptions is here.
+So are the assistant's safety replies (`app/providers/safety`), so that what a
+frightened person reads does not depend on which provider is configured.
 """
 
 import hashlib
@@ -23,6 +28,8 @@ from pydantic import BaseModel
 from app import prompts
 from app.config import Settings
 from app.providers.base import ProviderRefused, ProviderUnavailable
+from app.providers.policy import Action, Breaker, Verdict
+from app.providers.safety import CRISIS_REPLY, REFUSAL_REPLY, looks_like_crisis
 from app.schemas import (
     AssistantReply,
     ChatTurn,
@@ -40,22 +47,6 @@ Result = TypeVar("Result")
 # Refusals that no retry can fix: the account has no credit or has hit its cap.
 BILLING_CODES = {"insufficient_quota", "credit_balance_exhausted", "billing_hard_limit_reached"}
 
-# How long AI stays switched off after a billing refusal before it is tried again.
-COOLDOWN_SECONDS = 600
-
-CRISIS_REPLY = (
-    "I'm sorry you're going through this. If you are in danger, call 000 now. "
-    "If you are feeling overwhelmed or thinking about harming yourself, please call "
-    "Lifeline on 13 11 14 (24 hours) or text 0477 13 11 14.\n\n"
-    "Being scammed is a crime committed against you — it is not your fault. When you are "
-    "ready, contact your bank first, then IDCARE on 1800 595 160 for free, confidential support."
-)
-
-REFUSAL_REPLY = (
-    "I can't help with that message. I can help with recognising scams, what to do after "
-    "being targeted, reporting a scam, and keeping your accounts safe."
-)
-
 
 def _safety_id(payload: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
@@ -71,6 +62,31 @@ def _error_code(error: APIStatusError) -> str | None:
     return detail.get("code") if isinstance(detail, dict) else None
 
 
+def _classify(error: Exception) -> Verdict | None:
+    """Maps an OpenAI SDK exception onto the shared retry and breaker policy."""
+    if isinstance(error, APITimeoutError):
+        # Not retried: a timeout has already spent the whole budget.
+        return Verdict(Action.FAIL, "The AI provider did not respond in time.")
+
+    if isinstance(error, APIConnectionError):
+        return Verdict(Action.RETRY, "The AI provider could not be reached.")
+
+    if isinstance(error, APIStatusError):
+        code = _error_code(error)
+
+        if error.status_code == 429 and code in BILLING_CODES:
+            return Verdict(Action.TRIP, f"The AI provider refused on billing grounds ({code})")
+
+        if error.status_code in (429, 500, 502, 503):
+            return Verdict(Action.RETRY, f"The AI provider returned HTTP {error.status_code}.")
+
+        # Status and code only: the body can echo the request, which is user content.
+        return Verdict(Action.FAIL, f"The AI provider returned HTTP {error.status_code}.")
+
+    # Not ours to explain — a bug here, not an outage there. Let it propagate.
+    return None
+
+
 class OpenAIProvider:
     name = "openai"
 
@@ -82,13 +98,13 @@ class OpenAIProvider:
         # request against an exhausted account before failing anyway.
         self._client = (
             OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_seconds, max_retries=0)
-            if settings.configured
+            if settings.openai_api_key
             else None
         )
-        # Circuit breaker: after a billing refusal, AI reports itself unavailable
-        # until this monotonic time, so the interface stops offering it and no
-        # resident waits on a request that is certain to fail.
-        self._open_until = 0.0
+        # After a billing refusal the breaker opens and AI reports itself
+        # unavailable, so the interface stops offering it and no resident waits
+        # on a request that is certain to fail.
+        self._breaker = Breaker()
 
     @property
     def model(self) -> str:
@@ -96,43 +112,18 @@ class OpenAIProvider:
 
     @property
     def configured(self) -> bool:
-        return self._client is not None and time.monotonic() >= self._open_until
+        return self._client is not None and self._breaker.closed
 
     def _require(self) -> OpenAI:
         if self._client is None:
             raise ProviderUnavailable("OPENAI_API_KEY is not set.")
-        if time.monotonic() < self._open_until:
-            raise ProviderUnavailable("AI is paused after a billing refusal from the provider.")
+        self._breaker.check()
         return self._client
 
     def _call(self, operation: Callable[[OpenAI], Result]) -> Result:
-        """Runs one provider call with the service's own retry and breaker policy."""
+        """Runs one provider call under the shared retry and breaker policy."""
         client = self._require()
-
-        for attempt in (1, 2):
-            try:
-                return operation(client)
-            except APITimeoutError as error:
-                # Not retried: a timeout has already spent the whole budget.
-                raise ProviderUnavailable("The AI provider did not respond in time.") from error
-            except APIConnectionError as error:
-                if attempt == 2:
-                    raise ProviderUnavailable("The AI provider could not be reached.") from error
-            except APIStatusError as error:
-                code = _error_code(error)
-
-                if error.status_code == 429 and code in BILLING_CODES:
-                    self._open_until = time.monotonic() + COOLDOWN_SECONDS
-                    raise ProviderUnavailable(f"The AI provider refused on billing grounds ({code}); AI paused for {COOLDOWN_SECONDS // 60} minutes.") from error
-
-                if error.status_code in (429, 500, 502, 503) and attempt == 1:
-                    time.sleep(1.0)
-                    continue
-
-                # Status and code only: the body can echo the request, which is user content.
-                raise ProviderUnavailable(f"The AI provider returned HTTP {error.status_code}.") from error
-
-        raise ProviderUnavailable("The AI provider did not answer.")
+        return self._breaker.run(lambda: operation(client), _classify)
 
     def _parse(self, *, instructions: str, content: list[dict], schema: type[Parsed], model: str) -> tuple[Parsed, Usage]:
         started = time.perf_counter()
@@ -155,6 +146,7 @@ class OpenAIProvider:
             raise ProviderRefused("The model declined to produce an assessment.")
 
         usage = Usage(
+            provider=self.name,
             model=response.model or model,
             prompt_version=prompts.PROMPT_VERSION,
             latency_ms=round((time.perf_counter() - started) * 1000),
@@ -227,19 +219,30 @@ class OpenAIProvider:
         latest = messages[-1].content
         model = self._settings.assistant_model
 
-        category = self._moderation_category(latest)
-
-        if category:
-            reply = CRISIS_REPLY if category.startswith("self-harm") or category.startswith("self_harm") else REFUSAL_REPLY
+        def blocked(reply: str, by: str) -> AssistantReply:
             return AssistantReply(
                 reply=reply,
                 blocked=True,
                 usage=Usage(
-                    model=self._settings.openai_moderation_model,
+                    provider=self.name,
+                    model=by,
                     prompt_version=prompts.PROMPT_VERSION,
                     latency_ms=round((time.perf_counter() - started) * 1000),
                 ),
             )
+
+        # Ahead of moderation, and ahead of the network, so the Lifeline number
+        # reaches someone even when moderation is unreachable — where this
+        # method otherwise fails open — and so both providers answer a person
+        # in crisis with the same words.
+        if looks_like_crisis(latest):
+            return blocked(CRISIS_REPLY, model)
+
+        category = self._moderation_category(latest)
+
+        if category:
+            reply = CRISIS_REPLY if category.startswith("self-harm") or category.startswith("self_harm") else REFUSAL_REPLY
+            return blocked(reply, self._settings.openai_moderation_model)
 
         response = self._call(
             lambda client: client.responses.create(
@@ -260,6 +263,7 @@ class OpenAIProvider:
         return AssistantReply(
             reply=reply,
             usage=Usage(
+                provider=self.name,
                 model=response.model or model,
                 prompt_version=prompts.PROMPT_VERSION,
                 latency_ms=round((time.perf_counter() - started) * 1000),

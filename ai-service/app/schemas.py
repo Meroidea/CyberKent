@@ -148,6 +148,11 @@ class ImageAnalysis(BaseModel):
 
 
 class Usage(BaseModel):
+    # Which provider and model actually answered — not which one was configured
+    # when the process started. The gateway writes both to `AiInteraction`, so a
+    # month's usage can be read back per provider (FR72) and a result can always
+    # be traced to the thing that produced it (Rule 8.3).
+    provider: str
     model: str
     prompt_version: str
     latency_ms: int

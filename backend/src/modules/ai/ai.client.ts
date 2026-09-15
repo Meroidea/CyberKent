@@ -19,6 +19,7 @@ export class AiUnavailableError extends Error {
 }
 
 export interface AiUsage {
+  provider: string;
   model: string;
   prompt_version: string;
   latency_ms: number;

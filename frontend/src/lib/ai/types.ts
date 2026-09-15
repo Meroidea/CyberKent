@@ -8,6 +8,8 @@
 export type AiVerdict = "likely_scam" | "suspicious" | "likely_genuine" | "unclear";
 
 export interface AiUsage {
+  /** Which provider answered — `openai`, `gemini`, or whatever is configured. */
+  provider: string;
   model: string;
   prompt_version: string;
   latency_ms: number;

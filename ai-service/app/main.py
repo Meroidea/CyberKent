@@ -30,7 +30,7 @@ settings = get_settings()
 app = FastAPI(
     title="CyberKent AI service",
     version="1.0.0",
-    description="OpenAI-backed text, image and conversational analysis for CyberKent.",
+    description="Text, image and conversational analysis for CyberKent. Provider-agnostic (Rule 8.2).",
     # The interactive docs are a development aid; production exposes nothing
     # it does not need to.
     docs_url=None if settings.environment == "production" else "/docs",
