@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { initials } from "@/lib/report/labels";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { ChevronDown, X } from "lucide-react";
@@ -52,6 +53,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
      push the calls to action off the bottom of the card. */
   const [expanded, setExpanded] = useState<string | null>(null);
   const { user } = useAuth();
+  const { pending: confirmationPending } = useEmailConfirmation();
 
   useEffect(() => {
     if (!open) {
@@ -202,7 +204,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{user.fullName}</span>
                     <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                      {user.emailVerified ? "Your dashboard" : "Confirm your email"}
+                      {confirmationPending ? "Confirm your email" : "Your dashboard"}
                     </span>
                   </span>
                 </Link>

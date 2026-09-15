@@ -7,6 +7,7 @@ import { LogoMark } from "@/components/brand/LogoMark";
 import { ROUTES, SITE } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/components/auth/useAuth";
+import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { initials } from "@/lib/report/labels";
 
 /**
@@ -21,6 +22,7 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [query, setQuery] = useState("");
   const { pathname } = useLocation();
   const { status, user } = useAuth();
+  const { pending: confirmationPending } = useEmailConfirmation();
 
   const sections = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -87,7 +89,7 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
           <span className="min-w-0">
             <span className="block truncate text-[0.9375rem] font-semibold leading-tight text-ui-label">{user.fullName}</span>
             <span className="mt-0.5 block truncate text-[0.75rem] leading-tight text-ui-label-2">
-              {user.emailVerified ? "Your dashboard" : "Confirm your email"}
+              {confirmationPending ? "Confirm your email" : "Your dashboard"}
             </span>
           </span>
         </Link>

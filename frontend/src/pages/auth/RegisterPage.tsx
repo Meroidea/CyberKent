@@ -58,6 +58,15 @@ export function RegisterPage() {
     try {
       const session = await authApi.register({ fullName: fullName.trim(), email: email.trim(), password });
       signIn(session);
+
+      /* Straight on where no code is coming. Sending someone to a screen whose
+         only content is "there is nothing to do here" is a step charged to a
+         person who came to report a scam. */
+      if (emailDelivery === false) {
+        navigate(next, { replace: true });
+        return;
+      }
+
       navigate(`${ROUTES.verifyEmail}?next=${encodeURIComponent(next)}`, {
         replace: true,
         state: { devCode: session.devCode, fresh: true },
@@ -136,7 +145,7 @@ export function RegisterPage() {
               required
               placeholder="you@example.com"
               error={taken ? undefined : error?.field("email")}
-              hint={emailDelivery === false ? "Email confirmation isn't live on this site yet — you can still create an account." : "We will send a six-digit code to confirm it."}
+              hint={emailDelivery === false ? "Email isn't live on this site yet — you can still create an account and report scams." : "We will send a six-digit code to confirm it."}
             />
             <PasswordField
               label="Password"

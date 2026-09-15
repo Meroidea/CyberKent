@@ -124,10 +124,15 @@ export function VerifyEmailPage() {
   }
 
   return (
-    <ConsoleLayout title="Confirm your email" subtitle={state.fresh ? "Account created — one last step." : "One quick step."}>
+    <ConsoleLayout
+      title="Confirm your email"
+      subtitle={
+        emailDelivery === false ? "Not needed on this site yet." : state.fresh ? "Account created — one last step." : "One quick step."
+      }
+    >
       <ConsoleHero icon={MailCheck} tint="bg-blue-500">
         {emailDelivery === false ? (
-          <p>Confirming your address lets Council reach you about what you report — and proves nobody signed up with your address.</p>
+          <p>There is nothing to confirm here yet — this site cannot send codes. Your account is ready to use as it is.</p>
         ) : (
           <p>
             Enter the six-digit code we just emailed you. It lets Council reach you about what you report — and proves nobody
@@ -140,17 +145,31 @@ export function VerifyEmailPage() {
         <VerifyCodePanel devCode={state.devCode} justSent={Boolean(state.fresh)} onVerified={() => setVerified(true)} />
       </SettingsGroup>
 
-      {reporting ? (
-        <FormAlert tone="info">Your report draft is saved. Once you are confirmed, you can send it.</FormAlert>
+      {/* A screen with nothing to type on it needs the way onward to be the
+          obvious thing on it, not a quiet link under the fold. */}
+      {emailDelivery === false ? (
+        <SubmitButton type="button" onClick={() => navigate(next, { replace: true })}>
+          {continueLabel}
+        </SubmitButton>
       ) : null}
 
-      <p className="text-center text-[0.9375rem] leading-relaxed text-ui-label-2">
-        <Link to={next === ROUTES.account ? ROUTES.account : next} className="font-medium text-ui-tint hover:opacity-70">
-          Do this later
-        </Link>
-        <span className="mx-2 text-ui-label-3">·</span>
-        <span>You can look around, but a report can only be sent once your email is confirmed.</span>
-      </p>
+      {reporting ? (
+        <FormAlert tone="info">
+          {emailDelivery === false
+            ? "Your report draft is saved and ready to send."
+            : "Your report draft is saved. Once you are confirmed, you can send it."}
+        </FormAlert>
+      ) : null}
+
+      {emailDelivery === false ? null : (
+        <p className="text-center text-[0.9375rem] leading-relaxed text-ui-label-2">
+          <Link to={next === ROUTES.account ? ROUTES.account : next} className="font-medium text-ui-tint hover:opacity-70">
+            Do this later
+          </Link>
+          <span className="mx-2 text-ui-label-3">·</span>
+          <span>You can look around, but a report can only be sent once your email is confirmed.</span>
+        </p>
+      )}
     </ConsoleLayout>
   );
 }
