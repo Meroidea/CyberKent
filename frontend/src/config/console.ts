@@ -30,7 +30,12 @@ export type ConsoleIcon =
   | "settings"
   | "privacy"
   | "accessibility"
-  | "terms";
+  | "terms"
+  | "council"
+  | "queue"
+  | "users"
+  | "categories"
+  | "audit";
 
 export interface ConsoleItem {
   label: string;
@@ -48,8 +53,12 @@ export interface ConsoleItem {
   /**
    * Who the row is for. Signed-out visitors are offered a way in; members are
    * offered their own screens instead. Unset rows show to everyone.
+   *
+   * `staff` rows are Council's console — officers and administrators — and
+   * `admin` rows are administrators' alone. Hiding them is a courtesy, not the
+   * control: every one of those screens is refused by the API to anyone else.
    */
-  audience?: "guest" | "member";
+  audience?: "guest" | "member" | "staff" | "admin";
 }
 
 export interface ConsoleSection {
@@ -123,6 +132,16 @@ export const CONSOLE_NAV: ConsoleSection[] = [
       { label: "Create a free account", href: ROUTES.register, icon: "register", tint: "bg-blue-500", audience: "guest" },
       { label: "Your dashboard", href: ROUTES.account, icon: "dashboard", tint: "bg-blue-500", audience: "member" },
       { label: "Settings", href: ROUTES.accountSettings, icon: "settings", tint: "bg-slate-500", audience: "member" },
+    ],
+  },
+  {
+    title: "Council",
+    items: [
+      { label: "Council overview", href: ROUTES.council, icon: "council", tint: "bg-indigo-600", audience: "staff" },
+      { label: "Review queue", href: ROUTES.councilQueue, icon: "queue", tint: "bg-orange-500", audience: "staff" },
+      { label: "People and roles", href: ROUTES.councilUsers, icon: "users", tint: "bg-blue-600", audience: "admin" },
+      { label: "Scam categories", href: ROUTES.councilCategories, icon: "categories", tint: "bg-fuchsia-600", audience: "admin" },
+      { label: "Audit trail", href: ROUTES.councilAudit, icon: "audit", tint: "bg-slate-600", audience: "admin" },
     ],
   },
   {

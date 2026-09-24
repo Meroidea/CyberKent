@@ -1,5 +1,10 @@
 import {
   Accessibility,
+  Inbox,
+  Landmark,
+  ScrollText,
+  Tags,
+  UsersRound,
   Bell,
   BookOpen,
   Bot,
@@ -35,4 +40,9 @@ export const CONSOLE_ICONS: Record<ConsoleIcon, LucideIcon> = {
   privacy: Lock,
   accessibility: Accessibility,
   terms: Scale,
+  council: Landmark,
+  queue: Inbox,
+  users: UsersRound,
+  categories: Tags,
+  audit: ScrollText,
 };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Flag, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
+import { BookOpen, Flag, Landmark, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
@@ -157,6 +157,18 @@ export function DashboardPage() {
           </div>
         ))}
       </section>
+
+      {user?.role === "OFFICER" || user?.role === "ADMIN" ? (
+        <SettingsGroup>
+          <SettingsRow
+            icon={Landmark}
+            iconClassName="bg-gradient-to-br from-indigo-600 to-cyan-500"
+            label="Council console"
+            detail={user.role === "ADMIN" ? "Review queue, statistics, people, categories and audit." : "Review queue and statistics."}
+            to={ROUTES.council}
+          />
+        </SettingsGroup>
+      ) : null}
 
       <SettingsGroup>
         <SettingsRows inset={60}>

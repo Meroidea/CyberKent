@@ -100,3 +100,40 @@ export async function apiRequest<T>(
 
   return envelope.data;
 }
+
+/**
+ * Downloads a file endpoint — the one kind of response that is not an
+ * envelope — and hands it to the browser as a save.
+ *
+ * Fetched with the session's token rather than opened as a link: a plain link
+ * cannot carry the Authorization header, and putting the token in the URL
+ * would write it into history and server logs. A failure still arrives as an
+ * envelope, and is thrown as an `ApiError` like any other.
+ */
+export async function apiDownload(path: string): Promise<void> {
+  const token = readToken();
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(OFFLINE, 0);
+  }
+
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as Envelope<never> | null;
+    if (response.status === 401 && token) onSessionEnded();
+    throw new ApiError(envelope?.message ?? OFFLINE, response.status, envelope?.errors ?? []);
+  }
+
+  const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? "download";
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  /* Revoked on the next tick: some browsers start the save asynchronously. */
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}

@@ -33,6 +33,13 @@ import { ReportPage } from "@/pages/report/ReportPage";
 import { DashboardPage } from "@/pages/account/DashboardPage";
 import { ReportDetailPage } from "@/pages/account/ReportDetailPage";
 import { AccountDeletedPage, AccountSettingsPage } from "@/pages/account/AccountSettingsPage";
+import { RequireRole } from "@/components/auth/RequireRole";
+import { CouncilOverviewPage } from "@/pages/council/CouncilOverviewPage";
+import { ReviewQueuePage } from "@/pages/council/ReviewQueuePage";
+import { CouncilReportPage } from "@/pages/council/CouncilReportPage";
+import { UsersPage } from "@/pages/council/UsersPage";
+import { CategoriesPage } from "@/pages/council/CategoriesPage";
+import { AuditPage } from "@/pages/council/AuditPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
@@ -218,6 +225,15 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={ROUTES.accountSettings} element={<RequireAuth><AccountSettingsPage /></RequireAuth>} />
               <Route path={`${ROUTES.accountReport}/:reference`} element={<RequireAuth><ReportDetailPage /></RequireAuth>} />
               <Route path={`${ROUTES.account}/deleted`} element={<AccountDeletedPage />} />
+
+              {/* Council's console. The guard is a courtesy; the API re-checks
+                the role from the database on every one of these requests. */}
+              <Route path={ROUTES.council} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilOverviewPage /></RequireRole>} />
+              <Route path={ROUTES.councilQueue} element={<RequireRole roles={["OFFICER", "ADMIN"]}><ReviewQueuePage /></RequireRole>} />
+              <Route path={`${ROUTES.councilReport}/:reference`} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilReportPage /></RequireRole>} />
+              <Route path={ROUTES.councilUsers} element={<RequireRole roles={["ADMIN"]}><UsersPage /></RequireRole>} />
+              <Route path={ROUTES.councilCategories} element={<RequireRole roles={["ADMIN"]}><CategoriesPage /></RequireRole>} />
+              <Route path={ROUTES.councilAudit} element={<RequireRole roles={["ADMIN"]}><AuditPage /></RequireRole>} />
 
               {PLACEHOLDERS.map((page) => (
                 <Route
