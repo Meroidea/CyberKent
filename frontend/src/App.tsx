@@ -47,6 +47,7 @@ import { AlertDetailPage } from "@/pages/alerts/AlertDetailPage";
 import { SubscriptionLinkPage } from "@/pages/alerts/SubscriptionLinkPage";
 import { RecoverPage } from "@/pages/recover/RecoverPage";
 import { ChecklistPage } from "@/pages/recover/ChecklistPage";
+import { ScamMapPage } from "@/pages/ScamMapPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
@@ -98,13 +99,6 @@ const PLACEHOLDERS: {
   summary: string;
   requirements: string;
 }[] = [
-  {
-    path: ROUTES.scamMap,
-    title: "Scam map and trends",
-    summary:
-      "Where reports are clustering across the municipality, aggregated to suburb level so patterns show but people do not.",
-    requirements: "Module 12 · FR70",
-  },
   {
     path: ROUTES.privacy,
     title: "Privacy",
@@ -225,6 +219,9 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={`${ROUTES.alerts}/subscribe/confirm`} element={<SubscriptionLinkPage mode="confirm" />} />
               <Route path={`${ROUTES.alerts}/unsubscribe`} element={<SubscriptionLinkPage mode="unsubscribe" />} />
               <Route path={`${ROUTES.alerts}/:reference`} element={<AlertDetailPage />} />
+
+              {/* FR70 — the public, suburb-level picture. */}
+              <Route path={ROUTES.scamMap} element={<ScamMapPage />} />
 
               {/* Module 10 — recovery checklists (FR58–FR60). */}
               <Route path={ROUTES.recover} element={<RecoverPage />} />
