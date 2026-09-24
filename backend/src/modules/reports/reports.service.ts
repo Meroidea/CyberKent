@@ -7,7 +7,7 @@ import { emailDeliveryAvailable, mailTemplates, sendMail } from "@/lib/mailer";
 import { authRepository } from "@/modules/auth/auth.repository";
 import { normaliseIndicator } from "@/modules/reports/reports.normalise";
 import { reportsRepository, type ReportDetailRow, type ReportListRow } from "@/modules/reports/reports.repository";
-import type { CreateReportInput } from "@/modules/reports/reports.schema";
+import type { CreateReportInput, DraftInput } from "@/modules/reports/reports.schema";
 
 /** FR30 — the states a reporter may still withdraw from. After a decision, the report is Council's record. */
 const WITHDRAWABLE: ReportStatus[] = ["SUBMITTED", "UNDER_REVIEW", "INFORMATION_REQUESTED"];
@@ -145,7 +145,12 @@ export const reportsService = {
       throw new AppError(422, "Some details need another look.", problems);
     }
 
-    const reference = await newReference();
+    const draft = input.draftReference ? await reportsRepository.findDraft(userId, input.draftReference) : null;
+    if (input.draftReference && !draft) {
+      throw new AppError(404, "That draft is no longer on your account. Your report can still be sent as a new one.");
+    }
+
+    const reference = draft?.reference ?? (await newReference());
     const linkPath = `/account/reports/${reference}`;
 
     const report = await reportsRepository.create({
@@ -159,6 +164,7 @@ export const reportsService = {
       amountLostCents: input.amountLost === undefined ? undefined : Math.round(input.amountLost * 100),
       occurredAt: input.occurredOn ? new Date(`${input.occurredOn}T00:00:00Z`) : undefined,
       indicators,
+      promoteId: draft?.id,
       notification: {
         title: `Report ${reference} received`,
         body: "A CyberSafe officer will review it. We will let you know when its status changes.",
@@ -187,6 +193,48 @@ export const reportsService = {
     });
 
     return { reference, status: "SUBMITTED" as const, linkPath };
+  },
+
+  /** FR26 — save or update a draft; nothing is checked until it is sent. */
+  async saveDraft(userId: string, input: DraftInput) {
+    const existing = input.reference ? await reportsRepository.findDraft(userId, input.reference) : null;
+    if (input.reference && !existing) throw new AppError(404, "That draft is no longer on your account.");
+
+    if (input.categoryId && !(await reportsRepository.categoryExists(input.categoryId))) input.categoryId = undefined;
+    if (input.suburbId && !(await reportsRepository.suburbExists(input.suburbId))) input.suburbId = undefined;
+
+    /* Artefacts that do not parse yet are dropped from the draft rather than refused. */
+    const seen = new Set<string>();
+    const indicators = input.indicators
+      .flatMap((artefact) => normaliseIndicator(artefact.type, artefact.value) ?? [])
+      .filter((entry) => (seen.has(`${entry.type}:${entry.value}`) ? false : (seen.add(`${entry.type}:${entry.value}`), true)));
+
+    const saved = await reportsRepository.saveDraft(userId, existing?.reference ?? (await newReference()), existing?.id ?? null, {
+      channel: input.channel,
+      categoryId: input.categoryId,
+      suburbId: input.suburbId,
+      title: input.title,
+      description: input.description,
+      amountLostCents: input.amountLost === undefined ? undefined : Math.round(input.amountLost * 100),
+      occurredAt: input.occurredOn ? new Date(`${input.occurredOn}T00:00:00Z`) : undefined,
+      indicators,
+    });
+
+    return { reference: saved.reference, savedAt: saved.updatedAt.toISOString() };
+  },
+
+  async drafts(userId: string) {
+    return (await reportsRepository.listDrafts(userId)).map((row) => ({
+      reference: row.reference,
+      title: row.title,
+      channel: row.channel,
+      files: row._count.evidence,
+      updatedAt: row.updatedAt.toISOString(),
+    }));
+  },
+
+  async discardDraft(userId: string, reference: string) {
+    if (!(await reportsRepository.deleteDraft(userId, reference))) throw new AppError(404, "That draft is no longer on your account.");
   },
 
   async list(userId: string) {

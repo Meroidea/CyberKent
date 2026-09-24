@@ -9,7 +9,6 @@ import {
   Loader2,
   Mail,
   MessageCircleQuestion,
-  Paperclip,
   Phone,
   PlayCircle,
   RotateCcw,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { OfficerStatus, SeverityBadge } from "@/components/council/Badges";
 import { SimilarReports } from "@/components/council/SimilarReports";
+import { StaffEvidence } from "@/components/evidence/StaffEvidence";
 import { useLoad } from "@/components/council/useLoad";
 import { FormAlert, SelectField, SubmitButton, TextAreaField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -253,20 +253,7 @@ function ReportBody({ report, busy, onIndicator }: { report: CouncilReport; busy
         )}
       </SettingsGroup>
 
-      <SettingsGroup title="Evidence">
-        {report.evidence.length === 0 ? (
-          <p className="flex items-center gap-2 px-4 py-3.5 text-[0.9375rem] text-ui-label-2">
-            <Paperclip aria-hidden="true" className="h-4 w-4" />
-            No files attached.
-          </p>
-        ) : (
-          <SettingsRows>
-            {report.evidence.map((file) => (
-              <SettingsRow key={file.id} label={file.originalName} detail={`${file.mimeType} · ${Math.round(file.sizeBytes / 1024)} KB${file.description ? ` · ${file.description}` : ""}`} />
-            ))}
-          </SettingsRows>
-        )}
-      </SettingsGroup>
+      <StaffEvidence report={report} />
 
       <SettingsGroup title="History" footer="Decision notes are Council's working record. The reporter sees each change of status, never the notes.">
         <History report={report} />

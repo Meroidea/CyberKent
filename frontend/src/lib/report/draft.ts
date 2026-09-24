@@ -32,6 +32,8 @@ export interface ReportDraft {
   amountLost: string;
   indicators: DraftIndicator[];
   fromCheck?: { score: number; band: Analysis["band"] };
+  /** FR26 — set once the draft is also saved on the server, to any device. */
+  serverReference?: string;
   savedAt: number;
 }
 

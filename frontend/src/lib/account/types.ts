@@ -74,6 +74,8 @@ export interface NewReport {
   occurredOn?: string;
   indicators: { type: IndicatorType; value: string }[];
   fromCheck?: { score: number; band: "high" | "medium" | "low" | "unclear" };
+  /** FR26 — send a saved draft, which becomes this report. */
+  draftReference?: string;
 }
 
 export interface Notification {

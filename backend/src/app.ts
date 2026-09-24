@@ -17,6 +17,7 @@ import { subscriptionRoutes } from "@/modules/subscriptions/subscriptions.routes
 import { recoveryRoutes } from "@/modules/recovery/recovery.routes";
 import { insightsRoutes } from "@/modules/insights/insights.routes";
 import { indicatorRoutes } from "@/modules/indicators/indicators.routes";
+import { reporterEvidenceRoutes, staffEvidenceRoutes } from "@/modules/evidence/evidence.routes";
 import { AppError, sendOk } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
@@ -84,6 +85,8 @@ export function createApp() {
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/account", accountRoutes);
+  /* Evidence first: its limits route is public, and the reports router requires an account for everything. */
+  app.use("/api/reports", reporterEvidenceRoutes);
   app.use("/api/reports", reportsRoutes);
   app.use("/api/reference", referenceRoutes);
   app.use("/api/ai", aiRoutes);
@@ -92,6 +95,7 @@ export function createApp() {
   app.use("/api/recovery", recoveryRoutes);
   app.use("/api/insights", insightsRoutes);
   app.use("/api/indicators", indicatorRoutes);
+  app.use("/api/council/reports", staffEvidenceRoutes);
   app.use("/api/council", councilRoutes);
   app.use("/api/admin", adminRoutes);
 

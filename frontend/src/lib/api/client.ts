@@ -137,3 +137,49 @@ export async function apiDownload(path: string): Promise<void> {
   /* Revoked on the next tick: some browsers start the save asynchronously. */
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
+
+/**
+ * Sends a file as the raw request body — no base64, no multipart — so the
+ * byte count the API limits is the file's own. Name and description travel as
+ * URI-encoded headers; the API decides the type from the bytes regardless.
+ */
+export async function apiUpload<T>(path: string, file: Blob, headers: Record<string, string> = {}): Promise<T> {
+  const token = readToken();
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+      body: file,
+    });
+  } catch {
+    throw new ApiError(OFFLINE, 0);
+  }
+
+  const envelope = (await response.json().catch(() => null)) as Envelope<T> | null;
+  if (response.status === 401 && token) onSessionEnded();
+  if (!response.ok || !envelope?.success || envelope.data === null) {
+    throw new ApiError(envelope?.message ?? (response.status === 413 ? "That file is too large." : OFFLINE), response.status, envelope?.errors ?? []);
+  }
+  return envelope.data;
+}
+
+/** A file endpoint's bytes, for showing in the page rather than saving. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const token = readToken();
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(OFFLINE, 0);
+  }
+
+  if (!response.ok) {
+    const envelope = (await response.json().catch(() => null)) as Envelope<never> | null;
+    if (response.status === 401 && token) onSessionEnded();
+    throw new ApiError(envelope?.message ?? OFFLINE, response.status, envelope?.errors ?? []);
+  }
+  return response.blob();
+}

@@ -68,6 +68,8 @@ export const AUDIT_ACTION: Record<string, string> = {
   "category.archived": "Archived a category",
   "category.restored": "Restored a category",
   "data.exported": "Exported de-identified data",
+  "evidence.uploaded": "Attached evidence",
+  "recovery.progress": "Worked a recovery checklist",
   ALERT_PUBLISHED: "Published a community alert",
   "alert.drafted": "Drafted an alert",
   "alert.edited": "Edited an alert",
