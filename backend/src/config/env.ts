@@ -18,6 +18,11 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection string"),
+  /* Connections each API instance may hold. Every serverless instance keeps
+     its own pool, and the shared database gives CyberKent's login 20 in all,
+     so a small pool per instance is what lets a traffic spike scale out
+     without exhausting them. */
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(20).default(3),
   /* Long enough that a signature cannot be brute-forced offline. */
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_EXPIRES_IN: z.string().default("2h"),

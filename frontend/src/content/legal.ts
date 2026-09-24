@@ -72,7 +72,7 @@ export const LEGAL: Record<LegalDocument["slug"], LegalDocument> = {
       {
         heading: "Where it is kept",
         paragraphs: [
-          "The database and the service's API run in Sydney. Evidence files are encrypted before they are stored. Email is sent through a transactional email provider. These providers act on Council's behalf and may not use your information for their own purposes.",
+          "The database and the service's API run in Tokyo, Japan, with providers bound to protect it to a standard comparable to Victoria's Information Privacy Principles. Evidence files are encrypted before they are stored. Email is sent through a transactional email provider. These providers act on Council's behalf and may not use your information for their own purposes.",
         ],
       },
       {

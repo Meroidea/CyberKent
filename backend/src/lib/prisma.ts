@@ -33,7 +33,10 @@ export function splitSchema(url: string): { connectionString: string; schema?: s
 
 function createClient(): PrismaClient {
   const { connectionString, schema } = splitSchema(env.DATABASE_URL);
-  const adapter = new PrismaPg({ connectionString }, schema ? { schema } : undefined);
+  const adapter = new PrismaPg(
+    { connectionString, max: env.DATABASE_POOL_MAX, idleTimeoutMillis: 10_000 },
+    schema ? { schema } : undefined,
+  );
 
   return new PrismaClient({
     adapter,

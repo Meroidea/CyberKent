@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "regions": [
-    "syd1"
+    "hnd1"
   ],
   "rewrites": [
     {
