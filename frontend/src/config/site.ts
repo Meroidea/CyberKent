@@ -16,7 +16,7 @@ export const SITE = {
   description:
     "Check a suspicious message, link, phone number or email, report a scam to Council, and follow verified community alerts across Hume.",
   address: "1079 Pascoe Vale Road, Broadmeadows VIC 3047",
-  supportEmail: "cybersafe@hume.vic.gov.au",
+  supportEmail: "info@cyberkent.meroidea.com",
   supportPhone: "9205 2200",
   residents: "262,000+",
 } as const;
