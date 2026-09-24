@@ -63,7 +63,11 @@ function detail(row: ReportDetailRow) {
     withdrawnAt: row.withdrawnAt?.toISOString() ?? null,
     updatedAt: row.updatedAt.toISOString(),
     indicators: row.indicators.map(({ indicator }) => indicator),
-    reviews: row.reviews.map((review) => ({ id: review.id, decision: review.decision, createdAt: review.createdAt.toISOString() })),
+    /* A question is shown as the question itself (below); its status record
+       would only say the same thing twice in the reporter's history. */
+    reviews: row.reviews
+      .filter((review) => review.decision !== "INFORMATION_REQUESTED")
+      .map((review) => ({ id: review.id, decision: review.decision, createdAt: review.createdAt.toISOString() })),
     infoRequests: row.infoRequests.map((request) => ({
       id: request.id,
       message: request.message,
@@ -236,6 +240,10 @@ export const reportsService = {
 
     if (row.status === "WITHDRAWN") {
       throw new AppError(409, "This report has been withdrawn.");
+    }
+
+    if (!WITHDRAWABLE.includes(row.status)) {
+      throw new AppError(409, "Council has already made a decision on this report, so it is no longer taking answers.");
     }
 
     const answered = await reportsRepository.respond(row.id, requestId, response);

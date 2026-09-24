@@ -1,6 +1,29 @@
 import type { NextFunction, Request, Response } from "express";
-import { ZodError, type ZodTypeAny } from "zod";
-import { sendFail } from "@/lib/http";
+import { ZodError, type z, type ZodTypeAny } from "zod";
+import { AppError, sendFail } from "@/lib/http";
+
+/**
+ * Parses a query string against a schema, for the handler to use in place of
+ * `req.query`.
+ *
+ * A function rather than a middleware: Express 5 exposes `req.query` as a
+ * getter, so it cannot be replaced the way `validateBody` replaces the body.
+ * Returning the parsed value keeps the same guarantee — the handler only ever
+ * reads the validated copy.
+ */
+export function parseQuery<T extends ZodTypeAny>(schema: T, req: Request): z.infer<T> {
+  const result = schema.safeParse(req.query);
+
+  if (!result.success) {
+    throw new AppError(
+      422,
+      "The filters are not valid.",
+      result.error.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })),
+    );
+  }
+
+  return result.data;
+}
 
 /**
  * Validates and replaces `req.body` with the parsed result.
