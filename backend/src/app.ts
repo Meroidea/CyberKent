@@ -39,6 +39,16 @@ export function createApp() {
   app.disable("x-powered-by");
   app.use(helmet());
 
+  /* Browsers may still cache what a route marks public, but the platform's
+     edge must not: it would hand one caller's response, CORS headers and all,
+     to a caller from another origin, and the browser would then refuse it.
+     Seen in production — a copy cached for a request without an Origin
+     reached the site without Access-Control-Allow-Origin. */
+  app.use((_req, res, next) => {
+    res.setHeader("Vercel-CDN-Cache-Control", "no-store");
+    next();
+  });
+
   app.use(
     cors({
       origin(origin, callback) {
