@@ -16,6 +16,7 @@ import { publicAlertsRoutes } from "@/modules/alerts/alerts.routes";
 import { subscriptionRoutes } from "@/modules/subscriptions/subscriptions.routes";
 import { recoveryRoutes } from "@/modules/recovery/recovery.routes";
 import { insightsRoutes } from "@/modules/insights/insights.routes";
+import { indicatorRoutes } from "@/modules/indicators/indicators.routes";
 import { AppError, sendOk } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
@@ -76,7 +77,7 @@ export function createApp() {
       service: "CyberKent API",
       description: "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System",
       version: "0.1.0",
-      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai", "/api/alerts", "/api/subscriptions", "/api/recovery", "/api/insights", "/api/council", "/api/admin"],
+      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai", "/api/alerts", "/api/subscriptions", "/api/recovery", "/api/insights", "/api/indicators", "/api/council", "/api/admin"],
     });
   });
 
@@ -90,6 +91,7 @@ export function createApp() {
   app.use("/api/subscriptions", subscriptionRoutes);
   app.use("/api/recovery", recoveryRoutes);
   app.use("/api/insights", insightsRoutes);
+  app.use("/api/indicators", indicatorRoutes);
   app.use("/api/council", councilRoutes);
   app.use("/api/admin", adminRoutes);
 
