@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { BookOpen, Hammer, LifeBuoy } from "lucide-react";
+import { BookOpen, LifeBuoy } from "lucide-react";
+import { SearchBox } from "@/components/council/Filters";
+import type { LearnArticle } from "@/content/learn";
 import { LEARN_ARTICLES } from "@/content/learn";
 import { SegmentedControl, type Segment } from "@/components/settings/SegmentedControl";
 import { ROUTES } from "@/config/site";
@@ -32,16 +34,29 @@ const AUDIENCE_SEGMENTS: readonly Segment<string>[] = [
  * they want a guide and is choosing which, which is a scan of titles and
  * reading times, not of artwork.
  */
+/**
+ * FR57 — everything a guide says, as one lower-cased string to search.
+ * Built once; the library is a handful of guides, so a scan is instant and
+ * needs no index or server round trip.
+ */
+function searchText(article: LearnArticle): string {
+  const blocks = article.sections.flatMap((section) => [
+    section.heading,
+    ...section.blocks.map((block) => JSON.stringify(block)),
+  ]);
+  return [article.title, article.summary, article.audience, article.lede, ...article.takeaways, ...blocks].join(" ").toLowerCase();
+}
+
+const INDEX = LEARN_ARTICLES.map((article) => ({ article, text: searchText(article) }));
+
 export function LearnPage() {
   const [audience, setAudience] = useState("all");
+  const [query, setQuery] = useState("");
 
-  const guides = useMemo(
-    () =>
-      audience === "all"
-        ? LEARN_ARTICLES
-        : LEARN_ARTICLES.filter((article) => article.category === audience),
-    [audience],
-  );
+  const guides = useMemo(() => {
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return INDEX.filter(({ article, text }) => (audience === "all" || article.category === audience) && words.every((word) => text.includes(word))).map(({ article }) => article);
+  }, [audience, query]);
 
   return (
     <ConsoleLayout
@@ -60,6 +75,8 @@ export function LearnPage() {
           assumes you work in security.
         </p>
       </header>
+
+      <SearchBox label="Search the guides" value={query} onChange={setQuery} placeholder="Search — for example: gift card, invoice, password" />
 
       <div className="-mt-2">
         <SegmentedControl
@@ -87,29 +104,18 @@ export function LearnPage() {
         </SettingsRows>
       </SettingsGroup>
 
-      {/*
-       * Avoid.md §14: the library is specified as searchable and grouped by
-       * situation, and it is not yet. Saying so is what keeps the list above
-       * readable as the whole of what exists today rather than as a sample of
-       * something larger that cannot be found.
-       */}
-      <SettingsGroup title="Still being built">
-        <SettingsRows>
-          <SettingsRow
-            icon={Hammer}
-            iconClassName="bg-amber-500"
-            label="Search and grouping"
-            detail="Situation-based grouping and a search field over the library."
-            value="In development"
-          />
-          <SettingsRow
-            icon={LifeBuoy}
-            iconClassName="bg-teal-500"
-            label="Recovery checklists"
-            detail="Steps you can work through and tick off, with progress saved."
-            to={ROUTES.recover}
-          />
-        </SettingsRows>
+      {guides.length === 0 ? (
+        <p className="-mt-4 px-4 text-[0.9375rem] text-ui-label-2">No guide mentions “{query.trim()}”. Try a shorter word, or ask the CyberSafe Assistant.</p>
+      ) : null}
+
+      <SettingsGroup title="If it has already happened">
+        <SettingsRow
+          icon={LifeBuoy}
+          iconClassName="bg-teal-500"
+          label="Recovery checklists"
+          detail="Steps for your situation, in the order that matters, with your progress saved."
+          to={ROUTES.recover}
+        />
       </SettingsGroup>
     </ConsoleLayout>
   );

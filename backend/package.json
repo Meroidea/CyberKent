@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System API",
+  "description": "Hume City Council CyberSafe Services \u2014 Online Scam Detection and Reporting System API",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
@@ -14,8 +14,10 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
     "bundle": "node scripts/bundle.mjs",
-    "vercel-build": "prisma generate && node scripts/bundle.mjs"
+    "vercel-build": "prisma generate && node scripts/bundle.mjs",
+    "test": "vitest run"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -24,6 +26,7 @@
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@types/pg": "^8.20.4",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -40,9 +43,12 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.2",
+    "@types/supertest": "^7.2.1",
     "esbuild": "0.28.1",
     "prisma": "^7.9.1",
+    "supertest": "^7.3.0",
     "tsx": "^4.23.10",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
   }
 }

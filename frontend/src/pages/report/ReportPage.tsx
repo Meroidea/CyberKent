@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { EvidencePanel } from "@/components/evidence/EvidencePanel";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CheckCircle2,
   ClipboardCopy,
@@ -26,7 +27,7 @@ import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
 import { Switch } from "@/components/settings/Switch";
 import { fetchReferenceData, reportsApi } from "@/lib/account/api";
-import type { IndicatorType, ReferenceData } from "@/lib/account/types";
+import type { IndicatorType, ReferenceData, ReportDetail } from "@/lib/account/types";
 import { ApiError } from "@/lib/api/client";
 import {
   EMPTY_DRAFT,
@@ -133,6 +134,26 @@ function ReportGate() {
   );
 }
 
+/** A draft from the server, in the form's shape. A URL's derived domain is folded back into the URL. */
+function fromServerDraft(report: ReportDetail): ReportDraft {
+  const urls = report.indicators.filter((indicator) => indicator.type === "URL");
+  const hosts = new Set(urls.map((indicator) => indicator.value.split("/")[0]));
+  return {
+    ...EMPTY_DRAFT,
+    channel: report.channel,
+    categoryId: report.category?.id ?? "",
+    suburbId: report.suburb?.id ?? "",
+    title: report.title,
+    description: report.description,
+    occurredOn: report.occurredOn ?? "",
+    lostMoney: report.amountLost !== null,
+    amountLost: report.amountLost !== null ? String(report.amountLost) : "",
+    indicators: report.indicators.filter((indicator) => !(indicator.type === "DOMAIN" && hosts.has(indicator.value))),
+    serverReference: report.reference,
+    savedAt: Date.now(),
+  };
+}
+
 type Errors = Partial<Record<"channel" | "title" | "description" | "categoryId" | "suburbId" | "amountLost" | "occurredOn" | "newIndicator", string>> & {
   indicators?: Record<number, string>;
 };
@@ -163,6 +184,55 @@ function ReportForm() {
   const [newType, setNewType] = useState<IndicatorType>("URL");
   const [newValue, setNewValue] = useState("");
   const verifyRef = useRef<HTMLDivElement>(null);
+  const [params, setParams] = useSearchParams();
+  const [draftNotice, setDraftNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  /* FR26 — reopening a draft saved on the account, from any device. */
+  useEffect(() => {
+    const wanted = params.get("draft");
+    if (!wanted) return;
+    const controller = new AbortController();
+    reportsApi
+      .get(wanted, controller.signal)
+      .then(({ report }) => {
+        if (report.status !== "DRAFT") {
+          setDraftNotice({ tone: "error", text: `${report.reference} has already been sent.` });
+          return;
+        }
+        setDraft(fromServerDraft(report));
+        setDraftNotice({ tone: "success", text: `Draft ${report.reference} reopened. Finish it and send when you are ready.` });
+      })
+      .catch(() => setDraftNotice({ tone: "error", text: "That draft could not be opened." }))
+      .finally(() => setParams({}, { replace: true }));
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveToAccount = async () => {
+    setSavingDraft(true);
+    setDraftNotice(null);
+    try {
+      const amount = draft.lostMoney ? parseAmount(draft.amountLost) : undefined;
+      const saved = await reportsApi.saveDraft({
+        reference: draft.serverReference,
+        channel: draft.channel ?? undefined,
+        title: draft.title.trim(),
+        description: draft.description.trim(),
+        categoryId: draft.categoryId || undefined,
+        suburbId: draft.suburbId || undefined,
+        occurredOn: draft.occurredOn || undefined,
+        amountLost: amount === undefined || Number.isNaN(amount) ? undefined : amount,
+        indicators: draft.indicators,
+      });
+      setDraft((current) => ({ ...current, serverReference: saved.reference }));
+      setDraftNotice({ tone: "success", text: `Saved to your account as draft ${saved.reference}. Carry on here, or finish it from your dashboard on any device.` });
+    } catch (caught) {
+      setDraftNotice({ tone: "error", text: caught instanceof ApiError ? caught.message : "The draft could not be saved. It is still kept on this device." });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
 
   /* Whether the address has been proved, whether there is still a code to
      type, and whether Council can be written to today — which on a deployment
@@ -248,6 +318,7 @@ function ReportForm() {
         amountLost: amount,
         indicators: draft.indicators,
         fromCheck: draft.fromCheck,
+        draftReference: draft.serverReference,
       });
 
       clearReportDraft();
@@ -520,6 +591,12 @@ function ReportForm() {
             <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             Council uses your report to investigate and to warn others. Anything published is de-identified first.
           </p>
+          {draftNotice ? <FormAlert tone={draftNotice.tone}>{draftNotice.text}</FormAlert> : null}
+          {draftHasContent(draft) ? (
+            <SubmitButton type="button" variant="secondary" busy={savingDraft} onClick={() => void saveToAccount()}>
+              {draft.serverReference ? `Update draft ${draft.serverReference}` : "Save as a draft on your account"}
+            </SubmitButton>
+          ) : null}
           {draftHasContent(draft) ? (
             <button
               type="button"
@@ -538,6 +615,10 @@ function ReportForm() {
           ) : null}
         </div>
       </form>
+
+      {/* Files attach to a report on the server, so they are offered once the
+          draft is there; otherwise straight after the report is sent. */}
+      {draft.serverReference ? <EvidencePanel reference={draft.serverReference} canAdd canRemove /> : null}
 
       <SettingsGroup>
         <SettingsRows inset={60}>
@@ -573,6 +654,8 @@ function ReportSent({ reference, email }: { reference: string; email: string }) 
         </button>
         <p className="mt-3" role="status">A receipt is on its way to {email}.</p>
       </ConsoleHero>
+
+      <EvidencePanel reference={reference} canAdd canRemove />
 
       <div className="flex flex-col gap-3">
         <SubmitButton type="button" onClick={() => navigate(`${ROUTES.accountReport}/${reference}`)}>Track this report</SubmitButton>

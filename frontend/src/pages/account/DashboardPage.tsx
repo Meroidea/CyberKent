@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Flag, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
+import { BookOpen, Flag, Landmark, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
@@ -136,6 +136,8 @@ export function DashboardPage() {
         </SettingsGroup>
       ) : null}
 
+      <ServerDrafts />
+
       {draftHasContent(draft) ? (
         <SettingsGroup>
           <SettingsRow icon={Flag} iconClassName="bg-rose-500" label="Finish your report" detail={`“${draft.title || "Untitled"}” is saved on this device, not sent yet.`} to={ROUTES.reportScam} />
@@ -157,6 +159,18 @@ export function DashboardPage() {
           </div>
         ))}
       </section>
+
+      {user?.role === "OFFICER" || user?.role === "ADMIN" ? (
+        <SettingsGroup>
+          <SettingsRow
+            icon={Landmark}
+            iconClassName="bg-gradient-to-br from-indigo-600 to-cyan-500"
+            label="Council console"
+            detail={user.role === "ADMIN" ? "Review queue, statistics, people, categories and audit." : "Review queue and statistics."}
+            to={ROUTES.council}
+          />
+        </SettingsGroup>
+      ) : null}
 
       <SettingsGroup>
         <SettingsRows inset={60}>
@@ -261,5 +275,49 @@ export function DashboardPage() {
         </SettingsRows>
       </SettingsGroup>
     </ConsoleLayout>
+  );
+}
+
+/** FR26 — drafts saved on the account, to reopen on any device or discard. */
+function ServerDrafts() {
+  const [drafts, setDrafts] = useState<{ reference: string; title: string; files: number; updatedAt: string }[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    reportsApi.drafts(controller.signal).then(({ drafts: list }) => setDrafts(list)).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  if (drafts.length === 0) return null;
+
+  return (
+    <SettingsGroup title="Drafts saved to your account" footer="Not sent to Council yet. Only you can see them.">
+      <SettingsRows inset={60}>
+        {drafts.map((draft) => (
+          <SettingsRow
+            key={draft.reference}
+            icon={Flag}
+            iconClassName="bg-rose-400"
+            label={draft.title || "Untitled draft"}
+            detail={`${draft.reference} · saved ${formatRelative(draft.updatedAt)}${draft.files ? ` · ${draft.files} file${draft.files === 1 ? "" : "s"}` : ""}`}
+            to={`${ROUTES.reportScam}?draft=${encodeURIComponent(draft.reference)}`}
+            trailing={
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (window.confirm("Discard this draft?")) {
+                    void reportsApi.discardDraft(draft.reference).then(() => setDrafts((list) => list.filter((row) => row.reference !== draft.reference)));
+                  }
+                }}
+                className="shrink-0 text-[0.875rem] font-medium text-ui-label-2 hover:text-rose-500"
+              >
+                Discard
+              </button>
+            }
+          />
+        ))}
+      </SettingsRows>
+    </SettingsGroup>
   );
 }

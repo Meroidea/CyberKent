@@ -27,15 +27,23 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const sections = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
-    return CONSOLE_NAV.map((section) => ({
+    const staff = user?.role === "OFFICER" || user?.role === "ADMIN";
+    const shown = (audience: (typeof CONSOLE_NAV)[number]["items"][number]["audience"]) =>
+      !audience ||
+      audience === status ||
+      (audience === "staff" && staff) ||
+      (audience === "admin" && user?.role === "ADMIN");
+
+    /* Staff come to the console to work, so their section leads. */
+    const ordered = staff ? [...CONSOLE_NAV].sort((a, b) => Number(b.title === "Council") - Number(a.title === "Council")) : CONSOLE_NAV;
+
+    return ordered.map((section) => ({
       ...section,
       items: section.items.filter(
-        (item) =>
-          (!item.audience || item.audience === status) &&
-          (!needle || item.label.toLowerCase().includes(needle)),
+        (item) => shown(item.audience) && (!needle || item.label.toLowerCase().includes(needle)),
       ),
     })).filter((section) => section.items.length > 0);
-  }, [query, status]);
+  }, [query, status, user?.role]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,7 +115,15 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <ul className="flex flex-col gap-0.5">
               {section.items.map((item) => {
                 const Icon = CONSOLE_ICONS[item.icon];
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                /* The overview's address is the prefix of every Council
+                   screen, so it only lights for itself; the queue also
+                   lights while a report from it is open. */
+                const active =
+                  item.href === ROUTES.council
+                    ? pathname === item.href
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`) ||
+                      (item.href === ROUTES.councilQueue && pathname.startsWith(`${ROUTES.councilReport}/`));
 
                 return (
                   <li key={item.href}>

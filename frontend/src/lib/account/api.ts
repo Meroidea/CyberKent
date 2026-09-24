@@ -86,6 +86,16 @@ export const reportsApi = {
   get(reference: string, signal?: AbortSignal) {
     return apiRequest<{ report: ReportDetail }>(`/api/reports/${encodeURIComponent(reference)}`, { signal });
   },
+  /** FR26 — drafts saved on the account, to finish on any device. */
+  drafts(signal?: AbortSignal) {
+    return apiRequest<{ drafts: { reference: string; title: string; channel: string; files: number; updatedAt: string }[] }>("/api/reports/drafts", { signal });
+  },
+  saveDraft(body: Omit<NewReport, "channel" | "fromCheck"> & { channel?: NewReport["channel"]; reference?: string }) {
+    return apiRequest<{ reference: string; savedAt: string }>("/api/reports/drafts", { method: "PUT", body });
+  },
+  discardDraft(reference: string) {
+    return apiRequest<{ discarded: true }>(`/api/reports/drafts/${encodeURIComponent(reference)}`, { method: "DELETE" });
+  },
   withdraw(reference: string) {
     return apiRequest<{ report: ReportDetail }>(`/api/reports/${encodeURIComponent(reference)}/withdraw`, {
       method: "POST",

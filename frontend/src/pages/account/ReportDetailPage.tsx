@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
+import { EvidencePanel } from "@/components/evidence/EvidencePanel";
 import { FormAlert, SubmitButton, TextAreaField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -212,6 +213,8 @@ export function ReportDetailPage() {
           </SettingsRows>
         </SettingsGroup>
       ) : null}
+
+      <EvidencePanel reference={report.reference} canAdd={report.canWithdraw} canRemove={report.status === "SUBMITTED"} />
 
       <SettingsGroup title="History">
         <ol className="px-4 py-2">

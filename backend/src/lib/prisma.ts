@@ -12,8 +12,31 @@ import { env } from "@/config/env";
  */
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+/**
+ * The Postgres schema the tables live in, read from `?schema=` on the URL —
+ * the convention Prisma's own CLI uses for `migrate deploy`, so one URL serves
+ * both. The adapter would otherwise qualify every table as "public", which is
+ * wrong when CyberKent shares a database with another application under its
+ * own schema. The parameter is removed before the URL reaches `pg`, which does
+ * not know it.
+ */
+export function splitSchema(url: string): { connectionString: string; schema?: string } {
+  try {
+    const parsed = new URL(url);
+    const schema = parsed.searchParams.get("schema") ?? undefined;
+    parsed.searchParams.delete("schema");
+    return { connectionString: parsed.toString(), schema };
+  } catch {
+    return { connectionString: url };
+  }
+}
+
 function createClient(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+  const { connectionString, schema } = splitSchema(env.DATABASE_URL);
+  const adapter = new PrismaPg(
+    { connectionString, max: env.DATABASE_POOL_MAX, idleTimeoutMillis: 10_000 },
+    schema ? { schema } : undefined,
+  );
 
   return new PrismaClient({
     adapter,

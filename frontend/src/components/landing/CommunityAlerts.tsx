@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, BellRing } from "lucide-react";
 import { COMMUNITY_ALERTS, type AlertSeverity, type CommunityAlert } from "@/content/landing";
@@ -7,6 +8,9 @@ import { Marquee } from "@/components/ui/Marquee";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { fadeUp, REVEAL_VIEWPORT } from "@/lib/motion";
 import { cn } from "@/lib/cn";
+import { alertsApi } from "@/lib/alerts/api";
+import type { PublicAlert } from "@/lib/alerts/types";
+import { CHANNEL_LABEL, formatDate } from "@/lib/report/labels";
 
 /** Severity colours match the console: emerald low, amber medium, rose high. */
 const SEVERITY_STYLES: Record<AlertSeverity, { badge: string; dot: string; label: string }> = {
@@ -79,11 +83,47 @@ function AlertCard({ alert }: { alert: CommunityAlert }) {
   );
 }
 
-const HALF = Math.ceil(COMMUNITY_ALERTS.length / 2);
-const TOP_ROW = COMMUNITY_ALERTS.slice(0, HALF);
-const BOTTOM_ROW = COMMUNITY_ALERTS.slice(HALF);
+/** A published alert in the rail's shape. */
+function fromPublished(alert: PublicAlert): CommunityAlert {
+  return {
+    id: alert.reference,
+    reference: alert.reference,
+    category: alert.category?.name ?? "Scam alert",
+    headline: alert.headline,
+    specimen: alert.specimen ?? alert.summary,
+    summary: alert.summary,
+    suburb: alert.suburb?.name ?? "Across Hume",
+    channel: CHANNEL_LABEL[alert.channel],
+    severity: alert.severity.toLowerCase() as AlertSeverity,
+    publishedLabel: alert.publishedAt ? formatDate(alert.publishedAt) : "",
+  };
+}
+
+/**
+ * The live feed once Council has published enough to fill both rails; the
+ * illustrative set until then, so the section is never two empty tracks.
+ */
+function useRailAlerts(): CommunityAlert[] {
+  const [live, setLive] = useState<CommunityAlert[] | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    alertsApi
+      .feed({ pageSize: 12 }, controller.signal)
+      .then(({ alerts }) => setLive(alerts.map(fromPublished)))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  return live && live.length >= 4 ? live : COMMUNITY_ALERTS;
+}
 
 export function CommunityAlerts() {
+  const alerts = useRailAlerts();
+  const half = Math.ceil(alerts.length / 2);
+  const TOP_ROW = alerts.slice(0, half);
+  const BOTTOM_ROW = alerts.slice(half);
+
   return (
     <section id={SECTION_IDS.alerts} className="relative z-10 py-section">
       <div className="container">

@@ -101,6 +101,24 @@ export const mailTemplates = {
     };
   },
 
+  /* FR62. Says what changed and where to read more; the officer's reasoning
+     is an internal record and is not repeated to the reporter. */
+  reportStatusChanged(name: string, reference: string, headline: string, detail: string, link: string): Omit<Mail, "to"> {
+    return {
+      subject: `Report ${reference}: ${headline.toLowerCase()}`,
+      text: `Hi ${name},\n\nThere is an update on your report ${reference}.\n\n${headline}. ${detail}\n\nYou can read the full history here:\n${link}${SIGN_OFF}`,
+    };
+  },
+
+  /* FR63. The question itself is included so it can be answered from the
+     email's context, but the answer goes through the site, never by reply. */
+  informationRequested(name: string, reference: string, question: string, link: string): Omit<Mail, "to"> {
+    return {
+      subject: `Council has a question about report ${reference}`,
+      text: `Hi ${name},\n\nThe CyberSafe officer reviewing your report ${reference} has asked:\n\n    ${question.replace(/\n/g, "\n    ")}\n\nAnswer it here — replying to this email will not reach the officer:\n${link}${SIGN_OFF}`,
+    };
+  },
+
   reportReceived(name: string, reference: string, link: string): Omit<Mail, "to"> {
     return {
       subject: `Report ${reference} received`,

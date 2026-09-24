@@ -3,7 +3,7 @@ import { AppError, sendOk } from "@/lib/http";
 import { reportLimiter } from "@/lib/limits";
 import { requireAuth } from "@/middleware/auth";
 import { validateBody } from "@/middleware/validate";
-import { createReportSchema, respondSchema } from "@/modules/reports/reports.schema";
+import { createReportSchema, draftSchema, respondSchema } from "@/modules/reports/reports.schema";
 import { reportsService } from "@/modules/reports/reports.service";
 
 /**
@@ -38,6 +38,32 @@ reportsRoutes.post("/", reportLimiter, validateBody(createReportSchema), async (
   try {
     const result = await reportsService.create(me(req), req.body, req.ip);
     sendOk(res, result, `Report ${result.reference} sent to Council.`, 201);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* FR26 — before "/:reference", so "drafts" is never read as a reference. */
+reportsRoutes.get("/drafts", async (req, res, next) => {
+  try {
+    sendOk(res, { drafts: await reportsService.drafts(me(req)) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+reportsRoutes.put("/drafts", validateBody(draftSchema), async (req, res, next) => {
+  try {
+    sendOk(res, await reportsService.saveDraft(me(req), req.body), "Draft saved.");
+  } catch (error) {
+    next(error);
+  }
+});
+
+reportsRoutes.delete("/drafts/:reference", async (req, res, next) => {
+  try {
+    await reportsService.discardDraft(me(req), reference(req));
+    sendOk(res, { discarded: true }, "Draft discarded.");
   } catch (error) {
     next(error);
   }

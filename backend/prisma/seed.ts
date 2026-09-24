@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/lib/prisma";
+import { CHECKLISTS } from "../src/modules/recovery/recovery.content";
 
 /**
  * Seed data — reference data plus a small synthetic dataset.
@@ -82,14 +83,6 @@ const RESOURCES = [
 ];
 
 /** FR58 — the first-hour checklist, in the order that matters. */
-const FIRST_HOUR_STEPS = [
-  ["Ring the number on the back of your card", "Not a number from the message. Ask for the transaction to be stopped or recalled and write down the reference number."],
-  ["Change the password that was exposed", "Start with email, then banking. Use a new passphrase you have not used anywhere else."],
-  ["Turn on multi-factor authentication", "On email and banking first, so a stolen password alone is no longer enough."],
-  ["Keep the evidence", "Screenshot the messages, the sender's number or address and any payment receipts before anything is deleted."],
-  ["Report it", "ReportCyber if money or documents were lost, Scamwatch for the national picture, and CyberKent so Council can warn Hume."],
-  ["Contact IDCARE if identity documents were taken", "Free national support on 1800 595 160, with a response plan for a stolen licence, passport or Medicare card."],
-] as const;
 
 async function seedAccounts() {
   const email = (process.env.SEED_ADMIN_EMAIL ?? "admin.synthetic@cyberkent.test").toLowerCase();
@@ -170,22 +163,21 @@ async function seedReference() {
     });
   }
 
-  const checklist = await prisma.recoveryChecklist.upsert({
-    where: { slug: "first-hour" },
-    update: {},
-    create: {
-      slug: "first-hour",
-      title: "The first hour after you have been scammed",
-      situation: "You have paid, tapped a link, or shared details you should not have.",
-    },
-  });
-
-  for (const [index, [title, detail]] of FIRST_HOUR_STEPS.entries()) {
-    await prisma.recoveryStep.upsert({
-      where: { checklistId_position: { checklistId: checklist.id, position: index + 1 } },
-      update: { title, detail },
-      create: { checklistId: checklist.id, position: index + 1, title, detail },
+  /* The same content the API serves (FR58); see recovery.content. */
+  for (const content of CHECKLISTS) {
+    const checklist = await prisma.recoveryChecklist.upsert({
+      where: { slug: content.slug },
+      update: { title: content.title, situation: content.situation },
+      create: { slug: content.slug, title: content.title, situation: content.situation },
     });
+
+    for (const [index, [title, detail]] of content.steps.entries()) {
+      await prisma.recoveryStep.upsert({
+        where: { checklistId_position: { checklistId: checklist.id, position: index + 1 } },
+        update: { title, detail },
+        create: { checklistId: checklist.id, position: index + 1, title, detail },
+      });
+    }
   }
 }
 

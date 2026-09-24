@@ -15,6 +15,12 @@ interface ConsoleLayoutProps {
   /** The graphic block between the title and the first card. */
   hero?: ReactNode;
   children: ReactNode;
+  /**
+   * A wider detail column, for Council's working screens — a queue, a
+   * dashboard, a table — whose rows carry several values across rather than
+   * one label and one value.
+   */
+  wide?: boolean;
 }
 
 /**
@@ -35,7 +41,7 @@ interface ConsoleLayoutProps {
  * are lists of rows, and a row whose label and value are 1200px apart is not
  * one row any more. The cap is the same measure Settings uses on an iPad.
  */
-export function ConsoleLayout({ title, subtitle, hero, children }: ConsoleLayoutProps) {
+export function ConsoleLayout({ title, subtitle, hero, children, wide = false }: ConsoleLayoutProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
@@ -60,7 +66,7 @@ export function ConsoleLayout({ title, subtitle, hero, children }: ConsoleLayout
         </aside>
 
         <main className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[46rem]">
+          <div className={cn("mx-auto w-full", wide ? "max-w-[64rem]" : "max-w-[46rem]")}>
             <header className="relative pb-6 text-center">
               <button
                 type="button"

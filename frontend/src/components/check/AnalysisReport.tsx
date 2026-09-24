@@ -13,6 +13,7 @@ import {
 import { ROUTES } from "@/config/site";
 import { ReportActions } from "@/components/check/ReportActions";
 import { LinkBreakdown } from "@/components/check/LinkBreakdown";
+import { ReportedBefore } from "@/components/check/ReportedBefore";
 import { AiSecondOpinion } from "@/components/ai/AiSecondOpinion";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
@@ -663,6 +664,12 @@ export function AnalysisReport({
       {analysis.extracted.emails.length + analysis.extracted.phones.length > 0 ? (
         <motion.div variants={fadeUp}>
           <ExtractedEntities analysis={analysis} />
+        </motion.div>
+      ) : null}
+
+      {analysis.links.length + analysis.extracted.emails.length + analysis.extracted.phones.length > 0 ? (
+        <motion.div variants={fadeUp}>
+          <ReportedBefore analysis={analysis} />
         </motion.div>
       ) : null}
 

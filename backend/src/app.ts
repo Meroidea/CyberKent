@@ -10,6 +10,14 @@ import { aiRoutes } from "@/modules/ai/ai.routes";
 import { accountRoutes } from "@/modules/account/account.routes";
 import { referenceRoutes } from "@/modules/reference/reference.routes";
 import { reportsRoutes } from "@/modules/reports/reports.routes";
+import { councilRoutes } from "@/modules/council/council.routes";
+import { adminRoutes } from "@/modules/admin/admin.routes";
+import { publicAlertsRoutes } from "@/modules/alerts/alerts.routes";
+import { subscriptionRoutes } from "@/modules/subscriptions/subscriptions.routes";
+import { recoveryRoutes } from "@/modules/recovery/recovery.routes";
+import { insightsRoutes } from "@/modules/insights/insights.routes";
+import { indicatorRoutes } from "@/modules/indicators/indicators.routes";
+import { reporterEvidenceRoutes, staffEvidenceRoutes } from "@/modules/evidence/evidence.routes";
 import { AppError, sendOk } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
@@ -45,6 +53,8 @@ export function createApp() {
         callback(new AppError(403, "This site is not allowed to call the CyberKent API."));
       },
       credentials: true,
+      /* So the console can name a downloaded export the way the API named it. */
+      exposedHeaders: ["Content-Disposition"],
     }),
   );
 
@@ -68,16 +78,26 @@ export function createApp() {
       service: "CyberKent API",
       description: "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System",
       version: "0.1.0",
-      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai"],
+      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai", "/api/alerts", "/api/subscriptions", "/api/recovery", "/api/insights", "/api/indicators", "/api/council", "/api/admin"],
     });
   });
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/account", accountRoutes);
+  /* Evidence first: its limits route is public, and the reports router requires an account for everything. */
+  app.use("/api/reports", reporterEvidenceRoutes);
   app.use("/api/reports", reportsRoutes);
   app.use("/api/reference", referenceRoutes);
   app.use("/api/ai", aiRoutes);
+  app.use("/api/alerts", publicAlertsRoutes);
+  app.use("/api/subscriptions", subscriptionRoutes);
+  app.use("/api/recovery", recoveryRoutes);
+  app.use("/api/insights", insightsRoutes);
+  app.use("/api/indicators", indicatorRoutes);
+  app.use("/api/council/reports", staffEvidenceRoutes);
+  app.use("/api/council", councilRoutes);
+  app.use("/api/admin", adminRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

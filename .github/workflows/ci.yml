@@ -1,0 +1,83 @@
+name: CI
+
+# Every push and pull request: the API against a real PostgreSQL, the site's
+# type check, lint, detection checks and production build, and the AI service.
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — typecheck, integration tests, bundle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cyberkent_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cyberkent_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cyberkent_test
+      JWT_SECRET: ci-only-secret-that-is-long-enough-for-validation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run bundle
+
+  site:
+    name: Site — typecheck, lint, detection checks, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # The on-device model is fetched at deploy time, not in CI.
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx tsx src/lib/scam/__check__/run.ts
+      - run: npm run docs:build && npx tsc -b && npx vite build
+
+  ai:
+    name: AI service — tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ai-service/.python-version
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest -q

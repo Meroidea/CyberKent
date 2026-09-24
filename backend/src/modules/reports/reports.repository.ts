@@ -64,6 +64,19 @@ export interface NewReport {
   occurredAt?: Date;
   indicators: { type: IndicatorType; value: string }[];
   notification: { title: string; body: string; linkPath: string };
+  /** FR26 — the draft this report is being sent from, which it becomes. */
+  promoteId?: string;
+}
+
+export interface DraftFields {
+  channel?: Channel;
+  categoryId?: string;
+  suburbId?: string;
+  title: string;
+  description: string;
+  amountLostCents?: number;
+  occurredAt?: Date;
+  indicators: { type: IndicatorType; value: string }[];
 }
 
 export const reportsRepository = {
@@ -86,22 +99,28 @@ export const reportsRepository = {
   create(input: NewReport) {
     return prisma.$transaction(async (tx) => {
       const now = new Date();
-      const report = await tx.report.create({
-        data: {
-          reference: input.reference,
-          authorId: input.authorId,
-          channel: input.channel,
-          categoryId: input.categoryId ?? null,
-          suburbId: input.suburbId ?? null,
-          title: input.title,
-          description: input.description,
-          amountLostCents: input.amountLostCents ?? null,
-          occurredAt: input.occurredAt ?? null,
-          status: "SUBMITTED",
-          submittedAt: now,
-        },
-        select: { id: true, reference: true },
-      });
+      const fields = {
+        channel: input.channel,
+        categoryId: input.categoryId ?? null,
+        suburbId: input.suburbId ?? null,
+        title: input.title,
+        description: input.description,
+        amountLostCents: input.amountLostCents ?? null,
+        occurredAt: input.occurredAt ?? null,
+        status: "SUBMITTED" as const,
+        submittedAt: now,
+      };
+
+      /* A draft being sent becomes the report: same row, same reference,
+         same files. Its draft-time artefact links are replaced by the ones
+         being sent, which — unlike a draft's — count. */
+      const report = input.promoteId
+        ? await tx.report.update({ where: { id: input.promoteId }, data: { ...fields, createdAt: now }, select: { id: true, reference: true } })
+        : await tx.report.create({ data: { reference: input.reference, authorId: input.authorId, ...fields }, select: { id: true, reference: true } });
+
+      if (input.promoteId) {
+        await tx.reportIndicator.deleteMany({ where: { reportId: report.id } });
+      }
 
       for (const artefact of input.indicators) {
         const indicator = await tx.indicator.upsert({
@@ -123,6 +142,60 @@ export const reportsRepository = {
     /* One round trip per artefact to a database in another region adds up;
        the default five-second window is too tight for a report listing a
        couple of dozen of them. */
+  },
+
+  findDraft(authorId: string, reference: string) {
+    return prisma.report.findFirst({ where: { authorId, reference, status: "DRAFT", deletedAt: null }, select: { id: true, reference: true } });
+  },
+
+  /**
+   * FR26 — a draft, saved on the server. Its artefacts are linked so they
+   * come back when the draft is reopened, but a draft never counts: an
+   * artefact first seen in a draft is created with a count of zero, and an
+   * existing one is not incremented.
+   */
+  saveDraft(authorId: string, reference: string, existingId: string | null, fields: DraftFields) {
+    return prisma.$transaction(async (tx) => {
+      const data = {
+        channel: fields.channel ?? "OTHER",
+        categoryId: fields.categoryId ?? null,
+        suburbId: fields.suburbId ?? null,
+        title: fields.title,
+        description: fields.description,
+        amountLostCents: fields.amountLostCents ?? null,
+        occurredAt: fields.occurredAt ?? null,
+      };
+
+      const report = existingId
+        ? await tx.report.update({ where: { id: existingId }, data, select: { id: true, reference: true, updatedAt: true } })
+        : await tx.report.create({ data: { ...data, reference, authorId, status: "DRAFT" }, select: { id: true, reference: true, updatedAt: true } });
+
+      await tx.reportIndicator.deleteMany({ where: { reportId: report.id } });
+      for (const artefact of fields.indicators) {
+        const indicator = await tx.indicator.upsert({
+          where: { type_value: { type: artefact.type, value: artefact.value } },
+          create: { type: artefact.type, value: artefact.value, reportCount: 0 },
+          update: {},
+          select: { id: true },
+        });
+        await tx.reportIndicator.create({ data: { reportId: report.id, indicatorId: indicator.id } });
+      }
+
+      return report;
+    }, { timeout: 20_000 });
+  },
+
+  listDrafts(authorId: string) {
+    return prisma.report.findMany({
+      where: { authorId, status: "DRAFT", deletedAt: null },
+      select: { reference: true, title: true, channel: true, updatedAt: true, _count: { select: { evidence: { where: { deletedAt: null } } } } },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+    });
+  },
+
+  deleteDraft(authorId: string, reference: string) {
+    return prisma.report.updateMany({ where: { authorId, reference, status: "DRAFT", deletedAt: null }, data: { deletedAt: new Date() } }).then((r) => r.count === 1);
   },
 
   referenceTaken(reference: string) {
