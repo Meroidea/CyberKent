@@ -45,6 +45,8 @@ import { AlertEditorPage } from "@/pages/council/AlertEditorPage";
 import { AlertsPage } from "@/pages/alerts/AlertsPage";
 import { AlertDetailPage } from "@/pages/alerts/AlertDetailPage";
 import { SubscriptionLinkPage } from "@/pages/alerts/SubscriptionLinkPage";
+import { RecoverPage } from "@/pages/recover/RecoverPage";
+import { ChecklistPage } from "@/pages/recover/ChecklistPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
@@ -102,13 +104,6 @@ const PLACEHOLDERS: {
     summary:
       "Where reports are clustering across the municipality, aggregated to suburb level so patterns show but people do not.",
     requirements: "Module 12 · FR70",
-  },
-  {
-    path: ROUTES.recover,
-    title: "Recovery checklists",
-    summary:
-      "Step-by-step actions ordered by what matters in the first hour, with your progress saved as you work through them.",
-    requirements: "Module 10 · FR58–FR60",
   },
   {
     path: ROUTES.privacy,
@@ -230,6 +225,10 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={`${ROUTES.alerts}/subscribe/confirm`} element={<SubscriptionLinkPage mode="confirm" />} />
               <Route path={`${ROUTES.alerts}/unsubscribe`} element={<SubscriptionLinkPage mode="unsubscribe" />} />
               <Route path={`${ROUTES.alerts}/:reference`} element={<AlertDetailPage />} />
+
+              {/* Module 10 — recovery checklists (FR58–FR60). */}
+              <Route path={ROUTES.recover} element={<RecoverPage />} />
+              <Route path={`${ROUTES.recover}/:slug`} element={<ChecklistPage />} />
 
               {/* Council's console. The guard is a courtesy; the API re-checks
                 the role from the database on every one of these requests. */}
