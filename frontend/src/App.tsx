@@ -21,7 +21,7 @@ import { LearnPage } from "@/pages/LearnPage";
 import { LearnArticlePage } from "@/pages/LearnArticlePage";
 import { AssistantPage } from "@/pages/AssistantPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
+import { LegalPage } from "@/pages/LegalPage";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
@@ -91,36 +91,6 @@ function CheckRedirect() {
 
   return <Navigate to={ROUTES.home} replace />;
 }
-
-/** Modules that are specified and have tables, but no screens yet. */
-const PLACEHOLDERS: {
-  path: string;
-  title: string;
-  summary: string;
-  requirements: string;
-}[] = [
-  {
-    path: ROUTES.privacy,
-    title: "Privacy",
-    summary:
-      "What this service collects, why, how long it is kept, and how to have it erased.",
-    requirements: "Compliance 29–30",
-  },
-  {
-    path: ROUTES.accessibility,
-    title: "Accessibility",
-    summary:
-      "How this service meets WCAG 2.1 Level AA, and how to tell us where it does not.",
-    requirements: "NFR 13",
-  },
-  {
-    path: ROUTES.terms,
-    title: "Terms of use",
-    summary:
-      "The basis on which this service is offered, including that its results are advisory and not a professional assessment.",
-    requirements: "Ethical requirements",
-  },
-];
 
 /**
  * Everything below the router that needs to know which route is showing.
@@ -238,19 +208,10 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={ROUTES.councilCategories} element={<RequireRole roles={["ADMIN"]}><CategoriesPage /></RequireRole>} />
               <Route path={ROUTES.councilAudit} element={<RequireRole roles={["ADMIN"]}><AuditPage /></RequireRole>} />
 
-              {PLACEHOLDERS.map((page) => (
-                <Route
-                  key={page.path}
-                  path={page.path}
-                  element={
-                    <PlaceholderPage
-                      title={page.title}
-                      summary={page.summary}
-                      requirements={page.requirements}
-                    />
-                  }
-                />
-              ))}
+              {/* The service's statements. */}
+              <Route path={ROUTES.privacy} element={<LegalPage slug="privacy" />} />
+              <Route path={ROUTES.accessibility} element={<LegalPage slug="accessibility" />} />
+              <Route path={ROUTES.terms} element={<LegalPage slug="terms" />} />
 
               {/* Anything unmatched. The host rewrites every path to
                 index.html, so this is what stops an unknown address being
