@@ -14,6 +14,8 @@ import {
 } from "@/modules/council/council.schema";
 import { councilService, type Actor } from "@/modules/council/council.service";
 import { councilStats } from "@/modules/council/council.stats";
+import { councilSimilarity } from "@/modules/council/council.similarity";
+import { z } from "zod";
 import { staffAlertsRoutes } from "@/modules/alerts/alerts.routes";
 
 /**
@@ -99,4 +101,23 @@ councilRoutes.post("/reports/:reference/reopen", ...requireStaff("ADMIN"), valid
 councilRoutes.patch("/reports/:reference/indicators/:indicatorId", validateBody(indicatorStatusSchema), handle(async (req, res) => {
   const report = await councilService.setIndicatorStatus(reference(req), String(req.params.indicatorId), req.body.status, actor(req));
   sendOk(res, { report }, "Detail updated.");
+}));
+
+/* Module 8 — FR43–FR48. Suggestions are computed on request; links are an officer's. */
+const linkSchema = z
+  .object({ targetReference: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{4,32}$/), kind: z.enum(["DUPLICATE", "RELATED"]) })
+  .strict();
+
+councilRoutes.get("/reports/:reference/similar", handle(async (req, res) => {
+  sendOk(res, await councilSimilarity.candidates(reference(req)));
+}));
+
+councilRoutes.post("/reports/:reference/links", validateBody(linkSchema), handle(async (req, res) => {
+  await councilSimilarity.link(reference(req), req.body.targetReference, req.body.kind, actor(req));
+  sendOk(res, { report: await councilService.get(reference(req), actor(req), false) }, req.body.kind === "DUPLICATE" ? "Marked as a duplicate." : "Linked as related.");
+}));
+
+councilRoutes.delete("/reports/:reference/links/:target", handle(async (req, res) => {
+  await councilSimilarity.unlink(reference(req), String(req.params.target ?? "").toUpperCase().slice(0, 32), actor(req));
+  sendOk(res, { report: await councilService.get(reference(req), actor(req), false) }, "Link removed.");
 }));

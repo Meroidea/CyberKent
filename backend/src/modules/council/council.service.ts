@@ -11,6 +11,7 @@ import {
   type QueueRow,
 } from "@/modules/council/council.repository";
 import type { DecisionInput, QueueQuery, TriageInput } from "@/modules/council/council.schema";
+import { councilSimilarity } from "@/modules/council/council.similarity";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -194,7 +195,9 @@ function queueWhere(query: QueueQuery, userId: string): Prisma.ReportWhereInput 
   return { AND: and };
 }
 
-function detail(row: CouncilDetailRow, related: Awaited<ReturnType<typeof councilRepository.related>>, fromCheck: unknown, actor: Actor) {
+type Links = Awaited<ReturnType<typeof councilSimilarity.links>>;
+
+function detail(row: CouncilDetailRow, related: Awaited<ReturnType<typeof councilRepository.related>>, fromCheck: unknown, actor: Actor, links: Links = []) {
   const author = row.author && !row.author.deletedAt ? row.author : null;
   const open = OPEN_STATUSES.includes(row.status);
   const now = Date.now();
@@ -247,6 +250,8 @@ function detail(row: CouncilDetailRow, related: Awaited<ReturnType<typeof counci
       submittedAt: (other.submittedAt ?? other.createdAt).toISOString(),
       shared: other.indicators.map(({ indicator }) => indicator),
     })),
+    /* FR48 — the links an officer has made, either way round. */
+    links,
     evidence: row.evidence.map((file) => ({ ...file, createdAt: file.createdAt.toISOString() })),
     reviews: row.reviews.map((review) => ({
       id: review.id,
@@ -366,9 +371,10 @@ export const councilService = {
    */
   async get(reference: string, actor: Actor, logView = true) {
     const row = await load(reference);
-    const [related, submission] = await Promise.all([
+    const [related, submission, links] = await Promise.all([
       councilRepository.related(row.id, row.indicators.map(({ indicator }) => indicator.id)),
       councilRepository.submissionAudit(row.id),
+      councilSimilarity.links(row.id),
     ]);
 
     if (logView) {
@@ -376,7 +382,7 @@ export const councilService = {
     }
 
     const metadata = submission?.metadata as { fromCheck?: unknown } | null | undefined;
-    return detail(row, related, metadata?.fromCheck, actor);
+    return detail(row, related, metadata?.fromCheck, actor, links);
   },
 
   /** FR38. */

@@ -57,6 +57,8 @@ export const AUDIT_ACTION: Record<string, string> = {
   "report.approved": "Verified a report",
   "report.rejected": "Closed a report",
   "report.reopened": "Re-opened a decision",
+  "report.linked": "Linked two reports",
+  "report.unlinked": "Unlinked two reports",
   "indicator.status_changed": "Changed an artefact's status",
   "user.role_changed": "Changed a role",
   "user.suspended": "Suspended an account",

@@ -6,7 +6,6 @@ import {
   BellPlus,
   CircleSlash,
   EyeOff,
-  Link2,
   Loader2,
   Mail,
   MessageCircleQuestion,
@@ -19,6 +18,7 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import { OfficerStatus, SeverityBadge } from "@/components/council/Badges";
+import { SimilarReports } from "@/components/council/SimilarReports";
 import { useLoad } from "@/components/council/useLoad";
 import { FormAlert, SelectField, SubmitButton, TextAreaField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -37,7 +37,7 @@ import type { CouncilReport, IndicatorStatus, Severity, StaffMember } from "@/li
 import { CHANNEL_LABEL, INDICATOR_LABEL, formatDate, formatDateTime } from "@/lib/report/labels";
 import { cn } from "@/lib/cn";
 
-type Busy = null | "start" | "assign" | "triage" | "ask" | "decide" | "reopen" | `indicator:${string}`;
+type Busy = null | "start" | "assign" | "triage" | "ask" | "decide" | "reopen" | "link" | `indicator:${string}`;
 
 /**
  * FR38–FR42 — one report, as the officer works it.
@@ -131,6 +131,12 @@ export function CouncilReportPage() {
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex min-w-0 flex-col gap-7">
           <ReportBody report={report} busy={busy} onIndicator={(id, status) => act(`indicator:${id}`, () => councilApi.setIndicator(report.reference, id, status), "Detail updated.")} />
+          <SimilarReports
+            report={report}
+            busy={busy !== null}
+            onLink={(target, kind) => void act("link", () => councilApi.link(report.reference, target, kind), kind === "DUPLICATE" ? `Marked ${target} as a duplicate.` : `Linked ${target} as related.`)}
+            onUnlink={(target) => void act("link", () => councilApi.unlink(report.reference, target), `Unlinked ${target}.`)}
+          />
         </div>
 
         <aside id="actions" className="flex scroll-mt-24 flex-col gap-7 lg:sticky lg:top-24" aria-label="Actions">
@@ -246,24 +252,6 @@ function ReportBody({ report, busy, onIndicator }: { report: CouncilReport; busy
           </SettingsRows>
         )}
       </SettingsGroup>
-
-      {report.related.length > 0 ? (
-        <SettingsGroup title={`Other reports naming the same details (${report.related.length})`} footer="Exact matches on the same phone number, link, domain, email or account.">
-          <SettingsRows inset={60}>
-            {report.related.map((other) => (
-              <SettingsRow
-                key={other.reference}
-                icon={Link2}
-                iconClassName="bg-amber-500"
-                label={other.title}
-                detail={`${other.reference} · ${formatDate(other.submittedAt)} · shares ${other.shared.map((item) => item.value).join(", ")}`}
-                trailing={<OfficerStatus status={other.status} />}
-                to={`${ROUTES.councilReport}/${other.reference}`}
-              />
-            ))}
-          </SettingsRows>
-        </SettingsGroup>
-      ) : null}
 
       <SettingsGroup title="Evidence">
         {report.evidence.length === 0 ? (

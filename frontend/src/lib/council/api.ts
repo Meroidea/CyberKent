@@ -9,6 +9,7 @@ import type {
   IndicatorStatus,
   QueueFilters,
   QueuePage,
+  SimilarCandidate,
   Severity,
   StaffMember,
   UsersPage,
@@ -57,6 +58,15 @@ export const councilApi = {
   },
   reopen(reference: string, reason: string) {
     return apiRequest<{ report: CouncilReport }>(`${report(reference)}/reopen`, { method: "POST", body: { reason } });
+  },
+  similar(reference: string, signal?: AbortSignal) {
+    return apiRequest<{ candidates: SimilarCandidate[]; compared: number; windowDays: number }>(`${report(reference)}/similar`, { signal });
+  },
+  link(reference: string, targetReference: string, kind: "DUPLICATE" | "RELATED") {
+    return apiRequest<{ report: CouncilReport }>(`${report(reference)}/links`, { method: "POST", body: { targetReference, kind } });
+  },
+  unlink(reference: string, targetReference: string) {
+    return apiRequest<{ report: CouncilReport }>(`${report(reference)}/links/${encodeURIComponent(targetReference)}`, { method: "DELETE" });
   },
   setIndicator(reference: string, indicatorId: string, status: IndicatorStatus) {
     return apiRequest<{ report: CouncilReport }>(`${report(reference)}/indicators/${encodeURIComponent(indicatorId)}`, { method: "PATCH", body: { status } });

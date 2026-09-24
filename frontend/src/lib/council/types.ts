@@ -106,6 +106,7 @@ export interface CouncilReport {
     lastSeenAt: string;
   }[];
   related: { reference: string; title: string; status: ReportStatus; submittedAt: string; shared: { type: IndicatorType; value: string }[] }[];
+  links: { reference: string; title: string; status: ReportStatus; kind: "DUPLICATE" | "RELATED"; similarity: number | null; linkedAt: string }[];
   evidence: { id: string; originalName: string; mimeType: string; sizeBytes: number; description: string | null; createdAt: string }[];
   reviews: { id: string; decision: ReportStatus; severity: Severity | null; notes: string | null; reviewer: Person | null; createdAt: string }[];
   infoRequests: { id: string; message: string; response: string | null; respondedAt: string | null; requestedBy: Person | null; createdAt: string }[];
@@ -195,4 +196,16 @@ export interface AuditPage {
   page: number;
   pageSize: number;
   actions: { action: string; count: number }[];
+}
+
+export interface SimilarCandidate {
+  reference: string;
+  title: string;
+  status: ReportStatus;
+  submittedAt: string;
+  similarity: number;
+  score: number;
+  suggestion: "DUPLICATE" | "RELATED";
+  reasons: string[];
+  linked: "DUPLICATE" | "RELATED" | null;
 }
