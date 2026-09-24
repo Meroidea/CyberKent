@@ -45,6 +45,7 @@ export const ROUTES = {
   councilUsers: "/council/users",
   councilCategories: "/council/categories",
   councilAudit: "/council/audit",
+  councilAlerts: "/council/alerts",
   privacy: "/privacy",
   accessibility: "/accessibility",
   terms: "/terms",

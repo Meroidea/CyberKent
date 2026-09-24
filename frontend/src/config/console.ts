@@ -35,7 +35,8 @@ export type ConsoleIcon =
   | "queue"
   | "users"
   | "categories"
-  | "audit";
+  | "audit"
+  | "alertDesk";
 
 export interface ConsoleItem {
   label: string;
@@ -139,6 +140,7 @@ export const CONSOLE_NAV: ConsoleSection[] = [
     items: [
       { label: "Council overview", href: ROUTES.council, icon: "council", tint: "bg-indigo-600", audience: "staff" },
       { label: "Review queue", href: ROUTES.councilQueue, icon: "queue", tint: "bg-orange-500", audience: "staff" },
+      { label: "Alert desk", href: ROUTES.councilAlerts, icon: "alertDesk", tint: "bg-amber-500", audience: "staff" },
       { label: "People and roles", href: ROUTES.councilUsers, icon: "users", tint: "bg-blue-600", audience: "admin" },
       { label: "Scam categories", href: ROUTES.councilCategories, icon: "categories", tint: "bg-fuchsia-600", audience: "admin" },
       { label: "Audit trail", href: ROUTES.councilAudit, icon: "audit", tint: "bg-slate-600", audience: "admin" },

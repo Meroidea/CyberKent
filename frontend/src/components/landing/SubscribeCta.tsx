@@ -5,6 +5,8 @@ import { SECTION_IDS, SITE } from "@/config/site";
 import { GradientText } from "@/components/ui/GradientText";
 import { DecryptedText } from "@/components/ui/DecryptedText";
 import { SPRING_SOFT_OPTIONS, springSoft } from "@/lib/motion";
+import { subscriptionsApi } from "@/lib/alerts/api";
+import { ApiError } from "@/lib/api/client";
 
 const TILT_DEGREES = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,7 +20,8 @@ export function SubscribeCta() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<null | "confirmed" | "pending" | "unavailable">(null);
+  const [busy, setBusy] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -55,7 +58,9 @@ export function SubscribeCta() {
     pointerY.set(0);
   };
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  /* FR64 — every alert in Hume. A narrower subscription (a scam type, a
+     suburb) is offered on the alerts page, where there is room to choose. */
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!EMAIL_PATTERN.test(email.trim())) {
@@ -64,7 +69,14 @@ export function SubscribeCta() {
     }
 
     setError(null);
-    setSubmitted(true);
+    setBusy(true);
+    try {
+      setSubmitted((await subscriptionsApi.subscribe({ email: email.trim(), scope: "ALL" })).status);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? (caught.fields[0]?.message ?? caught.message) : "That did not work. Try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -132,7 +144,11 @@ export function SubscribeCta() {
                       </motion.span>
                     </span>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Almost done — confirm the link we just sent to {email}.
+                      {submitted === "confirmed"
+                        ? "You are subscribed to every alert in Hume."
+                        : submitted === "pending"
+                          ? `Almost done — confirm the link we just sent to ${email}.`
+                          : "Saved — but this site cannot send email yet, so your address cannot be confirmed. Sign in to subscribe with your account's address."}
                     </p>
                   </motion.div>
                 ) : (
@@ -163,9 +179,11 @@ export function SubscribeCta() {
                       />
                       <button
                         type="submit"
-                        className="interactive rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/30 dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950"
+                        disabled={busy}
+                        aria-busy={busy || undefined}
+                        className="interactive disabled:opacity-60 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/30 dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950"
                       >
-                        Subscribe
+                        {busy ? "Subscribing…" : "Subscribe"}
                       </button>
                     </div>
 

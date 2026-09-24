@@ -40,6 +40,11 @@ import { CouncilReportPage } from "@/pages/council/CouncilReportPage";
 import { UsersPage } from "@/pages/council/UsersPage";
 import { CategoriesPage } from "@/pages/council/CategoriesPage";
 import { AuditPage } from "@/pages/council/AuditPage";
+import { AlertDeskPage } from "@/pages/council/AlertDeskPage";
+import { AlertEditorPage } from "@/pages/council/AlertEditorPage";
+import { AlertsPage } from "@/pages/alerts/AlertsPage";
+import { AlertDetailPage } from "@/pages/alerts/AlertDetailPage";
+import { SubscriptionLinkPage } from "@/pages/alerts/SubscriptionLinkPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
 
@@ -91,13 +96,6 @@ const PLACEHOLDERS: {
   summary: string;
   requirements: string;
 }[] = [
-  {
-    path: ROUTES.alerts,
-    title: "Community alerts",
-    summary:
-      "Every scam circulating in Hume, published after a Council officer has reviewed the report and removed anything identifying.",
-    requirements: "Module 9 · FR49–FR54",
-  },
   {
     path: ROUTES.scamMap,
     title: "Scam map and trends",
@@ -226,11 +224,20 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={`${ROUTES.accountReport}/:reference`} element={<RequireAuth><ReportDetailPage /></RequireAuth>} />
               <Route path={`${ROUTES.account}/deleted`} element={<AccountDeletedPage />} />
 
+              {/* Module 9 — public. The two link pages are matched ahead of
+                an alert reference because static segments outrank dynamic ones. */}
+              <Route path={ROUTES.alerts} element={<AlertsPage />} />
+              <Route path={`${ROUTES.alerts}/subscribe/confirm`} element={<SubscriptionLinkPage mode="confirm" />} />
+              <Route path={`${ROUTES.alerts}/unsubscribe`} element={<SubscriptionLinkPage mode="unsubscribe" />} />
+              <Route path={`${ROUTES.alerts}/:reference`} element={<AlertDetailPage />} />
+
               {/* Council's console. The guard is a courtesy; the API re-checks
                 the role from the database on every one of these requests. */}
               <Route path={ROUTES.council} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilOverviewPage /></RequireRole>} />
               <Route path={ROUTES.councilQueue} element={<RequireRole roles={["OFFICER", "ADMIN"]}><ReviewQueuePage /></RequireRole>} />
               <Route path={`${ROUTES.councilReport}/:reference`} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilReportPage /></RequireRole>} />
+              <Route path={ROUTES.councilAlerts} element={<RequireRole roles={["OFFICER", "ADMIN"]}><AlertDeskPage /></RequireRole>} />
+              <Route path={`${ROUTES.councilAlerts}/:id`} element={<RequireRole roles={["OFFICER", "ADMIN"]}><AlertEditorPage /></RequireRole>} />
               <Route path={ROUTES.councilUsers} element={<RequireRole roles={["ADMIN"]}><UsersPage /></RequireRole>} />
               <Route path={ROUTES.councilCategories} element={<RequireRole roles={["ADMIN"]}><CategoriesPage /></RequireRole>} />
               <Route path={ROUTES.councilAudit} element={<RequireRole roles={["ADMIN"]}><AuditPage /></RequireRole>} />

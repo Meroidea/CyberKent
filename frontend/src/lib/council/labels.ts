@@ -67,6 +67,17 @@ export const AUDIT_ACTION: Record<string, string> = {
   "category.restored": "Restored a category",
   "data.exported": "Exported de-identified data",
   ALERT_PUBLISHED: "Published a community alert",
+  "alert.drafted": "Drafted an alert",
+  "alert.edited": "Edited an alert",
+  "alert.submitted": "Sent an alert for approval",
+  "alert.returned": "Returned an alert to its author",
+  "alert.published": "Published an alert",
+  "alert.announced": "Notified subscribers of an alert",
+  "alert.archived": "Archived an alert",
+  "alert.restored": "Restored an alert",
+  "subscription.created": "Subscribed to alerts",
+  "subscription.confirmed": "Confirmed an alert subscription",
+  "subscription.cancelled": "Unsubscribed from alerts",
 };
 
 export function auditLabel(action: string): string {

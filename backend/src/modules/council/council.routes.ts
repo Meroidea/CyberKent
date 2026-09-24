@@ -14,6 +14,7 @@ import {
 } from "@/modules/council/council.schema";
 import { councilService, type Actor } from "@/modules/council/council.service";
 import { councilStats } from "@/modules/council/council.stats";
+import { staffAlertsRoutes } from "@/modules/alerts/alerts.routes";
 
 /**
  * Modules 7 and 12 from Council's side — the review queue, the report
@@ -48,6 +49,9 @@ councilRoutes.use((_req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 });
+
+/* Module 9, from Council's side — behind the same staff check. */
+councilRoutes.use("/alerts", staffAlertsRoutes);
 
 councilRoutes.get("/stats", handle(async (req, res) => {
   const { days } = parseQuery(statsQuerySchema, req);

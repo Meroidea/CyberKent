@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BadgeCheck,
+  BellPlus,
   CircleSlash,
   EyeOff,
   Link2,
@@ -524,6 +525,20 @@ function ActionPanel({
           </p>
         </SettingsGroup>
       )}
+
+      {report.status === "APPROVED" ? (
+        <SettingsGroup title="Warn the community" footer="Starts a draft alert with the wording de-identified. A second officer approves it before it is published.">
+          <div className="p-4">
+            <Link
+              to={`${ROUTES.councilAlerts}/new?from=${encodeURIComponent(report.reference)}`}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 px-6 py-3 text-[0.9375rem] font-semibold text-white shadow-lg shadow-rose-500/20"
+            >
+              <BellPlus aria-hidden="true" className="h-4 w-4" />
+              Draft a community alert
+            </Link>
+          </div>
+        </SettingsGroup>
+      ) : null}
 
       {report.actions.reopen ? (
         <SettingsGroup title="Re-open (administrator)" footer="The earlier decision stays in the history. The reporter is told the report is being reviewed again.">

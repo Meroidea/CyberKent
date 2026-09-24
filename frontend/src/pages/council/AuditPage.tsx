@@ -27,6 +27,8 @@ const AREAS = [
   { value: "report.", label: "Reports" },
   { value: "user.", label: "People and roles" },
   { value: "category.", label: "Categories" },
+  { value: "alert.", label: "Community alerts" },
+  { value: "subscription.", label: "Subscriptions" },
   { value: "indicator.", label: "Artefacts" },
   { value: "account.", label: "Sign-ins and accounts" },
   { value: "data.", label: "Exports" },
@@ -51,6 +53,9 @@ function describe(metadata: Record<string, unknown> | null): string | null {
     parts.push(`severity ${change.from ?? "unset"} → ${change.to ?? "unset"}`.toLowerCase());
   } else if (typeof m.severity === "string") parts.push(`severity ${m.severity.toLowerCase()}`);
   if (typeof m.releasedReports === "number" && m.releasedReports > 0) parts.push(`${m.releasedReports} report(s) returned to the queue`);
+  if (typeof m.note === "string") parts.push(`“${m.note}”`);
+  if (typeof m.subscribers === "number") parts.push(`${m.subscribers} subscriber(s), ${String(m.emailed ?? 0)} emailed`);
+  if (typeof m.reference === "string") parts.push(m.reference);
   if (typeof m.rows === "number") parts.push(`${m.rows} rows, k ≥ ${String(m.k ?? 5)}`);
   if (typeof m.report === "string") parts.push(m.report);
   if (m.synthetic === true) parts.push("synthetic data");

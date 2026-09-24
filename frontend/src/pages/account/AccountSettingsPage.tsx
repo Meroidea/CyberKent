@@ -14,6 +14,8 @@ import type { Preferences } from "@/lib/account/types";
 import { ApiError } from "@/lib/api/client";
 import { clearReportDraft } from "@/lib/report/draft";
 import { ROUTES, SITE } from "@/config/site";
+import { describeSubscription, subscriptionsApi, type AlertSubscription } from "@/lib/alerts/api";
+import { BellRing } from "lucide-react";
 
 /** FR7, FR8, FR11, FR12 — everything a person manages about their account, on one screen. */
 export function AccountSettingsPage() {
@@ -55,6 +57,7 @@ export function AccountSettingsPage() {
 
       <PasswordSection />
       <PreferencesSection />
+      <SubscriptionsSection />
 
       <SettingsGroup>
         <SettingsRow
@@ -233,6 +236,60 @@ function PreferencesSection() {
       </SettingsGroup>
       {error ? <FormAlert>{error}</FormAlert> : null}
     </div>
+  );
+}
+
+/** FR66 — the alerts this person receives, and a way out of each. */
+function SubscriptionsSection() {
+  const [subscriptions, setSubscriptions] = useState<AlertSubscription[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    subscriptionsApi
+      .mine(controller.signal)
+      .then(({ subscriptions: list }) => setSubscriptions(list))
+      .catch((caught: unknown) => {
+        if (!(caught instanceof DOMException)) setError("Your alert subscriptions could not be loaded.");
+      });
+    return () => controller.abort();
+  }, []);
+
+  const cancel = async (id: string) => {
+    setError(null);
+    try {
+      setSubscriptions((await subscriptionsApi.cancel(id)).subscriptions);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : "That subscription could not be cancelled.");
+    }
+  };
+
+  return (
+    <SettingsGroup title="Scam alerts you receive" footer={<>Choose more on the <Link to={ROUTES.alerts} className="font-medium text-ui-tint">community alerts</Link> page. Every alert email also has a one-click unsubscribe link.</>}>
+      {error ? <FormAlert className="m-3">{error}</FormAlert> : null}
+      {subscriptions === null && !error ? (
+        <div className="m-4 h-8 animate-pulse rounded-lg bg-ui-fill" />
+      ) : subscriptions && subscriptions.length === 0 ? (
+        <p className="px-4 py-3.5 text-[0.9375rem] text-ui-label-2">You are not subscribed to any alerts.</p>
+      ) : (
+        <SettingsRows inset={60}>
+          {(subscriptions ?? []).map((subscription) => (
+            <SettingsRow
+              key={subscription.id}
+              icon={BellRing}
+              iconClassName="bg-amber-500"
+              label={describeSubscription(subscription)}
+              detail={`${subscription.email}${subscription.confirmed ? "" : " · waiting for you to confirm the link we sent"}`}
+              trailing={
+                <button type="button" onClick={() => void cancel(subscription.id)} className="shrink-0 text-[0.9375rem] font-medium text-rose-500 hover:opacity-70">
+                  Unsubscribe
+                </button>
+              }
+            />
+          ))}
+        </SettingsRows>
+      )}
+    </SettingsGroup>
   );
 }
 

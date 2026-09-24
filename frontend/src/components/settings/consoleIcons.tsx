@@ -1,5 +1,6 @@
 import {
   Accessibility,
+  BellPlus,
   Inbox,
   Landmark,
   ScrollText,
@@ -45,4 +46,5 @@ export const CONSOLE_ICONS: Record<ConsoleIcon, LucideIcon> = {
   users: UsersRound,
   categories: Tags,
   audit: ScrollText,
+  alertDesk: BellPlus,
 };
