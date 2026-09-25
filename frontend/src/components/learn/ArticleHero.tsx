@@ -1,6 +1,6 @@
 import { CalendarDays, Clock3, Users } from "lucide-react";
 import type { LearnArticle } from "@/content/learn";
-import { ARTICLE_ACCENTS, ARTICLE_COVERS, ARTICLE_KIND_ICONS } from "@/components/learn/articleArt";
+import { ARTICLE_ACCENTS, coverFor, ARTICLE_KIND_ICONS } from "@/components/learn/articleArt";
 import { cn } from "@/lib/cn";
 
 function formatDate(iso: string): string {
@@ -23,7 +23,7 @@ function formatDate(iso: string): string {
  */
 export function ArticleHero({ article }: { article: LearnArticle }) {
   const accent = ARTICLE_ACCENTS[article.accent];
-  const cover = ARTICLE_COVERS[article.id];
+  const cover = coverFor(article);
   const KindIcon = ARTICLE_KIND_ICONS[article.kind];
 
   return (

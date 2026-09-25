@@ -14,12 +14,14 @@ import { adminApi } from "@/lib/council/api";
 import type { AdminUser } from "@/lib/council/types";
 import { formatDate, formatRelative, initials } from "@/lib/report/labels";
 import { cn } from "@/lib/cn";
+import { isAdmin, isSuperAdmin } from "@/lib/roles";
 
 const ROLES: { value: Role; label: string; detail: string }[] = [
   { value: "RESIDENT", label: "Resident", detail: "Checks messages and reports scams." },
   { value: "BUSINESS", label: "Business", detail: "A resident account for a business or organisation." },
   { value: "OFFICER", label: "Officer", detail: "Reviews reports and reads reporters' details." },
   { value: "ADMIN", label: "Administrator", detail: "Everything an officer can, plus people, categories, audit and export." },
+  { value: "SUPER_ADMIN", label: "Super admin", detail: "Everything an administrator can, plus appointing and removing administrators." },
 ];
 
 const ROLE_LABEL = Object.fromEntries(ROLES.map((role) => [role.value, role.label])) as Record<Role, string>;
@@ -70,7 +72,7 @@ export function UsersPage() {
       </ConsoleHero>
 
       {data ? (
-        <section aria-label="Accounts by role" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <section aria-label="Accounts by role" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {ROLES.map((entry) => (
             <button
               key={entry.value}
@@ -120,6 +122,7 @@ export function UsersPage() {
                   <PersonRow
                     person={person}
                     self={person.id === me?.id}
+                    superAdmin={isSuperAdmin(me?.role)}
                     expanded={open === person.id}
                     onToggle={() => setOpen(open === person.id ? null : person.id)}
                     onChanged={(next, text) => { replace(next); setNotice({ tone: "success", text }); }}
@@ -138,6 +141,7 @@ export function UsersPage() {
 }
 
 function PersonRow({
+  superAdmin,
   person,
   self,
   expanded,
@@ -147,6 +151,7 @@ function PersonRow({
 }: {
   person: AdminUser;
   self: boolean;
+  superAdmin: boolean;
   expanded: boolean;
   onToggle: () => void;
   onChanged: (next: AdminUser, text: string) => void;
@@ -175,7 +180,7 @@ function PersonRow({
   return (
     <div className={cn(suspended && "bg-ui-fill/40")}>
       <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-ui-card-hover">
-        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[0.8125rem] font-semibold text-white", suspended ? "bg-slate-400" : person.role === "ADMIN" ? "bg-gradient-to-br from-violet-500 to-indigo-600" : person.role === "OFFICER" ? "bg-gradient-to-br from-blue-500 to-cyan-500" : "bg-gradient-to-br from-slate-400 to-slate-500")}>
+        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[0.8125rem] font-semibold text-white", suspended ? "bg-slate-400" : isAdmin(person.role) ? "bg-gradient-to-br from-violet-500 to-indigo-600" : person.role === "OFFICER" ? "bg-gradient-to-br from-blue-500 to-cyan-500" : "bg-gradient-to-br from-slate-400 to-slate-500")}>
           {initials(person.fullName)}
         </span>
         <span className="min-w-0 flex-1">
@@ -206,13 +211,15 @@ function PersonRow({
 
           {self ? (
             <p className="text-[0.875rem] text-ui-label-2">You cannot change your own role or suspend yourself. Another administrator can.</p>
+          ) : isAdmin(person.role) && !superAdmin ? (
+            <p className="text-[0.875rem] text-ui-label-2">Only a super administrator can change or suspend an administrator.</p>
           ) : (
             <>
               <div>
                 <p className="pb-2 text-[0.8125rem] font-medium text-ui-label-2">Role</p>
                 <SegmentedControl
                   label={`Role for ${person.fullName}`}
-                  segments={ROLES.map((entry) => ({ value: entry.value, label: entry.label }))}
+                  segments={ROLES.filter((entry) => superAdmin || !isAdmin(entry.value)).map((entry) => ({ value: entry.value, label: entry.label }))}
                   value={pendingRole}
                   onChange={setPendingRole}
                   className="max-w-full"

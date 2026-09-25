@@ -674,7 +674,7 @@ export function AnalysisReport({
       ) : null}
 
       {/*
-       * The OpenAI second opinion. Offered after the rule-based verdict rather
+       * The AI second opinion. Offered after the rule-based verdict rather
        * than instead of it: the rules are explainable line by line and run
        * with nothing leaving the device, so they are the result; the model is
        * a second reader the person can choose to ask.

@@ -24,6 +24,18 @@ export const ARTICLE_COVERS: Record<string, string> = {
   "not-for-profit": volunteerOrganisationCover,
 };
 
+/* Guides written in the admin panel borrow the built-in art that shares their accent. */
+const COVER_BY_ACCENT: Record<ArticleAccent, string> = {
+  amber: firstHourCover,
+  indigo: paymentRedirectionCover,
+  cyan: phoneScamsCover,
+  emerald: volunteerOrganisationCover,
+};
+
+export function coverFor(article: { id: string; accent: ArticleAccent }): string {
+  return ARTICLE_COVERS[article.id] ?? COVER_BY_ACCENT[article.accent];
+}
+
 /**
  * The badge on a cover says what the reader is opening, because the four are
  * read differently: a checklist is worked through, an article is read, a

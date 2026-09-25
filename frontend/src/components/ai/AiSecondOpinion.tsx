@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { AiTextResult } from "@/components/ai/AiTextResult";
 import { AiImageResult } from "@/components/ai/AiImageResult";
 import { useAiStatus } from "@/components/ai/useAiStatus";
+import { providerInfo } from "@/lib/ai/provider";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
 /** Images sent per check. Each is a paid vision call; two covers a conversation screenshot pair. */
@@ -24,7 +25,7 @@ interface ImageOutcome {
 }
 
 /**
- * The OpenAI second opinion, offered beneath the rule-based verdict.
+ * The AI second opinion, offered beneath the rule-based verdict.
  *
  * Opt-in by design. The rule-based check runs entirely on the device, and the
  * checker promises as much; asking the AI sends the message to a third party
@@ -119,6 +120,7 @@ export function AiSecondOpinion({
   }
 
   const unavailable = status !== null && !status.available;
+  const provider = providerInfo(status?.provider);
 
   return (
     <SettingsGroup
@@ -131,7 +133,7 @@ export function AiSecondOpinion({
           <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[0.9375rem] font-semibold text-ui-label">Powered by OpenAI</p>
+          <p className="text-[0.9375rem] font-semibold text-ui-label">Powered by {provider.name}</p>
           <p className="mt-0.5 text-[0.8125rem] leading-snug text-ui-label-2">
             Looks for manipulation tactics and emotional pressure
             {imageFiles.length > 0 ? ", and examines your screenshots" : ""}.
@@ -153,8 +155,8 @@ export function AiSecondOpinion({
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>
                     Only if you choose: the message text{imageFiles.length > 0 ? " and your screenshots, with their location and camera data removed," : ""} will be
-                    sent to OpenAI in the United States. Card, account and ID numbers are masked first. Council does not
-                    store the message, and OpenAI is asked not to keep it.
+                    sent to {provider.where}. Card, account and ID numbers are masked first. Council does not
+                    store the message. {provider.retention}
                   </span>
                 </p>
                 <button
@@ -183,7 +185,7 @@ export function AiSecondOpinion({
           >
             <p className="flex items-center gap-2 text-caption font-medium text-indigo-700 dark:text-cyan-300">
               <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              Asking OpenAI{imageFiles.length > 0 ? " to read the message and look at your screenshots" : " to read the message"}…
+              Asking {provider.name}{imageFiles.length > 0 ? " to read the message and look at your screenshots" : " to read the message"}…
             </p>
             {[0.9, 0.7, 0.8].map((width) => (
               <div

@@ -15,6 +15,7 @@ import { ApiError } from "@/lib/api/client";
 import { adminApi, councilApi } from "@/lib/council/api";
 import { OFFICER_STATUS, formatHours, formatMoney } from "@/lib/council/labels";
 import { CHANNEL_LABEL, STATUS } from "@/lib/report/labels";
+import { isAdmin as isAdminRole } from "@/lib/roles";
 
 const PERIODS = [
   { value: "7", label: "7 days" },
@@ -42,7 +43,7 @@ export function CouncilOverviewPage() {
   const navigate = useNavigate();
   const [days, setDays] = useState<(typeof PERIODS)[number]["value"]>("30");
   const { data: stats, error, loading, reload } = useLoad((signal) => councilApi.stats(Number(days), signal), days);
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = isAdminRole(user?.role);
 
   const queue = (params: Record<string, string>) => navigate(`${ROUTES.councilQueue}?${new URLSearchParams(params).toString()}`);
   const risingCount = stats?.byCategory.filter((row) => row.rising).length ?? 0;
@@ -173,7 +174,7 @@ export function CouncilOverviewPage() {
         </SettingsGroup>
 
         <SettingsGroup title="Officer workload" footer="Open reports each officer is holding.">
-          <BarList rows={(stats?.workload ?? []).map((row) => ({ key: row.id, label: row.fullName, count: row.openReports, note: row.role === "ADMIN" ? "Admin" : undefined }))} empty="No officers yet." />
+          <BarList rows={(stats?.workload ?? []).map((row) => ({ key: row.id, label: row.fullName, count: row.openReports, note: isAdminRole(row.role) ? "Admin" : undefined }))} empty="No officers yet." />
         </SettingsGroup>
       </div>
 

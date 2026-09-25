@@ -5,19 +5,23 @@ AI Gateway (`backend/src/modules/ai`), never by a browser, and holds no state
 between requests. If it is stopped or unconfigured, the rest of CyberKent keeps
 working and the AI features report themselves unavailable (constraint C3).
 
-| Endpoint | Purpose | OpenAI capability |
-|---|---|---|
-| `GET /health` | Liveness and whether a key is configured | — |
-| `POST /v1/analyse/text` | Scam classification, manipulation tactics, sentiment | Responses API + Structured Outputs |
-| `POST /v1/analyse/image` | Image identification, brands, visual red flags | Vision (input_image) + Structured Outputs |
-| `POST /v1/assistant/chat` | CyberSafe Assistant chatbot | Responses API + Moderation |
+Two interchangeable providers implement the same contract
+(`app/providers/base.py`): **Google Gemini** (default when `GEMINI_API_KEY` is
+set; free tier) and **OpenAI**. `AI_PROVIDER` forces one or the other.
+
+| Endpoint | Purpose | Gemini | OpenAI |
+|---|---|---|---|
+| `GET /health` | Liveness, provider and whether it is configured | — | — |
+| `POST /v1/analyse/text` | Scam classification, manipulation tactics, sentiment | generateContent + JSON Schema output | Responses API + Structured Outputs |
+| `POST /v1/analyse/image` | Image identification, brands, visual red flags | inline image + JSON Schema output | Vision + Structured Outputs |
+| `POST /v1/assistant/chat` | CyberSafe Assistant chatbot | generateContent + safety filters + crisis check | Responses API + Moderation |
 
 ## Run
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env   # add OPENAI_API_KEY
+cp .env.example .env   # add GEMINI_API_KEY (or OPENAI_API_KEY)
 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -40,6 +44,7 @@ app/
   prompts.py              every prompt, versioned (PROMPT_VERSION)
   dependencies.py         provider selection and internal-token check
   providers/base.py       AiProvider protocol — the replaceable seam
+  providers/gemini_provider.py  Google Gemini over REST (default)
   providers/openai_provider.py
   routers/analysis.py     /v1/analyse/text, /v1/analyse/image
   routers/assistant.py    /v1/assistant/chat

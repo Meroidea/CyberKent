@@ -12,12 +12,14 @@ from fastapi import Header, HTTPException, status
 
 from app.config import get_settings
 from app.providers.base import AiProvider
+from app.providers.gemini_provider import GeminiProvider
 from app.providers.openai_provider import OpenAIProvider
 
 
 @lru_cache
 def get_provider() -> AiProvider:
-    return OpenAIProvider(get_settings())
+    settings = get_settings()
+    return GeminiProvider(settings) if settings.provider_name == "gemini" else OpenAIProvider(settings)
 
 
 def require_internal_token(x_internal_token: str | None = Header(default=None)) -> None:

@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     openai_moderation_model: str = Field(default="omni-moderation-latest", alias="OPENAI_MODERATION_MODEL")
     openai_timeout_seconds: float = Field(default=40.0, alias="OPENAI_TIMEOUT_SECONDS")
 
+    # Google Gemini. When a key is present Gemini serves requests unless
+    # AI_PROVIDER says otherwise; the free tier needs no billing account.
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    gemini_assistant_model: str | None = Field(default=None, alias="GEMINI_ASSISTANT_MODEL")
+    gemini_timeout_seconds: float = Field(default=40.0, alias="GEMINI_TIMEOUT_SECONDS")
+
+    # "gemini" or "openai". Unset: Gemini if its key is set, otherwise OpenAI.
+    ai_provider: str | None = Field(default=None, alias="AI_PROVIDER")
+
     # Shared secret with the Express gateway. When set, every request without
     # it is refused: this service is never meant to be reachable from a browser.
     internal_token: str | None = Field(default=None, alias="AI_SERVICE_TOKEN")
@@ -49,6 +59,13 @@ class Settings(BaseSettings):
     @property
     def configured(self) -> bool:
         return bool(self.openai_api_key)
+
+    @property
+    def provider_name(self) -> str:
+        chosen = (self.ai_provider or "").strip().lower()
+        if chosen in ("gemini", "openai"):
+            return chosen
+        return "gemini" if self.gemini_api_key else "openai"
 
     @property
     def assistant_model(self) -> str:

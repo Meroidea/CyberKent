@@ -148,6 +148,9 @@ class ImageAnalysis(BaseModel):
 
 
 class Usage(BaseModel):
+    # Which provider answered; set by the router so the gateway's audit line
+    # names the one actually used, whichever is configured.
+    provider: str | None = None
     model: str
     prompt_version: str
     latency_ms: int

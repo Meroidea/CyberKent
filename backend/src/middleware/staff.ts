@@ -2,10 +2,10 @@ import type { NextFunction, Request, Response } from "express";
 import type { Role } from "@prisma/client";
 import { AppError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { STAFF_ROLES } from "@/lib/roles";
 import { requireAuth } from "@/middleware/auth";
 
-/** The roles that work inside Council's console. */
-export const STAFF_ROLES: Role[] = ["OFFICER", "ADMIN"];
+export { STAFF_ROLES } from "@/lib/roles";
 
 /**
  * FR10, Rule 6.3 — Council-side authorisation, answered from the database.
@@ -21,7 +21,9 @@ export const STAFF_ROLES: Role[] = ["OFFICER", "ADMIN"];
  * that branches on role is branching on the truth.
  */
 export function requireStaff(...roles: Role[]) {
-  const allowed = roles.length > 0 ? roles : STAFF_ROLES;
+  /* A super admin passes every check an administrator does. */
+  const asked = roles.length > 0 ? roles : STAFF_ROLES;
+  const allowed = asked.includes("ADMIN") && !asked.includes("SUPER_ADMIN") ? [...asked, "SUPER_ADMIN" as Role] : asked;
 
   return [
     requireAuth,
@@ -38,7 +40,7 @@ export function requireStaff(...roles: Role[]) {
         }
 
         if (!allowed.includes(account.role)) {
-          next(new AppError(403, allowed.includes("OFFICER") ? "This part of the service is for Council staff." : "Only a Council administrator can do this."));
+          next(new AppError(403, allowed.includes("OFFICER") ? "This part of the service is for Council staff." : allowed.includes("ADMIN") ? "Only a Council administrator can do this." : "Only a super administrator can do this."));
           return;
         }
 

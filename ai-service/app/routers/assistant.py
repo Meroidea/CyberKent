@@ -27,4 +27,6 @@ def chat(body: AssistantRequest, provider: AiProvider = Depends(get_provider)) -
     if any(len(turn.content) > settings.max_chat_chars for turn in body.messages):
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "A message is too long.")
 
-    return provider.chat(body.messages[-settings.max_chat_turns :])
+    reply = provider.chat(body.messages[-settings.max_chat_turns :])
+    reply.usage.provider = provider.name
+    return reply

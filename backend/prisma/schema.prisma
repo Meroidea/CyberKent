@@ -28,6 +28,9 @@ enum Role {
   BUSINESS
   OFFICER
   ADMIN
+  /// Everything an administrator can do, plus appointing and removing
+  /// administrators. There is always at least one.
+  SUPER_ADMIN
 }
 
 /// FR14 — the channel a scam arrived through.
@@ -113,6 +116,7 @@ enum NotificationKind {
   REPORT_STATUS_CHANGED
   INFORMATION_REQUESTED
   ALERT_PUBLISHED
+  TASK_ASSIGNED
 }
 
 /// FR64, FR65 — what a subscription is scoped to.
@@ -153,6 +157,9 @@ model User {
   organisation  String?
   phone         String?
   role          Role      @default(RESIDENT)
+  /// Council staff only — shown in the team directory.
+  jobTitle      String?
+  department    String?
   /// FR2 — set once the emailed link has been followed.
   emailVerified DateTime?
   lastLoginAt   DateTime?
@@ -180,6 +187,11 @@ model User {
   recoveryProgress   RecoveryProgress[]
   auditEntries       AuditLog[]
   aiInteractions     AiInteraction[]
+  tasksAssigned      Task[]                   @relation("TaskAssignee")
+  tasksCreated       Task[]                   @relation("TaskCreator")
+  taskComments       TaskComment[]
+  noticesCreated     SiteNotice[]
+  articlesAuthored   AwarenessResource[]
 
   @@index([role])
   @@index([deletedAt])
@@ -425,6 +437,7 @@ model Report {
   reviews    ReportReview[]
   infoRequests InformationRequest[]
   alerts     Alert[]
+  tasks      Task[]
 
   /// FR48 — self-relation, expressed from both ends so either side can be
   /// queried without a union.
@@ -611,13 +624,109 @@ model AwarenessResource {
   summary     String
   body        String
   readingTime String
+  /// Editable guide content from the admin panel: kind, accent, audience,
+  /// lede, takeaways and the body in the guide markup. Null for rows that
+  /// predate the editor.
+  content     Json?
+  /// Set when the guide is live on the public library; null is a draft.
+  publishedAt DateTime?
+  authorId    String?
   /// FR54-style archiving rather than deletion, so a link that was published
   /// does not simply 404.
   archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
   @@index([category])
+  @@index([publishedAt])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// The console's task tracker: work for Council staff, optionally tied to a
+/// report, with its own conversation.
+model Task {
+  id          String       @id @default(cuid())
+  /// "TASK-0042" — quotable in a meeting.
+  reference   String       @unique
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueAt       DateTime?
+  labels      String[]     @default([])
+  /// Order within a board column; fractional so a move rewrites one row.
+  position    Float        @default(0)
+  completedAt DateTime?
+  assigneeId  String?
+  createdById String?
+  reportId    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  assignee  User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy User?         @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  report    Report?       @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  comments  TaskComment[]
+
+  @@index([status])
+  @@index([assigneeId])
+  @@index([dueAt])
+  @@index([reportId])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  authorId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  task   Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+}
+
+enum NoticeTone {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+/// A banner across the public site — "fake toll texts are circulating today" —
+/// scheduled by an administrator.
+model SiteNotice {
+  id          String     @id @default(cuid())
+  title       String
+  body        String
+  tone        NoticeTone @default(INFO)
+  linkUrl     String?
+  linkLabel   String?
+  startsAt    DateTime   @default(now())
+  endsAt      DateTime?
+  archivedAt  DateTime?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([startsAt])
 }
 
 /// FR58 — an ordered checklist for someone who has been scammed.

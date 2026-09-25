@@ -53,6 +53,24 @@
     --ui-tint: #4f46e5;
     --ui-sidebar: rgba(255, 255, 255, 0.72);
     --ui-selected: rgba(118, 118, 128, 0.14);
+    /* Data-viz palette (reference instance, validated against the card
+       surface in each mode): categorical slots in fixed order, a one-hue
+       sequential ramp, and a neutral for "previous period" / "other". */
+    --viz-1: #2a78d6;
+    --viz-2: #eb6834;
+    --viz-3: #1baf7a;
+    --viz-4: #eda100;
+    --viz-5: #e87ba4;
+    --viz-6: #008300;
+    --viz-muted: #b4b2aa;
+    --viz-seq-0: #f0f4fa;
+    --viz-seq-1: #cde2fb;
+    --viz-seq-2: #9ec5f4;
+    --viz-seq-3: #6da7ec;
+    --viz-seq-4: #3987e5;
+    --viz-seq-5: #256abf;
+    --viz-seq-6: #184f95;
+    --viz-seq-7: #0d366b;
 
     /* Hover fill for the decorative background grid. */
     --tile: rgba(99, 102, 241, 0.15);
@@ -128,6 +146,21 @@
     --ui-tint: #22d3ee;
     --ui-sidebar: rgba(22, 22, 24, 0.72);
     --ui-selected: rgba(118, 118, 128, 0.28);
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
+    --viz-4: #c98500;
+    --viz-5: #d55181;
+    --viz-6: #008300;
+    --viz-muted: #5c5b56;
+    --viz-seq-0: #1c2230;
+    --viz-seq-1: #104281;
+    --viz-seq-2: #184f95;
+    --viz-seq-3: #1c5cab;
+    --viz-seq-4: #256abf;
+    --viz-seq-5: #3987e5;
+    --viz-seq-6: #6da7ec;
+    --viz-seq-7: #9ec5f4;
 
     --tile: rgba(6, 182, 212, 0.12);
 

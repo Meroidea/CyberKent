@@ -1,6 +1,6 @@
 /** Shapes the account and report endpoints answer with. Mirrors the API's own types. */
 
-export type Role = "RESIDENT" | "BUSINESS" | "OFFICER" | "ADMIN";
+export type Role = "RESIDENT" | "BUSINESS" | "OFFICER" | "ADMIN" | "SUPER_ADMIN";
 
 export interface User {
   id: string;

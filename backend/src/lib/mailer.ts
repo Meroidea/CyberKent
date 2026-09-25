@@ -78,6 +78,21 @@ export const mailTemplates = {
     };
   },
 
+  /** A council member added from the admin panel sets their own password. */
+  staffInvite(name: string, inviter: string, role: string, link: string): Omit<Mail, "to"> {
+    return {
+      subject: `You have been added to ${SITE_NAME} as ${role}`,
+      text: `Hi ${name},\n\n${inviter} has added you to ${SITE_NAME}, Hume City Council's scam reporting service, as ${role}.\n\nChoose your password to activate your account:\n${link}\n\nThe link works once and expires in 7 days. After that, sign in with this email address to reach the Council console.${SIGN_OFF}`,
+    };
+  },
+
+  taskAssigned(name: string, reference: string, title: string, link: string): Omit<Mail, "to"> {
+    return {
+      subject: `${reference} assigned to you: ${title}`,
+      text: `Hi ${name},\n\nA task has been assigned to you in the Council console:\n\n    ${reference} — ${title}\n\nOpen it here:\n${link}${SIGN_OFF}`,
+    };
+  },
+
   passwordReset(name: string, link: string): Omit<Mail, "to"> {
     return {
       subject: `Reset your ${SITE_NAME} password`,

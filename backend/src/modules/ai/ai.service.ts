@@ -22,7 +22,9 @@ import type { AnalyseImageInput, AnalyseTextInput, AssistantInput } from "@/modu
  * to wait on. It is reported to the server log instead.
  */
 
-const PROVIDER = "openai";
+/* Recorded when the AI service could not say which provider it used, e.g. it
+   was unreachable. Otherwise the audit line names the provider that answered. */
+const UNKNOWN_PROVIDER = "unknown";
 
 /* Written per feature: the checker has a complete rule-based result to fall back
    on and says so; the assistant has none, so it points somewhere that helps. */
@@ -51,7 +53,7 @@ async function account(feature: AiFeature, input: string, redactions: number, us
       userId,
       feature,
       outcome: result.outcome,
-      provider: PROVIDER,
+      provider: result.usage?.provider ?? UNKNOWN_PROVIDER,
       model: result.usage?.model ?? "n/a",
       promptVersion: result.usage?.prompt_version ?? "n/a",
       inputSha256: digest(input),
@@ -98,7 +100,7 @@ export const aiService = {
       const health = await aiClient.health();
       return { available: health.configured, provider: health.provider, model: health.model };
     } catch {
-      return { available: false, provider: PROVIDER, model: null };
+      return { available: false, provider: UNKNOWN_PROVIDER, model: null };
     }
   },
 

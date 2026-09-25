@@ -19,6 +19,8 @@ export class AiUnavailableError extends Error {
 }
 
 export interface AiUsage {
+  /* Which provider answered, as the AI service reports it. */
+  provider?: string | null;
   model: string;
   prompt_version: string;
   latency_ms: number;

@@ -10,7 +10,7 @@ import type {
 import type { Analysis, Channel } from "@/lib/scam/types";
 
 /**
- * Calls to the AI Gateway (`/api/ai`). The browser never talks to OpenAI or to
+ * Calls to the AI Gateway (`/api/ai`). The browser never talks to the AI provider or to
  * the AI service directly: the key lives on the server, and the gateway is what
  * masks, limits and audits every request.
  */

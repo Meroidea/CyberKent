@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { BookOpen, LifeBuoy } from "lucide-react";
 import { SearchBox } from "@/components/council/Filters";
 import type { LearnArticle } from "@/content/learn";
-import { LEARN_ARTICLES } from "@/content/learn";
+import { useLibrary } from "@/lib/content/useLibrary";
 import { SegmentedControl, type Segment } from "@/components/settings/SegmentedControl";
 import { ROUTES } from "@/config/site";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
@@ -17,13 +17,12 @@ import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
  * "Everyone" is prepended because a filter with no way back to the full list
  * is a dead end.
  */
-const AUDIENCE_SEGMENTS: readonly Segment<string>[] = [
-  { value: "all", label: "Everyone" },
-  ...Array.from(new Set(LEARN_ARTICLES.map((article) => article.category))).map((category) => ({
-    value: category,
-    label: category,
-  })),
-];
+function audienceSegments(articles: LearnArticle[]): readonly Segment<string>[] {
+  return [
+    { value: "all", label: "Everyone" },
+    ...Array.from(new Set(articles.map((article) => article.category))).map((category) => ({ value: category, label: category })),
+  ];
+}
 
 /**
  * The awareness library.
@@ -47,16 +46,19 @@ function searchText(article: LearnArticle): string {
   return [article.title, article.summary, article.audience, article.lede, ...article.takeaways, ...blocks].join(" ").toLowerCase();
 }
 
-const INDEX = LEARN_ARTICLES.map((article) => ({ article, text: searchText(article) }));
 
 export function LearnPage() {
   const [audience, setAudience] = useState("all");
   const [query, setQuery] = useState("");
+  /* Built-in guides at once; guides published from the admin panel join them. */
+  const library = useLibrary();
+  const INDEX = useMemo(() => library.map((article) => ({ article, text: searchText(article) })), [library]);
+  const AUDIENCE_SEGMENTS = useMemo(() => audienceSegments(library), [library]);
 
   const guides = useMemo(() => {
     const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return INDEX.filter(({ article, text }) => (audience === "all" || article.category === audience) && words.every((word) => text.includes(word))).map(({ article }) => article);
-  }, [audience, query]);
+  }, [audience, query, INDEX]);
 
   return (
     <ConsoleLayout

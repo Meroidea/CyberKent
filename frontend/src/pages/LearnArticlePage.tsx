@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ListTree, Sparkles } from "lucide-react";
-import { articleHref, findArticle, LEARN_ARTICLES } from "@/content/learn";
+import { articleHref } from "@/content/learn";
+import { useLibraryState } from "@/lib/content/useLibrary";
 import { ROUTES, SITE } from "@/config/site";
 import { ContentsRail, OutlineLabel } from "@/components/documents/ContentsRail";
 import { ArticleBody } from "@/components/learn/ArticleBody";
 import { ArticleHero } from "@/components/learn/ArticleHero";
-import { ARTICLE_ACCENTS, ARTICLE_COVERS } from "@/components/learn/articleArt";
+import { ARTICLE_ACCENTS, coverFor } from "@/components/learn/articleArt";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
@@ -25,7 +26,8 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
  */
 export function LearnArticlePage() {
   const { slug } = useParams();
-  const article = findArticle(slug);
+  const { articles: LEARN_ARTICLES, ready } = useLibraryState();
+  const article = LEARN_ARTICLES.find((entry) => entry.id === slug);
 
   const body = useRef<HTMLDivElement>(null);
   const percent = useReadingProgress(body);
@@ -62,7 +64,8 @@ export function LearnArticlePage() {
   }, [article]);
 
   if (!article) {
-    return <NotFoundPage />;
+    /* A guide published from the admin panel arrives a moment after the built-ins. */
+    return ready ? <NotFoundPage /> : <div className="mx-auto mt-32 h-96 max-w-3xl animate-pulse rounded-3xl bg-ui-card" aria-busy="true" />;
   }
 
   const accent = ARTICLE_ACCENTS[article.accent];
@@ -205,7 +208,7 @@ export function LearnArticlePage() {
                   className="hidden h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-900/10 dark:border-white/10 sm:block"
                 >
                   <img
-                    src={ARTICLE_COVERS[next.id]}
+                    src={coverFor(next)}
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover"

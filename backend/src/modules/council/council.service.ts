@@ -1,6 +1,7 @@
 import type { NotificationKind, Prisma, ReportStatus, Severity } from "@prisma/client";
 import { env } from "@/config/env";
 import { audit } from "@/lib/audit";
+import { isAdminRole } from "@/lib/roles";
 import { AppError } from "@/lib/http";
 import { mailTemplates, sendMail } from "@/lib/mailer";
 import {
@@ -20,7 +21,7 @@ const PRIORITISED_LIMIT = 1000;
 
 export interface Actor {
   id: string;
-  role: "OFFICER" | "ADMIN";
+  role: "OFFICER" | "ADMIN" | "SUPER_ADMIN";
   ipAddress?: string;
 }
 
@@ -275,7 +276,7 @@ function detail(row: CouncilDetailRow, related: Awaited<ReturnType<typeof counci
       triage: open,
       requestInfo: open && author !== null,
       decide: open,
-      reopen: DECIDED_STATUSES.includes(row.status) && actor.role === "ADMIN",
+      reopen: DECIDED_STATUSES.includes(row.status) && isAdminRole(actor.role),
     },
   };
 }
