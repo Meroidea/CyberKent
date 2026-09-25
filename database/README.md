@@ -31,4 +31,4 @@ npx prisma db seed
 - Third normal form; every relationship enforced by a foreign key
 - Soft deletion (`deletedAt`) on records with audit or evidentiary weight
 - `retentionUntil` on every table holding personal data (ER-6)
-- `AiInteraction` audits every OpenAI call without storing any submitted content
+- `AiInteraction` audits every AI call without storing any submitted content

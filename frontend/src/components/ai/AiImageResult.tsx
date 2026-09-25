@@ -12,7 +12,7 @@ const SECTION_HEADING =
  * form, a spoofed sender name, a payment QR code.
  */
 export function AiImageResult({ name, response }: { name: string; response: AiResult<AiImageAnalysis> }) {
-  const { result, usage } = response;
+  const { result } = response;
   const style = VERDICT_STYLE[result.verdict];
 
   return (
@@ -69,7 +69,7 @@ export function AiImageResult({ name, response }: { name: string; response: AiRe
       <p className="mt-3 text-copy text-slate-600 dark:text-slate-400">{result.explanation}</p>
 
       <p className="mt-2 font-mono text-[0.6875rem] text-slate-400 dark:text-slate-500">
-        {usage.model} vision · confidence {result.confidence.toFixed(2)} · metadata removed before sending
+        CyberSafe AI · confidence {result.confidence.toFixed(2)} · metadata removed before sending
       </p>
     </div>
   );

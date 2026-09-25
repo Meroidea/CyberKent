@@ -107,7 +107,7 @@ export function AdminHubPage() {
           <Health icon={Activity} label="API" state={s.health ? "ok" : "checking"} detail="Responding" />
           <Health icon={Database} label="Database" state={!s.health ? "checking" : s.health.db !== null ? "ok" : "down"} detail={s.health?.db != null ? `${s.health.db} ms` : "Unreachable"} />
           <Health icon={Mail} label="Email" state={!s.health ? "checking" : s.health.email ? "ok" : "down"} detail={s.health?.email ? "Delivering" : "Not configured"} />
-          <Health icon={Bot} label="AI" state={!s.health ? "checking" : s.health.ai?.available ? "ok" : "down"} detail={s.health?.ai?.available ? `${s.health.ai.provider} · ${s.health.ai.model ?? ""}` : "Unavailable"} />
+          <Health icon={Bot} label="AI" state={!s.health ? "checking" : s.health.ai?.available ? "ok" : "down"} detail={s.health?.ai?.available ? "Online" : "Unavailable"} />
         </div>
       </SettingsGroup>
 

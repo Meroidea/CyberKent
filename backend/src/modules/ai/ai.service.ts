@@ -93,14 +93,23 @@ interface ScoredResult {
   confidence: number;
 }
 
+/**
+ * What a browser is told about how an answer was produced: how long it took
+ * and which prompt produced it. Which model or vendor answered stays in the
+ * audit log for staff; residents see CyberSafe AI, not a supplier.
+ */
+function publicUsage(usage: AiUsage | undefined) {
+  return { prompt_version: usage?.prompt_version ?? "n/a", latency_ms: usage?.latency_ms ?? 0 };
+}
+
 export const aiService = {
   /** Whether the AI layer can answer, for the interface to decide what to offer. */
   async status() {
     try {
       const health = await aiClient.health();
-      return { available: health.configured, provider: health.provider, model: health.model };
+      return { available: health.configured };
     } catch {
-      return { available: false, provider: UNKNOWN_PROVIDER, model: null };
+      return { available: false };
     }
   },
 
@@ -120,7 +129,7 @@ export const aiService = {
         confidence: result.confidence,
       });
 
-      return { ...response, redactions: count };
+      return { result, usage: publicUsage(usage), redactions: count };
     } catch (error) {
       await account("TEXT_ANALYSIS", input.text, count, userId, { outcome: outcomeOf(error) });
       throw toAppError(error, "TEXT_ANALYSIS");
@@ -143,7 +152,7 @@ export const aiService = {
         confidence: result.confidence,
       });
 
-      return { ...response, redactions: context.count };
+      return { result, usage: publicUsage(usage), redactions: context.count };
     } catch (error) {
       await account("IMAGE_ANALYSIS", input.image, context.count, userId, { outcome: outcomeOf(error) });
       throw toAppError(error, "IMAGE_ANALYSIS");
@@ -174,7 +183,7 @@ export const aiService = {
         usage: response.usage,
       });
 
-      return { reply: response.reply, blocked: response.blocked, model: response.usage.model, redactions };
+      return { reply: response.reply, blocked: response.blocked, redactions };
     } catch (error) {
       await account("ASSISTANT", latest, redactions, userId, { outcome: outcomeOf(error) });
       throw toAppError(error, "ASSISTANT");

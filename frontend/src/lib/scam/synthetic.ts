@@ -129,6 +129,9 @@ function load(): Promise<Classifier> {
     env.allowRemoteModels = false;
     env.allowLocalModels = true;
     env.localModelPath = MODEL_ROOT;
+    /* The ONNX runtime from this site too (scripts/copy-runtimes.mjs), not a CDN. */
+    const onnx = env.backends.onnx as { wasm?: { wasmPaths?: unknown } };
+    if (onnx.wasm) onnx.wasm.wasmPaths = { mjs: "/ort/ort-wasm-simd-threaded.mjs", wasm: "/ort/ort-wasm-simd-threaded.wasm" };
 
     const pipe = await pipeline("image-classification", MODEL_ID, { dtype: MODEL_DTYPE });
 

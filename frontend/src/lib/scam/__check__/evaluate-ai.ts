@@ -3,7 +3,7 @@ import { analyse } from "@/lib/scam/analyse";
 import { CORPUS, HELD_OUT, type LabelledCase } from "@/lib/scam/__check__/corpus";
 
 /**
- * Scores the OpenAI second opinion on the same labelled sets as the rules, and
+ * Scores the AI second opinion on the same labelled sets as the rules, and
  * the combination the interface recommends ("act on the more cautious of the
  * two").
  *

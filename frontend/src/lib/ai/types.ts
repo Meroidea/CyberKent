@@ -7,12 +7,10 @@
 
 export type AiVerdict = "likely_scam" | "suspicious" | "likely_genuine" | "unclear";
 
+/** How an answer was produced, as far as a resident is told: timing and prompt, never the vendor. */
 export interface AiUsage {
-  model: string;
   prompt_version: string;
   latency_ms: number;
-  input_tokens?: number | null;
-  output_tokens?: number | null;
 }
 
 export interface AiTactic {
@@ -64,8 +62,6 @@ export interface AiResult<T> {
 
 export interface AiStatus {
   available: boolean;
-  provider: string;
-  model: string | null;
 }
 
 export interface ChatMessage {
@@ -76,6 +72,5 @@ export interface ChatMessage {
 export interface ChatReply {
   reply: string;
   blocked: boolean;
-  model: string;
   redactions: number;
 }

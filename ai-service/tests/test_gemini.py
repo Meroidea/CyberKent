@@ -11,7 +11,7 @@ import pytest
 from app.config import Settings
 from app.providers.base import ProviderRefused, ProviderUnavailable
 from app.providers.gemini_provider import API_ROOT, GeminiProvider
-from app.providers.openai_provider import CRISIS_REPLY, REFUSAL_REPLY
+from app.providers.replies import CRISIS_REPLY, REFUSAL_REPLY
 from app.schemas import ChatTurn, RuleSummary
 
 ANALYSIS = {
@@ -52,10 +52,9 @@ def gemini(monkeypatch):
     return provider
 
 
-def test_selected_by_default_when_its_key_is_set():
-    assert Settings(GEMINI_API_KEY="k").provider_name == "gemini"
-    assert Settings(OPENAI_API_KEY="k").provider_name == "openai"
-    assert Settings(GEMINI_API_KEY="k", AI_PROVIDER="openai").provider_name == "openai"
+def test_configured_only_when_its_key_is_set():
+    assert Settings(GEMINI_API_KEY="k").configured is True
+    assert Settings(GEMINI_API_KEY="").configured is False
 
 
 def test_text_analysis_sends_a_self_contained_schema_and_clamps_the_answer(gemini):

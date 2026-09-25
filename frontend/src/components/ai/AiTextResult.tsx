@@ -155,7 +155,7 @@ export function AiTextResult({ response, ruleBand }: { response: AiResult<AiText
       ) : null}
 
       <p className="font-mono text-[0.6875rem] text-slate-400 dark:text-slate-500">
-        {usage.model} · {(usage.latency_ms / 1000).toFixed(1)}s · prompt {usage.prompt_version}
+        CyberSafe AI · answered in {(usage.latency_ms / 1000).toFixed(1)}s
         {redactions > 0 ? ` · ${redactions} sensitive ${redactions === 1 ? "number" : "numbers"} masked before sending` : ""}
       </p>
     </div>
