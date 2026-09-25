@@ -17,6 +17,7 @@ import { draftHasContent, loadReportDraft } from "@/lib/report/draft";
 import { CHANNEL_LABEL, formatDate, formatRelative, initials } from "@/lib/report/labels";
 import { ROUTES } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { isAdmin, isStaff } from "@/lib/roles";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -160,13 +161,13 @@ export function DashboardPage() {
         ))}
       </section>
 
-      {user?.role === "OFFICER" || user?.role === "ADMIN" ? (
+      {isStaff(user?.role) ? (
         <SettingsGroup>
           <SettingsRow
             icon={Landmark}
             iconClassName="bg-gradient-to-br from-indigo-600 to-cyan-500"
             label="Council console"
-            detail={user.role === "ADMIN" ? "Review queue, statistics, people, categories and audit." : "Review queue and statistics."}
+            detail={isAdmin(user?.role) ? "Admin panel: tasks, scam radar, analytics, team and content — plus the review queue." : "Review queue, tasks, scam radar and analytics."}
             to={ROUTES.council}
           />
         </SettingsGroup>

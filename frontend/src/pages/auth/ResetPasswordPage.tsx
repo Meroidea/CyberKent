@@ -17,6 +17,8 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get("token");
+  /* The same one-time link welcomes a council member added by an administrator. */
+  const invite = params.get("invite") === "1";
 
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ export function ResetPasswordPage() {
 
     try {
       signIn(await authApi.resetPassword(token, password));
-      navigate(ROUTES.account, { replace: true, state: { notice: "Password changed. You are signed in." } });
+      navigate(invite ? ROUTES.council : ROUTES.account, { replace: true, state: { notice: invite ? "Welcome to CyberKent. Your account is ready." : "Password changed. You are signed in." } });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught : new ApiError("Something went wrong. Try again.", 0));
       setBusy(false);
@@ -50,9 +52,9 @@ export function ResetPasswordPage() {
   const linkDead = error?.status === 400 && !error.fields.length;
 
   return (
-    <ConsoleLayout title="Choose a new password">
+    <ConsoleLayout title={invite ? "Set up your account" : "Choose a new password"} subtitle={invite ? "You have been added to Council's CyberSafe team." : undefined}>
       <ConsoleHero icon={KeyRound} tint="bg-blue-500">
-        <p>Use at least 12 characters. A few unrelated words is easier to remember than symbols, and harder to guess.</p>
+        <p>{invite ? "Choose the password you will sign in with. " : ""}Use at least 12 characters. A few unrelated words is easier to remember than symbols, and harder to guess.</p>
       </ConsoleHero>
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
@@ -65,7 +67,7 @@ export function ResetPasswordPage() {
         <SettingsGroup>
           <SettingsRows>
             <PasswordField
-              label="New password"
+              label={invite ? "Password" : "New password"}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"

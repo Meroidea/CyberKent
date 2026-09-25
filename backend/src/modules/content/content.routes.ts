@@ -14,12 +14,15 @@ const id = (req: Request) => String(req.params.id ?? "").slice(0, 40);
 
 /** Public: published guides and live notices. Short browser cache; never the edge. */
 export const publicContentRoutes = Router();
-publicContentRoutes.use((_req, res, next) => {
+/* A guide can wait a minute to appear; an urgent notice should reach residents within half of one. */
+publicContentRoutes.get("/articles", handle(async (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=60");
-  next();
-});
-publicContentRoutes.get("/articles", handle(async (_req, res) => sendOk(res, await contentService.publishedArticles())));
-publicContentRoutes.get("/notices", handle(async (_req, res) => sendOk(res, await contentService.activeNotices())));
+  sendOk(res, await contentService.publishedArticles());
+}));
+publicContentRoutes.get("/notices", handle(async (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=30");
+  sendOk(res, await contentService.activeNotices());
+}));
 
 /** Administrators: the editor. */
 export const adminContentRoutes = Router();

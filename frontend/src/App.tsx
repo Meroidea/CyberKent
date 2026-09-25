@@ -10,6 +10,14 @@ import { PageBackground } from "@/components/background/PageBackground";
 import { BootScreen } from "@/components/boot/BootScreen";
 import { PageSkeleton } from "@/components/boot/PageSkeleton";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteNoticeBanner } from "@/components/layout/SiteNoticeBanner";
+import { AdminHubPage } from "@/pages/admin/AdminHubPage";
+import { AnalyticsPage } from "@/pages/admin/AnalyticsPage";
+import { ArticleEditorPage } from "@/pages/admin/ArticleEditorPage";
+import { ContentPage } from "@/pages/admin/ContentPage";
+import { RadarPage } from "@/pages/admin/RadarPage";
+import { TasksPage } from "@/pages/admin/TasksPage";
+import { TeamPage } from "@/pages/admin/TeamPage";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ConsoleFooter } from "@/components/settings/ConsoleFooter";
 import { CheckModalProvider } from "@/components/check/CheckModalProvider";
@@ -50,6 +58,7 @@ import { ChecklistPage } from "@/pages/recover/ChecklistPage";
 import { ScamMapPage } from "@/pages/ScamMapPage";
 import { ROUTES } from "@/config/site";
 import { holdScroll, jumpToTop, startSmoothScroll } from "@/lib/smoothScroll";
+import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/roles";
 
 /**
  * How long the boot sequence holds before handing over.
@@ -151,6 +160,7 @@ function AppShell({ booting }: { booting: boolean }) {
       ) : (
         <>
           <SiteHeader />
+          <SiteNoticeBanner />
 
           <main id="main" className="relative z-10">
             <Routes>
@@ -199,14 +209,21 @@ function AppShell({ booting }: { booting: boolean }) {
 
               {/* Council's console. The guard is a courtesy; the API re-checks
                 the role from the database on every one of these requests. */}
-              <Route path={ROUTES.council} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilOverviewPage /></RequireRole>} />
-              <Route path={ROUTES.councilQueue} element={<RequireRole roles={["OFFICER", "ADMIN"]}><ReviewQueuePage /></RequireRole>} />
-              <Route path={`${ROUTES.councilReport}/:reference`} element={<RequireRole roles={["OFFICER", "ADMIN"]}><CouncilReportPage /></RequireRole>} />
-              <Route path={ROUTES.councilAlerts} element={<RequireRole roles={["OFFICER", "ADMIN"]}><AlertDeskPage /></RequireRole>} />
-              <Route path={`${ROUTES.councilAlerts}/:id`} element={<RequireRole roles={["OFFICER", "ADMIN"]}><AlertEditorPage /></RequireRole>} />
-              <Route path={ROUTES.councilUsers} element={<RequireRole roles={["ADMIN"]}><UsersPage /></RequireRole>} />
-              <Route path={ROUTES.councilCategories} element={<RequireRole roles={["ADMIN"]}><CategoriesPage /></RequireRole>} />
-              <Route path={ROUTES.councilAudit} element={<RequireRole roles={["ADMIN"]}><AuditPage /></RequireRole>} />
+              <Route path={ROUTES.council} element={<RequireRole roles={STAFF_ROLES}><CouncilOverviewPage /></RequireRole>} />
+              <Route path={ROUTES.councilQueue} element={<RequireRole roles={STAFF_ROLES}><ReviewQueuePage /></RequireRole>} />
+              <Route path={`${ROUTES.councilReport}/:reference`} element={<RequireRole roles={STAFF_ROLES}><CouncilReportPage /></RequireRole>} />
+              <Route path={ROUTES.councilAlerts} element={<RequireRole roles={STAFF_ROLES}><AlertDeskPage /></RequireRole>} />
+              <Route path={`${ROUTES.councilAlerts}/:id`} element={<RequireRole roles={STAFF_ROLES}><AlertEditorPage /></RequireRole>} />
+              <Route path={ROUTES.councilTasks} element={<RequireRole roles={STAFF_ROLES}><TasksPage /></RequireRole>} />
+              <Route path={ROUTES.councilRadar} element={<RequireRole roles={STAFF_ROLES}><RadarPage /></RequireRole>} />
+              <Route path={ROUTES.councilAnalytics} element={<RequireRole roles={STAFF_ROLES}><AnalyticsPage /></RequireRole>} />
+              <Route path={ROUTES.admin} element={<RequireRole roles={ADMIN_ROLES}><AdminHubPage /></RequireRole>} />
+              <Route path={ROUTES.adminTeam} element={<RequireRole roles={ADMIN_ROLES}><TeamPage /></RequireRole>} />
+              <Route path={ROUTES.adminContent} element={<RequireRole roles={ADMIN_ROLES}><ContentPage /></RequireRole>} />
+              <Route path={`${ROUTES.adminContent}/guides/:id`} element={<RequireRole roles={ADMIN_ROLES}><ArticleEditorPage /></RequireRole>} />
+              <Route path={ROUTES.councilUsers} element={<RequireRole roles={ADMIN_ROLES}><UsersPage /></RequireRole>} />
+              <Route path={ROUTES.councilCategories} element={<RequireRole roles={ADMIN_ROLES}><CategoriesPage /></RequireRole>} />
+              <Route path={ROUTES.councilAudit} element={<RequireRole roles={ADMIN_ROLES}><AuditPage /></RequireRole>} />
 
               {/* The service's statements. */}
               <Route path={ROUTES.privacy} element={<LegalPage slug="privacy" />} />

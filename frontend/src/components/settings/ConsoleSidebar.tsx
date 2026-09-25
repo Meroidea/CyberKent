@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { initials } from "@/lib/report/labels";
+import { isAdmin, isStaff } from "@/lib/roles";
 
 /**
  * The master column: the index of every screen the service has.
@@ -27,15 +28,16 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const sections = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
-    const staff = user?.role === "OFFICER" || user?.role === "ADMIN";
+    const staff = isStaff(user?.role);
     const shown = (audience: (typeof CONSOLE_NAV)[number]["items"][number]["audience"]) =>
       !audience ||
       audience === status ||
       (audience === "staff" && staff) ||
-      (audience === "admin" && user?.role === "ADMIN");
+      (audience === "admin" && isAdmin(user?.role));
 
     /* Staff come to the console to work, so their section leads. */
-    const ordered = staff ? [...CONSOLE_NAV].sort((a, b) => Number(b.title === "Council") - Number(a.title === "Council")) : CONSOLE_NAV;
+    const lead = (title?: string) => (title === "Admin panel" ? 2 : title === "Council" ? 1 : 0);
+    const ordered = staff ? [...CONSOLE_NAV].sort((a, b) => lead(b.title) - lead(a.title)) : CONSOLE_NAV;
 
     return ordered.map((section) => ({
       ...section,

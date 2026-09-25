@@ -1,5 +1,11 @@
 import {
   Accessibility,
+  BarChart3,
+  IdCard,
+  KanbanSquare,
+  Newspaper,
+  Radar,
+  ShieldHalf,
   BellPlus,
   Inbox,
   Landmark,
@@ -47,4 +53,10 @@ export const CONSOLE_ICONS: Record<ConsoleIcon, LucideIcon> = {
   categories: Tags,
   audit: ScrollText,
   alertDesk: BellPlus,
+  adminHub: ShieldHalf,
+  tasks: KanbanSquare,
+  radar: Radar,
+  analytics: BarChart3,
+  team: IdCard,
+  content: Newspaper,
 };

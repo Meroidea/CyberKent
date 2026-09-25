@@ -36,7 +36,13 @@ export type ConsoleIcon =
   | "users"
   | "categories"
   | "audit"
-  | "alertDesk";
+  | "alertDesk"
+  | "adminHub"
+  | "tasks"
+  | "radar"
+  | "analytics"
+  | "team"
+  | "content";
 
 export interface ConsoleItem {
   label: string;
@@ -133,6 +139,17 @@ export const CONSOLE_NAV: ConsoleSection[] = [
       { label: "Create a free account", href: ROUTES.register, icon: "register", tint: "bg-blue-500", audience: "guest" },
       { label: "Your dashboard", href: ROUTES.account, icon: "dashboard", tint: "bg-blue-500", audience: "member" },
       { label: "Settings", href: ROUTES.accountSettings, icon: "settings", tint: "bg-slate-500", audience: "member" },
+    ],
+  },
+  {
+    title: "Admin panel",
+    items: [
+      { label: "Admin home", href: ROUTES.admin, icon: "adminHub", tint: "bg-gradient-to-br from-indigo-600 to-violet-600", audience: "admin" },
+      { label: "Task tracker", href: ROUTES.councilTasks, icon: "tasks", tint: "bg-emerald-600", audience: "staff" },
+      { label: "Scam radar", href: ROUTES.councilRadar, icon: "radar", tint: "bg-rose-600", audience: "staff" },
+      { label: "Analytics", href: ROUTES.councilAnalytics, icon: "analytics", tint: "bg-sky-600", audience: "staff" },
+      { label: "Team", href: ROUTES.adminTeam, icon: "team", tint: "bg-violet-600", audience: "admin" },
+      { label: "Content", href: ROUTES.adminContent, icon: "content", tint: "bg-teal-600", audience: "admin" },
     ],
   },
   {
