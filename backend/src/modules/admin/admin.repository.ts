@@ -73,7 +73,7 @@ export const adminRepository = {
   },
 
   activeAdmins() {
-    return prisma.user.count({ where: { role: "ADMIN", deletedAt: null } });
+    return prisma.user.count({ where: { role: { in: ["ADMIN", "SUPER_ADMIN"] }, deletedAt: null } });
   },
 
   /**

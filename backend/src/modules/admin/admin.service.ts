@@ -3,6 +3,8 @@ import { audit } from "@/lib/audit";
 import { toCsv } from "@/lib/csv";
 import { AppError } from "@/lib/http";
 import { STAFF_ROLES } from "@/middleware/staff";
+import { isAdminRole } from "@/lib/roles";
+import { assertMayManage, keepASuperAdmin } from "@/modules/admin/admin.team";
 import { adminRepository, type AdminUserRow } from "@/modules/admin/admin.repository";
 import { councilStats, K_ANONYMITY } from "@/modules/council/council.stats";
 import type { Actor } from "@/modules/council/council.service";
@@ -52,7 +54,7 @@ async function manageable(id: string, actor: Actor) {
 
 /** A change that would leave Council with no active administrator is refused, whoever asks. */
 async function keepAnAdministrator(row: AdminUserRow) {
-  if (row.role === "ADMIN" && !row.deletedAt && (await adminRepository.activeAdmins()) <= 1) {
+  if (isAdminRole(row.role) && !row.deletedAt && (await adminRepository.activeAdmins()) <= 1) {
     throw new AppError(409, "This is the only active administrator. Make someone else an administrator first.");
   }
 }
@@ -79,7 +81,9 @@ export const adminService = {
     const row = await manageable(id, actor);
 
     if (row.role === role) return toAdminUser(row);
-    if (role !== "ADMIN") await keepAnAdministrator(row);
+    assertMayManage(actor.role as Role, row.role, role);
+    await keepASuperAdmin(row, role);
+    if (!isAdminRole(role)) await keepAnAdministrator(row);
 
     const leavesStaff = STAFF_ROLES.includes(row.role) && !STAFF_ROLES.includes(role);
     const { user, released } = await adminRepository.setRole(id, role, leavesStaff);
@@ -99,6 +103,8 @@ export const adminService = {
     const row = await manageable(id, actor);
 
     if (row.deletedAt) throw new AppError(409, "This account is already suspended.");
+    assertMayManage(actor.role as Role, row.role);
+    await keepASuperAdmin(row);
     await keepAnAdministrator(row);
 
     const released = await adminRepository.suspend(id);
@@ -110,7 +116,8 @@ export const adminService = {
   },
 
   async reactivate(id: string, actor: Actor) {
-    await manageable(id, actor);
+    const row = await manageable(id, actor);
+    assertMayManage(actor.role as Role, row.role);
 
     if (!(await adminRepository.reactivate(id))) throw new AppError(409, "This account is not suspended.");
 

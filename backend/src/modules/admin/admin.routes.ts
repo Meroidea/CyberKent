@@ -6,12 +6,16 @@ import {
   auditQuerySchema,
   createCategorySchema,
   exportQuerySchema,
+  inviteSchema,
+  profileSchema,
   roleSchema,
   suspendSchema,
   updateCategorySchema,
   usersQuerySchema,
 } from "@/modules/admin/admin.schema";
 import { adminService } from "@/modules/admin/admin.service";
+import { teamService } from "@/modules/admin/admin.team";
+import { prisma } from "@/lib/prisma";
 import type { Actor } from "@/modules/council/council.service";
 
 /**
@@ -27,7 +31,7 @@ adminRoutes.use((_req, res, next) => {
 });
 
 function actor(req: Request): Actor {
-  return { id: req.user!.id, role: "ADMIN", ipAddress: req.ip };
+  return { id: req.user!.id, role: req.user!.role as Actor["role"], ipAddress: req.ip };
 }
 
 const handle = (fn: (req: Request, res: Response) => Promise<void>) => (req: Request, res: Response, next: NextFunction) => {
@@ -51,6 +55,30 @@ adminRoutes.post("/users/:id/suspend", validateBody(suspendSchema), handle(async
 
 adminRoutes.post("/users/:id/reactivate", handle(async (req, res) => {
   sendOk(res, { user: await adminService.reactivate(id(req), actor(req)) }, "Account reactivated.");
+}));
+
+/* People management — the team directory, invites and profiles. */
+async function namedActor(req: Request) {
+  const me = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { fullName: true } });
+  return { ...actor(req), name: me?.fullName ?? "A Council administrator" };
+}
+
+adminRoutes.get("/team", handle(async (_req, res) => {
+  sendOk(res, await teamService.directory());
+}));
+
+adminRoutes.post("/team", validateBody(inviteSchema), handle(async (req, res) => {
+  const result = await teamService.invite(req.body, await namedActor(req));
+  sendOk(res, result, result.emailSent ? `Invitation sent to ${result.member.email}.` : "Account created. Email is unavailable, so share the set-up link with them directly.", 201);
+}));
+
+adminRoutes.post("/team/:id/invite", handle(async (req, res) => {
+  const result = await teamService.resendInvite(id(req), await namedActor(req));
+  sendOk(res, result, result.emailSent ? "A new invitation has been sent." : "Email is unavailable; share the new set-up link directly.");
+}));
+
+adminRoutes.patch("/team/:id", validateBody(profileSchema), handle(async (req, res) => {
+  sendOk(res, { member: await teamService.updateProfile(id(req), req.body, actor(req)) }, "Profile saved.");
 }));
 
 adminRoutes.get("/categories", handle(async (_req, res) => {

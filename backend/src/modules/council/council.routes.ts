@@ -17,6 +17,9 @@ import { councilStats } from "@/modules/council/council.stats";
 import { councilSimilarity } from "@/modules/council/council.similarity";
 import { z } from "zod";
 import { staffAlertsRoutes } from "@/modules/alerts/alerts.routes";
+import { analyticsRoutes } from "@/modules/analytics/analytics.routes";
+import { radarRoutes } from "@/modules/radar/radar.routes";
+import { tasksRoutes } from "@/modules/tasks/tasks.routes";
 
 /**
  * Modules 7 and 12 from Council's side — the review queue, the report
@@ -54,6 +57,11 @@ councilRoutes.use((_req, res, next) => {
 
 /* Module 9, from Council's side — behind the same staff check. */
 councilRoutes.use("/alerts", staffAlertsRoutes);
+
+/* The admin panel's staff tools — same staff check, same no-store. */
+councilRoutes.use("/tasks", tasksRoutes);
+councilRoutes.use("/radar", radarRoutes);
+councilRoutes.use("/analytics", analyticsRoutes);
 
 councilRoutes.get("/stats", handle(async (req, res) => {
   const { days } = parseQuery(statsQuerySchema, req);

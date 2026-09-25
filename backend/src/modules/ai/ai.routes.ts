@@ -1,7 +1,8 @@
 import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { env } from "@/config/env";
-import { optionalAuth, requireAuth, requireRole } from "@/middleware/auth";
+import { optionalAuth } from "@/middleware/auth";
+import { requireStaff } from "@/middleware/staff";
 import { validateBody } from "@/middleware/validate";
 import { aiController } from "@/modules/ai/ai.controller";
 import { analyseImageSchema, analyseTextSchema, assistantSchema } from "@/modules/ai/ai.schema";
@@ -37,4 +38,4 @@ aiRoutes.get("/status", aiController.status);
 aiRoutes.post("/analyse-text", aiLimiter, optionalAuth, validateBody(analyseTextSchema), aiController.analyseText);
 aiRoutes.post("/analyse-image", aiLimiter, imageBody, optionalAuth, validateBody(analyseImageSchema), aiController.analyseImage);
 aiRoutes.post("/assistant", aiLimiter, optionalAuth, validateBody(assistantSchema), aiController.chat);
-aiRoutes.get("/usage", requireAuth, requireRole("ADMIN"), aiController.usage);
+aiRoutes.get("/usage", ...requireStaff("ADMIN"), aiController.usage);
