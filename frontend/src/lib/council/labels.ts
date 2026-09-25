@@ -82,6 +82,22 @@ export const AUDIT_ACTION: Record<string, string> = {
   "subscription.created": "Subscribed to alerts",
   "subscription.confirmed": "Confirmed an alert subscription",
   "subscription.cancelled": "Unsubscribed from alerts",
+  "user.invited": "Invited a council member",
+  "user.invite_resent": "Resent an invitation",
+  "user.profile_updated": "Updated a staff profile",
+  "task.created": "Created a task",
+  "task.updated": "Updated a task",
+  "task.deleted": "Deleted a task",
+  "content.article_created": "Drafted a guide",
+  "content.article_edited": "Edited a guide",
+  "content.article_published": "Published a guide",
+  "content.article_unpublished": "Unpublished a guide",
+  "content.article_archived": "Archived a guide",
+  "content.article_restored": "Restored a guide",
+  "content.builtins_imported": "Imported the built-in guides",
+  "content.notice_created": "Posted a site notice",
+  "content.notice_edited": "Edited a site notice",
+  "content.notice_archived": "Took down a site notice",
 };
 
 export function auditLabel(action: string): string {

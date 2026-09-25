@@ -49,6 +49,15 @@ export function connectSession(getToken: () => string | null, ended: () => void)
   onSessionEnded = ended;
 }
 
+/** Waits before a retry, and stops waiting if the caller has gone. */
+function pause(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+    const timer = setTimeout(resolve, ms + Math.random() * ms);
+    signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("Aborted", "AbortError")); }, { once: true });
+  });
+}
+
 export async function apiRequest<T>(
   path: string,
   init: { method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE"; body?: unknown; signal?: AbortSignal } = {},
@@ -64,19 +73,37 @@ export async function apiRequest<T>(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method: init.method ?? "GET",
-      headers,
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
-      signal: init.signal,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
+  /* A read that fails on the server's side — a pooler momentarily full, a cold
+     instance timing out — is tried once more before the screen shows an error.
+     Only reads: repeating a write could do it twice. */
+  const method = init.method ?? "GET";
+  const attempts = method === "GET" ? 2 : 1;
+
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers,
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+        signal: init.signal,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      if (attempt < attempts) {
+        await pause(500, init.signal);
+        continue;
+      }
+
+      throw new ApiError(OFFLINE, 0);
     }
 
-    throw new ApiError(OFFLINE, 0);
+    if (response.status >= 500 && attempt < attempts) {
+      await pause(500, init.signal);
+      continue;
+    }
+    break;
   }
 
   let envelope: Envelope<T> | null = null;
