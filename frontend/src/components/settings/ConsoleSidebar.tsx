@@ -93,7 +93,7 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className="-mt-2 flex items-center gap-3 rounded-ui bg-ui-card px-3 py-2.5 transition-colors duration-150 hover:bg-ui-card-hover"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[0.8125rem] font-semibold text-white">
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[0.8125rem] font-semibold text-white ring-2 ring-white/70 dark:ring-white/10">
             {initials(user.fullName)}
           </span>
           <span className="min-w-0">
@@ -134,14 +134,14 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-[0.625rem] px-3 py-[0.4375rem] transition-colors duration-150",
-                        active ? "bg-ui-selected" : "hover:bg-ui-fill",
+                        "group flex items-center gap-3 rounded-xl px-3 py-[0.4375rem] transition-colors duration-150",
+                        active ? "ck-card ck-pill-in bg-ui-card" : "hover:bg-ui-fill",
                       )}
                     >
                       <span
                         aria-hidden="true"
                         className={cn(
-                          "flex h-[1.75rem] w-[1.75rem] shrink-0 items-center justify-center rounded-[0.4375rem] text-white",
+                          "flex h-[1.75rem] w-[1.75rem] shrink-0 items-center justify-center rounded-[0.5rem] text-white shadow-sm transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110",
                           item.tint,
                         )}
                       >
@@ -150,7 +150,7 @@ export function ConsoleSidebar({ onNavigate }: { onNavigate?: () => void }) {
                       <span
                         className={cn(
                           "min-w-0 flex-1 truncate text-[1.0625rem] leading-tight",
-                          active ? "font-medium text-ui-label" : "text-ui-label",
+                          active ? "font-semibold text-ui-label" : "text-ui-label",
                         )}
                       >
                         {item.label}

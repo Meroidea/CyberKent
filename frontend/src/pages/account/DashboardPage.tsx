@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Flag, Landmark, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Settings } from "lucide-react";
+import { BookOpen, Clock3, Flag, Landmark, LogOut, MailWarning, MessageCircleQuestion, ScanSearch, Send, Settings, ShieldCheck } from "lucide-react";
 import { StatusPill } from "@/components/account/StatusPill";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailConfirmation } from "@/components/auth/useEmailConfirmation";
 import { useCheckModal } from "@/components/check/useCheckModal";
 import { FormAlert } from "@/components/forms/fields";
-import { ConsoleHero } from "@/components/settings/ConsoleHero";
+import { CountUp } from "@/components/dash/CountUp";
+import { StatTile } from "@/components/dash/StatTile";
+import { BannerAction, WelcomeBanner } from "@/components/dash/WelcomeBanner";
 import { ConsoleLayout } from "@/components/settings/ConsoleLayout";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 import { SettingsRow, SettingsRows } from "@/components/settings/SettingsRow";
@@ -16,7 +18,6 @@ import { ApiError } from "@/lib/api/client";
 import { draftHasContent, loadReportDraft } from "@/lib/report/draft";
 import { CHANNEL_LABEL, formatDate, formatRelative, initials } from "@/lib/report/labels";
 import { ROUTES } from "@/config/site";
-import { cn } from "@/lib/cn";
 import { isAdmin, isStaff } from "@/lib/roles";
 
 function greeting(): string {
@@ -82,16 +83,35 @@ export function DashboardPage() {
   const awaiting = overview?.recentReports.find((report) => report.awaitingYou);
 
   return (
-    <ConsoleLayout title="Your dashboard" subtitle={user?.email}>
-      <ConsoleHero
-        tile={<span className="text-[1.625rem] font-semibold tracking-wide">{initials(user?.fullName ?? "")}</span>}
-        tint="bg-gradient-to-br from-blue-500 to-indigo-600"
+    <ConsoleLayout title="Your dashboard" subtitle={user ? `Signed in as ${user.email}` : undefined} wide>
+      <WelcomeBanner
+        eyebrow={new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
+        title={<>{greeting()}, {firstName}.</>}
+        avatar={<span className="tracking-wide">{initials(user?.fullName ?? "")}</span>}
+        actions={
+          <>
+            <BannerAction primary onClick={openChecker}><ScanSearch className="h-4 w-4" aria-hidden="true" />Check a message</BannerAction>
+            <BannerAction onClick={() => navigate(ROUTES.reportScam)}><Flag className="h-4 w-4" aria-hidden="true" />Report a scam</BannerAction>
+          </>
+        }
+        aside={
+          overview && overview.stats.verified > 0 ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/25 backdrop-blur-md">
+              <ShieldCheck className="h-8 w-8" aria-hidden="true" />
+              <div>
+                <p className="text-[1.5rem] font-semibold leading-none"><CountUp value={overview.stats.verified} /></p>
+                <p className="mt-1 text-[0.75rem] text-white/80">scam{overview.stats.verified === 1 ? "" : "s"} you helped confirm</p>
+              </div>
+            </div>
+          ) : null
+        }
       >
-        <p className="text-[1.0625rem] font-semibold text-ui-label">
-          {greeting()}, {firstName}.
-        </p>
-        {user ? <p className="mt-1 text-[0.8125rem]">Member since {formatDate(user.createdAt)}</p> : null}
-      </ConsoleHero>
+        {awaiting
+          ? "Council has a question about one of your reports — answering it keeps the review moving."
+          : user
+            ? `Member since ${formatDate(user.createdAt)}. Check anything suspicious before you act on it; report it so others in Hume are warned.`
+            : null}
+      </WelcomeBanner>
 
       {notice ? <FormAlert tone="success">{notice}</FormAlert> : null}
       {error ? (
@@ -145,136 +165,131 @@ export function DashboardPage() {
         </SettingsGroup>
       ) : null}
 
-      <section aria-label="Your reports at a glance" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "With Council", value: overview?.stats.open, accent: "text-sky-600 dark:text-sky-300" },
-          { label: "Need your reply", value: overview?.stats.needsYou, accent: overview?.stats.needsYou ? "text-amber-600 dark:text-amber-300" : "text-ui-label" },
-          { label: "Verified scams", value: overview?.stats.verified, accent: "text-emerald-600 dark:text-emerald-300" },
-          { label: "Sent in total", value: overview?.stats.total, accent: "text-ui-label" },
-        ].map((tile) => (
-          <div key={tile.label} className="rounded-ui bg-ui-card px-4 py-3.5">
-            <p className={cn("text-[1.75rem] font-semibold leading-none tabular-nums", tile.accent)}>
-              {tile.value ?? <span className="inline-block h-7 w-8 animate-pulse rounded bg-ui-fill" />}
-            </p>
-            <p className="mt-2 text-[0.8125rem] leading-tight text-ui-label-2">{tile.label}</p>
-          </div>
-        ))}
+      <section aria-label="Your reports at a glance" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile icon={Clock3} label="With Council" value={overview?.stats.open} tint="bg-gradient-to-br from-sky-500 to-indigo-600" hint="Being reviewed" />
+        <StatTile icon={MessageCircleQuestion} label="Need your reply" value={overview?.stats.needsYou} tint="bg-gradient-to-br from-amber-500 to-orange-500" emphasis={overview?.stats.needsYou ? "text-amber-600 dark:text-amber-300" : undefined} hint={overview?.stats.needsYou ? "Council is waiting on you" : "Nothing waiting"} to={awaiting ? `${ROUTES.accountReport}/${awaiting.reference}` : undefined} />
+        <StatTile icon={ShieldCheck} label="Verified scams" value={overview?.stats.verified} tint="bg-gradient-to-br from-emerald-500 to-teal-600" hint="Confirmed by Council" />
+        <StatTile icon={Send} label="Sent in total" value={overview?.stats.total} tint="bg-gradient-to-br from-violet-500 to-fuchsia-500" hint="Since you joined" />
       </section>
 
-      {isStaff(user?.role) ? (
-        <SettingsGroup>
-          <SettingsRow
-            icon={Landmark}
-            iconClassName="bg-gradient-to-br from-indigo-600 to-cyan-500"
-            label="Council console"
-            detail={isAdmin(user?.role) ? "Admin panel: tasks, scam radar, analytics, team and content — plus the review queue." : "Review queue, tasks, scam radar and analytics."}
-            to={ROUTES.council}
-          />
-        </SettingsGroup>
-      ) : null}
+      <div className="grid gap-7 lg:grid-cols-5">
+        <div className="flex flex-col gap-7 lg:col-span-3">
+          {isStaff(user?.role) ? (
+            <SettingsGroup>
+              <SettingsRow
+                icon={Landmark}
+                iconClassName="bg-gradient-to-br from-indigo-600 to-cyan-500"
+                label="Council console"
+                detail={isAdmin(user?.role) ? "Admin panel: tasks, scam radar, analytics, team and content — plus the review queue." : "Review queue, tasks, scam radar and analytics."}
+                to={ROUTES.council}
+              />
+            </SettingsGroup>
+          ) : null}
 
-      <SettingsGroup>
-        <SettingsRows inset={60}>
-          <SettingsRow icon={Flag} iconClassName="bg-rose-500" label="Report a scam" detail="Send it to Council with the details." to={ROUTES.reportScam} />
-          <SettingsRow icon={ScanSearch} iconClassName="bg-indigo-500" label="Check a message" detail="Instant, private, free." onClick={openChecker} chevron />
-        </SettingsRows>
-      </SettingsGroup>
+          <SettingsGroup>
+            <SettingsRows inset={60}>
+              <SettingsRow icon={Flag} iconClassName="bg-rose-500" label="Report a scam" detail="Send it to Council with the details." to={ROUTES.reportScam} />
+              <SettingsRow icon={ScanSearch} iconClassName="bg-indigo-500" label="Check a message" detail="Instant, private, free." onClick={openChecker} chevron />
+            </SettingsRows>
+          </SettingsGroup>
 
-      <SettingsGroup
-        title="Your reports"
-        action={
-          overview && !allReports && overview.stats.total > overview.recentReports.length ? (
-            <button
-              type="button"
-              onClick={() => reportsApi.list().then(({ reports: list }) => setAllReports(list)).catch(() => undefined)}
-              className="text-[0.9375rem] font-medium text-ui-tint hover:opacity-70"
+          <SettingsGroup
+            title="Your reports"
+            action={
+              overview && !allReports && overview.stats.total > overview.recentReports.length ? (
+                <button
+                  type="button"
+                  onClick={() => reportsApi.list().then(({ reports: list }) => setAllReports(list)).catch(() => undefined)}
+                  className="text-[0.9375rem] font-medium text-ui-tint hover:opacity-70"
+                >
+                  See all {overview.stats.total}
+                </button>
+              ) : null
+            }
+          >
+            {!overview && !error ? (
+              <div className="flex flex-col gap-3 px-4 py-4" aria-busy="true">
+                {[0, 1].map((row) => (
+                  <div key={row} className="h-10 animate-pulse rounded-lg bg-ui-fill" />
+                ))}
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-[1.0625rem] text-ui-label">No reports yet.</p>
+                <p className="mt-1 text-[0.875rem] text-ui-label-2">When you report a scam, you can follow it here.</p>
+                <Link to={ROUTES.reportScam} className="mt-3 inline-block text-[0.9375rem] font-semibold text-ui-tint hover:opacity-70">
+                  Report a scam
+                </Link>
+              </div>
+            ) : (
+              <SettingsRows>
+                {reports.map((report) => (
+                  <SettingsRow
+                    key={report.reference}
+                    label={report.title}
+                    detail={`${report.reference} · ${CHANNEL_LABEL[report.channel]} · ${formatRelative(report.submittedAt)}`}
+                    trailing={<StatusPill status={report.status} />}
+                    to={`${ROUTES.accountReport}/${report.reference}`}
+                  />
+                ))}
+              </SettingsRows>
+            )}
+          </SettingsGroup>
+        </div>
+        <div className="flex flex-col gap-7 lg:col-span-2">
+          {overview && overview.notifications.length > 0 ? (
+            <SettingsGroup
+              title="Updates"
+              action={
+                overview.unreadNotifications > 0 ? (
+                  <button type="button" onClick={markAllRead} className="text-[0.9375rem] font-medium text-ui-tint hover:opacity-70">
+                    Mark all read
+                  </button>
+                ) : null
+              }
             >
-              See all {overview.stats.total}
-            </button>
-          ) : null
-        }
-      >
-        {!overview && !error ? (
-          <div className="flex flex-col gap-3 px-4 py-4" aria-busy="true">
-            {[0, 1].map((row) => (
-              <div key={row} className="h-10 animate-pulse rounded-lg bg-ui-fill" />
-            ))}
-          </div>
-        ) : reports.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-[1.0625rem] text-ui-label">No reports yet.</p>
-            <p className="mt-1 text-[0.875rem] text-ui-label-2">When you report a scam, you can follow it here.</p>
-            <Link to={ROUTES.reportScam} className="mt-3 inline-block text-[0.9375rem] font-semibold text-ui-tint hover:opacity-70">
-              Report a scam
-            </Link>
-          </div>
-        ) : (
-          <SettingsRows>
-            {reports.map((report) => (
+              <SettingsRows>
+                {overview.notifications.map((item) => (
+                  <SettingsRow
+                    key={item.id}
+                    label={
+                      <span className="flex items-center gap-2">
+                        {!item.readAt ? <span aria-label="Unread" className="h-2 w-2 shrink-0 rounded-full bg-ui-tint" /> : null}
+                        <span className={item.readAt ? "" : "font-semibold"}>{item.title}</span>
+                      </span>
+                    }
+                    detail={
+                      <>
+                        {item.body} <span className="text-ui-label-3">· {formatRelative(item.createdAt)}</span>
+                      </>
+                    }
+                    onClick={() => openNotification(item.id, item.linkPath)}
+                    chevron={Boolean(item.linkPath)}
+                  />
+                ))}
+              </SettingsRows>
+            </SettingsGroup>
+          ) : null}
+          <SettingsGroup title="Account">
+            <SettingsRows inset={60}>
+              <SettingsRow icon={Settings} iconClassName="bg-slate-500" label="Settings" detail="Profile, password, email preferences." to={ROUTES.accountSettings} />
+              <SettingsRow icon={BookOpen} iconClassName="bg-sky-500" label="Awareness library" detail="Short guides to the scams going around." to={ROUTES.learn} />
               <SettingsRow
-                key={report.reference}
-                label={report.title}
-                detail={`${report.reference} · ${CHANNEL_LABEL[report.channel]} · ${formatRelative(report.submittedAt)}`}
-                trailing={<StatusPill status={report.status} />}
-                to={`${ROUTES.accountReport}/${report.reference}`}
+                icon={LogOut}
+                iconClassName="bg-slate-400"
+                label="Sign out"
+                onClick={() => {
+                  /* Away first: signing out on a guarded screen would send the
+                     guard to the sign-in form instead of home. */
+                  navigate(ROUTES.home);
+                  void signOut();
+                }}
+                chevron={false}
               />
-            ))}
-          </SettingsRows>
-        )}
-      </SettingsGroup>
-
-      {overview && overview.notifications.length > 0 ? (
-        <SettingsGroup
-          title="Updates"
-          action={
-            overview.unreadNotifications > 0 ? (
-              <button type="button" onClick={markAllRead} className="text-[0.9375rem] font-medium text-ui-tint hover:opacity-70">
-                Mark all read
-              </button>
-            ) : null
-          }
-        >
-          <SettingsRows>
-            {overview.notifications.map((item) => (
-              <SettingsRow
-                key={item.id}
-                label={
-                  <span className="flex items-center gap-2">
-                    {!item.readAt ? <span aria-label="Unread" className="h-2 w-2 shrink-0 rounded-full bg-ui-tint" /> : null}
-                    <span className={item.readAt ? "" : "font-semibold"}>{item.title}</span>
-                  </span>
-                }
-                detail={
-                  <>
-                    {item.body} <span className="text-ui-label-3">· {formatRelative(item.createdAt)}</span>
-                  </>
-                }
-                onClick={() => openNotification(item.id, item.linkPath)}
-                chevron={Boolean(item.linkPath)}
-              />
-            ))}
-          </SettingsRows>
-        </SettingsGroup>
-      ) : null}
-
-      <SettingsGroup title="Account">
-        <SettingsRows inset={60}>
-          <SettingsRow icon={Settings} iconClassName="bg-slate-500" label="Settings" detail="Profile, password, email preferences." to={ROUTES.accountSettings} />
-          <SettingsRow icon={BookOpen} iconClassName="bg-sky-500" label="Awareness library" detail="Short guides to the scams going around." to={ROUTES.learn} />
-          <SettingsRow
-            icon={LogOut}
-            iconClassName="bg-slate-400"
-            label="Sign out"
-            onClick={() => {
-              /* Away first: signing out on a guarded screen would send the
-                 guard to the sign-in form instead of home. */
-              navigate(ROUTES.home);
-              void signOut();
-            }}
-            chevron={false}
-          />
-        </SettingsRows>
-      </SettingsGroup>
+            </SettingsRows>
+          </SettingsGroup>
+        </div>
+      </div>
     </ConsoleLayout>
   );
 }

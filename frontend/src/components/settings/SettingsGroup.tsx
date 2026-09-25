@@ -34,16 +34,16 @@ export function SettingsGroup({
   return (
     <section className={cn("flex flex-col", className)}>
       {title ? (
-        <div className="flex items-end justify-between gap-4 px-4 pb-2">
-          <h2 className="text-[0.9375rem] font-semibold leading-tight text-ui-label-2">{title}</h2>
+        <div className="flex items-end justify-between gap-4 px-1 pb-2.5">
+          <h2 className="text-[0.75rem] font-semibold uppercase leading-tight tracking-[0.12em] text-ui-label-2">{title}</h2>
           {action}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-ui bg-ui-card">{children}</div>
+      <div className="ck-card overflow-hidden rounded-[1.125rem] bg-ui-card">{children}</div>
 
       {footer ? (
-        <p className="px-4 pt-2 text-[0.8125rem] leading-[1.45] text-ui-label-2">{footer}</p>
+        <p className="px-1 pt-2.5 text-[0.8125rem] leading-[1.45] text-ui-label-2">{footer}</p>
       ) : null}
     </section>
   );
