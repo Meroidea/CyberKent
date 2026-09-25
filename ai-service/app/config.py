@@ -15,7 +15,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # The service reads its own .env, and falls back to the API's so a
-        # developer who has set OPENAI_API_KEY once does not set it twice.
+        # developer who has set GEMINI_API_KEY once does not set it twice.
         env_file=(".env", "../backend/.env"),
         env_file_encoding="utf-8",
         extra="ignore",
@@ -23,27 +23,16 @@ class Settings(BaseSettings):
 
     environment: str = Field(default="development", alias="NODE_ENV")
 
-    # Optional so the service can start and report itself unconfigured. The
-    # gateway then degrades to "AI unavailable" instead of the process refusing
-    # to boot — constraint C3: the core system works when AI does not.
-    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
-
-    # Centralised, never hard-coded at a call site (Avoid.md §8). One model for
-    # structured analysis and vision; the assistant may use a different one.
-    openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
-    openai_assistant_model: str | None = Field(default=None, alias="OPENAI_ASSISTANT_MODEL")
-    openai_moderation_model: str = Field(default="omni-moderation-latest", alias="OPENAI_MODERATION_MODEL")
-    openai_timeout_seconds: float = Field(default=40.0, alias="OPENAI_TIMEOUT_SECONDS")
-
-    # Google Gemini. When a key is present Gemini serves requests unless
-    # AI_PROVIDER says otherwise; the free tier needs no billing account.
+    # Google Gemini, the one model behind every AI feature; the free tier needs
+    # no billing account. Optional so the service can start and report itself
+    # unconfigured: the gateway then degrades to "AI unavailable" instead of the
+    # process refusing to boot — constraint C3: the core system works when AI
+    # does not. Models are centralised here, never hard-coded at a call site
+    # (Avoid.md §8); the assistant may use a different one.
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
     gemini_assistant_model: str | None = Field(default=None, alias="GEMINI_ASSISTANT_MODEL")
     gemini_timeout_seconds: float = Field(default=40.0, alias="GEMINI_TIMEOUT_SECONDS")
-
-    # "gemini" or "openai". Unset: Gemini if its key is set, otherwise OpenAI.
-    ai_provider: str | None = Field(default=None, alias="AI_PROVIDER")
 
     # Shared secret with the Express gateway. When set, every request without
     # it is refused: this service is never meant to be reachable from a browser.
@@ -58,18 +47,7 @@ class Settings(BaseSettings):
 
     @property
     def configured(self) -> bool:
-        return bool(self.openai_api_key)
-
-    @property
-    def provider_name(self) -> str:
-        chosen = (self.ai_provider or "").strip().lower()
-        if chosen in ("gemini", "openai"):
-            return chosen
-        return "gemini" if self.gemini_api_key else "openai"
-
-    @property
-    def assistant_model(self) -> str:
-        return self.openai_assistant_model or self.openai_model
+        return bool(self.gemini_api_key)
 
 
 @lru_cache

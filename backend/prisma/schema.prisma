@@ -126,7 +126,7 @@ enum SubscriptionScope {
   ALL
 }
 
-/// The OpenAI-backed capability an interaction used.
+/// The AI capability an interaction used.
 enum AiFeature {
   TEXT_ANALYSIS
   IMAGE_ANALYSIS

@@ -33,7 +33,7 @@ from pydantic import BaseModel, ValidationError
 from app import prompts
 from app.config import Settings
 from app.providers.base import ProviderRefused, ProviderUnavailable
-from app.providers.openai_provider import CRISIS_REPLY, REFUSAL_REPLY
+from app.providers.replies import CRISIS_REPLY, REFUSAL_REPLY
 from app.schemas import (
     AssistantReply,
     ChatTurn,

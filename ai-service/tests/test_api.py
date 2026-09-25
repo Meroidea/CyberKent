@@ -1,5 +1,5 @@
 """
-Contract tests for the AI service, run without calling OpenAI.
+Contract tests for the AI service, run without calling the model.
 
 The provider is replaced with a fake through FastAPI's dependency override —
 the same seam a different provider would be plugged into — so these tests check

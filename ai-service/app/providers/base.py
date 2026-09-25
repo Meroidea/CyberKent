@@ -2,8 +2,8 @@
 The contract every AI provider implements.
 
 Rule 8.2 and Avoid.md §8 — the service must never assume a provider. Routes
-depend on this protocol, not on OpenAI; replacing OpenAI with Gemini, Claude or
-a local model is a new class here and a one-line change in `dependencies.py`,
+depend on this protocol, not on a vendor; serving the features from another
+model is a new class here and a one-line change in `dependencies.py`,
 with no route, schema or gateway touched.
 """
 

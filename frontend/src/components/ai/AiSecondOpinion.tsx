@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { AiTextResult } from "@/components/ai/AiTextResult";
 import { AiImageResult } from "@/components/ai/AiImageResult";
 import { useAiStatus } from "@/components/ai/useAiStatus";
-import { providerInfo } from "@/lib/ai/provider";
+import { CYBERSAFE_AI } from "@/lib/ai/provider";
 import { SettingsGroup } from "@/components/settings/SettingsGroup";
 
 /** Images sent per check. Each is a paid vision call; two covers a conversation screenshot pair. */
@@ -120,7 +120,7 @@ export function AiSecondOpinion({
   }
 
   const unavailable = status !== null && !status.available;
-  const provider = providerInfo(status?.provider);
+  const provider = CYBERSAFE_AI;
 
   return (
     <SettingsGroup
@@ -133,7 +133,7 @@ export function AiSecondOpinion({
           <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[0.9375rem] font-semibold text-ui-label">Powered by {provider.name}</p>
+          <p className="text-[0.9375rem] font-semibold text-ui-label">{provider.name}</p>
           <p className="mt-0.5 text-[0.8125rem] leading-snug text-ui-label-2">
             Looks for manipulation tactics and emotional pressure
             {imageFiles.length > 0 ? ", and examines your screenshots" : ""}.

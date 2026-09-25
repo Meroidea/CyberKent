@@ -2,7 +2,7 @@
 Request and response shapes for the AI service.
 
 The *output* models double as the JSON schema the model is constrained to
-(OpenAI Structured Outputs). That is the single most important reliability
+(Gemini structured output). That is the single most important reliability
 decision in this service: the model cannot return prose where a score is
 expected, or invent a field the interface does not know how to show, because
 the response is validated against these classes before it leaves.
