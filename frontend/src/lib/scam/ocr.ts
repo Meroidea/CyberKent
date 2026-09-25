@@ -35,9 +35,41 @@ import type { FileMetadata } from "@/lib/scam/types";
  * who only pastes text never downloads any of it.
  */
 async function recogniser() {
-  const { createWorker } = await import("tesseract.js");
-  return createWorker("eng");
+  const { createWorker, OEM } = await import("tesseract.js");
+  /* Everything from this site's own origin (scripts/copy-runtimes.mjs). The
+     library's default is a CDN, which the site's Content-Security-Policy
+     rightly refuses — and tesseract waited on that refusal forever. */
+  return createWorker("eng", OEM.LSTM_ONLY, {
+    workerPath: "/tesseract/worker.min.js",
+    corePath: "/tesseract/core",
+    langPath: "/tesseract/lang",
+    workerBlobURL: false,
+  });
 }
+
+/**
+ * Settles `work` or gives up after `ms` with `fallback`.
+ *
+ * Every pass over an image depends on something that can stall — a download,
+ * a worker, a model — and a check that never finishes is worse than one that
+ * reports a gap. The work is left to finish or fail on its own; its answer is
+ * simply no longer waited for.
+ */
+function within<T>(work: Promise<T>, ms: number, fallback: () => T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback()), ms);
+    work.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      () => { clearTimeout(timer); resolve(fallback()); },
+    );
+  });
+}
+
+/** Seconds allowed for reading the text in one image, including a first-time download of the reader. */
+const READ_TIMEOUT_MS = 45_000;
+
+/** Seconds allowed for the AI-image detector, including a first-time model download. */
+const SYNTHETIC_TIMEOUT_MS = 30_000;
 
 type Recogniser = Awaited<ReturnType<typeof recogniser>>;
 
@@ -264,8 +296,14 @@ export async function describeFiles(
          */
         const provenance = await readProvenance(file);
         const edits = await readEdits(file);
-        const synthetic = await readSynthetic(file);
-        const { text, unreadable, qrCodes } = await readImage(file, metadata, worker);
+        const synthetic = await within(readSynthetic(file), SYNTHETIC_TIMEOUT_MS, () => ({
+          probability: 0,
+          model: "",
+          unavailable: "The AI-image check took too long on this device and was skipped. Everything else in this report was still checked.",
+        }));
+        const { text, unreadable, qrCodes } = await within(readImage(file, metadata, worker), READ_TIMEOUT_MS, () => ({
+          unreadable: "Reading the text in this image took too long on this device. Paste the message into the box above to check it instead.",
+        }));
 
         described.push({ ...base, extractedText: text, unreadable, qrCodes, provenance, synthetic, edits });
         continue;
@@ -274,9 +312,8 @@ export async function describeFiles(
       described.push({ ...base, unreadable: NOT_READ[kind] ?? NOT_READ.document });
     }
   } finally {
-    if (shared.pending) {
-      await (await shared.pending).terminate();
-    }
+    /* Not awaited: a worker that never started must not hold the report back. */
+    shared.pending?.then((ready) => ready.terminate()).catch(() => undefined);
   }
 
   return described;
