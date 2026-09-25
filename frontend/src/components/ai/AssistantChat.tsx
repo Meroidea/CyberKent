@@ -5,6 +5,7 @@ import { sendAssistantMessage } from "@/lib/ai/api";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useAiStatus } from "@/components/ai/useAiStatus";
 import { cn } from "@/lib/cn";
+import { providerInfo } from "@/lib/ai/provider";
 
 /** Questions residents actually arrive with, as one-tap starting points. */
 const STARTERS = [
@@ -111,7 +112,7 @@ export function AssistantChat() {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">CyberSafe Assistant</p>
             <p className="truncate text-[0.6875rem] text-slate-500 dark:text-slate-400">
-              {status === null ? "Connecting…" : unavailable ? "Unavailable" : `Powered by OpenAI · ${status.model ?? ""}`}
+              {status === null ? "Connecting…" : unavailable ? "Unavailable" : `Powered by ${providerInfo(status.provider).name} · ${status.model ?? ""}`}
             </p>
           </div>
         </div>

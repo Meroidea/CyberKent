@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchAiStatus } from "@/lib/ai/api";
+import { DEFAULT_PROVIDER } from "@/lib/ai/provider";
 import type { AiStatus } from "@/lib/ai/types";
 
 /**
@@ -11,7 +12,7 @@ import type { AiStatus } from "@/lib/ai/types";
  */
 let shared: Promise<AiStatus> | null = null;
 
-const UNKNOWN: AiStatus = { available: false, provider: "openai", model: null };
+const UNKNOWN: AiStatus = { available: false, provider: DEFAULT_PROVIDER, model: null };
 
 export function useAiStatus(): { status: AiStatus | null } {
   const [status, setStatus] = useState<AiStatus | null>(null);

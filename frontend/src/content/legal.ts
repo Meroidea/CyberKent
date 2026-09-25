@@ -56,8 +56,8 @@ export const LEGAL: Record<LegalDocument["slug"], LegalDocument> = {
       {
         heading: "Optional AI features",
         paragraphs: [
-          "The AI second opinion and the CyberSafe Assistant send the text you choose to OpenAI for analysis. Before anything is sent, card numbers, account numbers and similar sensitive numbers are masked. OpenAI processes it outside Australia. Council keeps a record that the feature was used and what it concluded, but never the text itself — only a fingerprint of it.",
-          "You never have to use these features. The rule-based check works without them.",
+          "The AI second opinion and the CyberSafe Assistant send the text you choose — and any screenshot you ask it to look at — to Google's Gemini service for analysis. Before anything is sent, card numbers, account numbers and similar sensitive numbers are masked, and location and camera data are removed from images. Google processes it outside Australia, and on the free service it uses, Google may keep what is sent and use it to improve its products. Council keeps a record that the feature was used and what it concluded, but never the text itself — only a fingerprint of it.",
+          "You never have to use these features, and you should not send anything you would not want kept. The rule-based check works without them.",
         ],
       },
       {

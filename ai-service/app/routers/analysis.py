@@ -33,7 +33,9 @@ def analyse_text(body: TextAnalysisRequest, provider: AiProvider = Depends(get_p
     if len(body.text) > get_settings().max_text_chars:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "The message is too long to analyse.")
 
-    return provider.analyse_text(body.text, body.channel, body.rules)
+    response = provider.analyse_text(body.text, body.channel, body.rules)
+    response.usage.provider = provider.name
+    return response
 
 
 @router.post("/image", response_model=ImageAnalysisResponse)
@@ -51,4 +53,6 @@ def analyse_image(body: ImageAnalysisRequest, provider: AiProvider = Depends(get
     if size > get_settings().max_image_bytes:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "The image is too large to analyse.")
 
-    return provider.analyse_image(body.image, body.context)
+    response = provider.analyse_image(body.image, body.context)
+    response.usage.provider = provider.name
+    return response

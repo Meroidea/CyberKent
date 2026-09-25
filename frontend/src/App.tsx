@@ -166,7 +166,7 @@ function AppShell({ booting }: { booting: boolean }) {
               <Route path={ROUTES.learn} element={<LearnPage />} />
               <Route path={`${ROUTES.learn}/:slug`} element={<LearnArticlePage />} />
 
-              {/* The OpenAI-backed CyberSafe Assistant. */}
+              {/* The AI-backed CyberSafe Assistant. */}
               <Route path={ROUTES.assistant} element={<AssistantPage />} />
 
               {/* Checking is free and anonymous; reporting needs a free
