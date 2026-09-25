@@ -328,9 +328,9 @@ function TaskCard({ task, onOpen, onDragStart, onDrop, dragging }: { task: Task;
           <span className="flex flex-wrap gap-1">{task.labels.map((l) => <span key={l} className="rounded-full bg-ui-fill px-2 py-0.5 text-[0.6875rem] text-ui-label-2">{l}</span>)}</span>
         ) : null}
         <span className="flex items-center justify-between gap-2 text-[0.75rem]">
-          <span className="flex min-w-0 items-center gap-2.5">
-            {due ? <span className={cn("inline-flex items-center gap-1", due.tone)}><AlarmClock className="h-3.5 w-3.5" aria-hidden="true" />{due.text}</span> : null}
-            {task.report ? <span className="inline-flex items-center gap-0.5 font-mono text-ui-label-3"><Link2 className="h-3 w-3" aria-hidden="true" />{task.report.reference}</span> : null}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+            {due ? <span className={cn("inline-flex items-center gap-1 whitespace-nowrap", due.tone)}><AlarmClock className="h-3.5 w-3.5" aria-hidden="true" />{due.text}</span> : null}
+            {task.report ? <span className="inline-flex items-center gap-0.5 whitespace-nowrap font-mono text-ui-label-3"><Link2 className="h-3 w-3" aria-hidden="true" />{task.report.reference}</span> : null}
             {task.commentCount > 0 ? <span className="inline-flex items-center gap-0.5 text-ui-label-3"><MessageSquare className="h-3 w-3" aria-hidden="true" />{task.commentCount}</span> : null}
           </span>
           {task.assignee ? (
