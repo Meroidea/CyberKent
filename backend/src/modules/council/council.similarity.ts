@@ -89,7 +89,7 @@ const LABEL: Record<string, string> = { PHONE: "phone number", EMAIL: "email add
 
 async function load(reference: string) {
   const report = await prisma.report.findFirst({
-    where: { reference, deletedAt: null },
+    where: { reference, deletedAt: null, status: { not: "DRAFT" } },
     select: {
       id: true,
       reference: true,

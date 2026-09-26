@@ -152,7 +152,7 @@ export const councilRepository = {
   },
 
   findByReference(reference: string): Promise<CouncilDetailRow | null> {
-    return prisma.report.findFirst({ where: { reference, deletedAt: null }, select: detailSelect });
+    return prisma.report.findFirst({ where: { reference, deletedAt: null, status: { not: "DRAFT" } }, select: detailSelect });
   },
 
   /** How the report was made — the checker verdict it started from, if any — as recorded at submission. */

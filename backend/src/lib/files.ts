@@ -107,7 +107,10 @@ function stripPng(bytes: Buffer): Buffer {
  */
 export function stripMetadata(kind: FileKind, bytes: Buffer): { bytes: Buffer; stripped: boolean } {
   try {
-    if (kind.mime === "image/jpeg") return { bytes: stripJpeg(bytes), stripped: true };
+    if (kind.mime === "image/jpeg") {
+      const cleaned = stripJpeg(bytes);
+      return { bytes: cleaned, stripped: cleaned !== bytes };
+    }
     if (kind.mime === "image/png") return { bytes: stripPng(bytes), stripped: true };
   } catch {
     /* A malformed file is served as uploaded rather than rejected: it may be the only evidence. */

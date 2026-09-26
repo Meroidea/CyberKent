@@ -197,6 +197,7 @@ export const teamService = {
     const user = await prisma.user.findFirst({ where: { id, deletedAt: null, role: { in: STAFF_ROLES } }, select: { id: true, email: true, fullName: true, role: true, lastLoginAt: true } });
     if (!user) throw new AppError(404, "There is no active team member with that id.");
     if (user.lastLoginAt) throw new AppError(409, "This person has already signed in. They can use “Forgot password” if they need a new one.");
+    assertMayManage(actor.role as Role, user.role);
 
     const delivery = await issueInvite(user, actor.name);
     await audit({ userId: actor.id, action: "user.invite_resent", entityType: "User", entityId: id, ipAddress: actor.ipAddress });

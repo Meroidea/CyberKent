@@ -105,6 +105,21 @@ def _clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 
+def _is_transient_rate_limit(body: dict[str, Any]) -> bool:
+    """True only when every quota violation Google reports is a per-minute
+    rate limit, not a real quota/billing exhaustion. A burst of ordinary
+    traffic should fail just that request, not open the breaker for
+    everyone; an unrecognised or absent reason still opens it, as before."""
+    violations = [
+        violation
+        for detail in body.get("error", {}).get("details", [])
+        for violation in detail.get("violations", [])
+    ]
+    if not violations:
+        return False
+    return all("PerMinute" in (violation.get("quotaId") or "") for violation in violations)
+
+
 class GeminiProvider:
     name = "gemini"
 
@@ -153,18 +168,24 @@ class GeminiProvider:
                 continue
 
             if response.status_code == 200:
-                return response.json()
+                try:
+                    return response.json()
+                except ValueError as error:
+                    raise ProviderUnavailable("The AI provider returned a malformed response.") from error
 
             # Status and Google's error status only: the body can echo the request.
             try:
-                reason = response.json().get("error", {}).get("status", "")
+                body = response.json()
             except ValueError:
-                reason = ""
+                body = {}
+            reason = body.get("error", {}).get("status", "")
 
             if response.status_code == 429:
                 if attempt == 1:
                     time.sleep(1.5)
                     continue
+                if _is_transient_rate_limit(body):
+                    raise ProviderUnavailable(f"The AI provider is rate-limited ({reason or 'HTTP 429'}); try again shortly.")
                 self._open_until = time.monotonic() + COOLDOWN_SECONDS
                 raise ProviderUnavailable(f"The AI provider's quota is exhausted ({reason or 'HTTP 429'}); AI paused for {COOLDOWN_SECONDS} seconds.")
 

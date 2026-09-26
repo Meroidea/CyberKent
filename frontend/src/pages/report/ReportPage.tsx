@@ -134,10 +134,19 @@ function ReportGate() {
   );
 }
 
+/** The hostname of a URL indicator's value, however it was stored (with or without a scheme). */
+function hostOf(value: string): string {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return value.split("/")[0];
+  }
+}
+
 /** A draft from the server, in the form's shape. A URL's derived domain is folded back into the URL. */
 function fromServerDraft(report: ReportDetail): ReportDraft {
   const urls = report.indicators.filter((indicator) => indicator.type === "URL");
-  const hosts = new Set(urls.map((indicator) => indicator.value.split("/")[0]));
+  const hosts = new Set(urls.map((indicator) => hostOf(indicator.value)));
   return {
     ...EMPTY_DRAFT,
     channel: report.channel,

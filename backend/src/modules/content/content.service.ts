@@ -196,6 +196,9 @@ export const contentService = {
     const row = await prisma.siteNotice.findUnique({ where: { id } });
     if (!row) throw new AppError(404, "There is no notice with that id.");
     const { archived, ...fields } = input;
+    const endsAt = fields.endsAt !== undefined ? fields.endsAt : row.endsAt;
+    const startsAt = fields.startsAt ?? row.startsAt;
+    if (endsAt && endsAt.getTime() <= startsAt.getTime()) throw new AppError(422, "The notice must end after it starts.", [{ field: "endsAt", message: "Choose a later end." }]);
     const updated = await prisma.siteNotice.update({
       where: { id },
       data: { ...fields, ...(archived !== undefined ? { archivedAt: archived ? new Date() : null } : {}) },
