@@ -139,7 +139,7 @@ function hostOf(value: string): string {
   try {
     return new URL(value).hostname;
   } catch {
-    return value.split("/")[0];
+    return value.split("/")[0] ?? value;
   }
 }
 
