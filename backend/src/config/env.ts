@@ -47,6 +47,9 @@ const schema = z.object({
   EMAIL_FROM: blankAsUnset(z.string().default("Hume CyberSafe <no-reply@cyberkent.local>")),
   /* Where links in emails point. Defaults to the first allowed origin. */
   PUBLIC_APP_URL: blankAsUnset(z.string().url().optional()),
+  /* Shared with the website's /api proxy. When set, the API answers only
+     requests that came through it (see middleware/proxy-gate). */
+  API_PROXY_SECRET: blankAsUnset(z.string().min(32, "API_PROXY_SECRET must be at least 32 characters").optional()),
 });
 
 const parsed = schema.safeParse(process.env);

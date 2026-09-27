@@ -9,7 +9,9 @@
  * component (Avoid.md §3).
  */
 
-export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "http://localhost:4000";
+/* In production the API is served from the site's own address (/api, proxied
+   by api/proxy.js), so the browser never needs to know where it really runs. */
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || (import.meta.env.PROD ? "" : "http://localhost:4000");
 
 interface Envelope<T> {
   success: boolean;
