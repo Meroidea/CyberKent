@@ -898,6 +898,19 @@
   animation: ck-sheen 6s ease-in-out infinite;
   animation-delay: 1.2s;
 }
+@keyframes ck-shimmer {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+.ck-shimmer {
+  animation: ck-shimmer 1.15s ease-in-out infinite;
+}
+
 .ck-pill-in {
   animation: ck-pill-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: left center;

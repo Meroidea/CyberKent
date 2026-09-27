@@ -202,7 +202,9 @@ export function PasswordField({
 export function SubmitButton({
   children,
   busy,
+  busyLabel,
   icon: Icon,
+  trailingIcon: Trailing,
   className,
   variant = "primary",
   type = "submit",
@@ -210,26 +212,42 @@ export function SubmitButton({
 }: {
   children: ReactNode;
   busy?: boolean;
+  /** Said while busy, in place of the label — "Signing in…". */
+  busyLabel?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
+  /** After the label, nudged forward on hover — an arrow for "go". */
+  trailingIcon?: ComponentType<{ className?: string }>;
   variant?: "primary" | "secondary" | "danger";
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const inactive = busy || rest.disabled;
   return (
     <button
       type={type}
-      disabled={busy || rest.disabled}
+      disabled={inactive}
       aria-busy={busy || undefined}
       {...rest}
       className={cn(
-        "interactive inline-flex min-h-[2.875rem] items-center justify-center gap-2 rounded-full px-6 py-3 text-[0.9375rem] font-semibold disabled:cursor-not-allowed disabled:opacity-60",
+        "interactive group relative inline-flex min-h-[2.875rem] items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3 text-[0.9375rem] font-semibold disabled:cursor-not-allowed disabled:opacity-60",
+        /* The primary button answers every state: it lifts and glows under
+           the pointer while its gradient drifts, squeezes when pressed
+           (.interactive), shimmers while working, and sits still when it
+           cannot be used. */
         variant === "primary" &&
-          "bg-gradient-to-r from-indigo-600 to-cyan-500 text-white shadow-lg shadow-indigo-600/20 dark:from-indigo-500 dark:to-cyan-400 dark:text-slate-950",
+          "bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-[length:200%_100%] bg-left text-white shadow-lg shadow-indigo-600/25 transition-[background-position,transform,box-shadow] duration-500 dark:from-indigo-500 dark:via-violet-500 dark:to-cyan-400 dark:text-slate-950",
+        variant === "primary" && !inactive && "hover:-translate-y-0.5 hover:bg-right hover:shadow-xl hover:shadow-indigo-600/35 focus-visible:bg-right",
         variant === "secondary" && "bg-ui-card text-ui-tint shadow-[0_0_0_1px_var(--ui-separator)] hover:bg-ui-card-hover",
         variant === "danger" && "bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:bg-rose-500",
         className,
       )}
     >
+      {busy && variant === "primary" ? (
+        <span aria-hidden="true" className="ck-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+      ) : null}
       {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}
-      {children}
+      <span className="relative">{busy && busyLabel ? busyLabel : children}</span>
+      {Trailing && !busy ? (
+        <Trailing aria-hidden="true" className="relative h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-1 group-disabled:translate-x-0" />
+      ) : null}
     </button>
   );
 }
