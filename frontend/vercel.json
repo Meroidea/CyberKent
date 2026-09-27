@@ -10,14 +10,14 @@
   },
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "cyber-kent.vercel.app"
         }
       ],
-      "destination": "https://cyberkent.meroidea.com/:path*",
+      "destination": "https://cyberkent.meroidea.com/$1",
       "permanent": true
     }
   ],
