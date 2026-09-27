@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { UserRound } from "lucide-react";
+import { ArrowRight, UserRound } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { FormAlert, PasswordField, SubmitButton, TextField } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -96,7 +96,13 @@ export function SignInPage() {
           </Link>
         </div>
 
-        <SubmitButton busy={busy} disabled={!email.trim() || !password}>
+        <SubmitButton
+          busy={busy}
+          busyLabel="Signing in…"
+          trailingIcon={ArrowRight}
+          disabled={!email.trim() || !password}
+          className="min-w-[11rem] self-center"
+        >
           Sign in
         </SubmitButton>
       </form>
