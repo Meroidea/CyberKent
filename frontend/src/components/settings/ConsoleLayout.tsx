@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { PanelLeft, X } from "lucide-react";
+import { useAuth } from "@/components/auth/useAuth";
 import { ConsoleSidebar } from "@/components/settings/ConsoleSidebar";
 import { CONSOLE_ICONS } from "@/components/settings/consoleIcons";
 import { CONSOLE_NAV } from "@/config/console";
@@ -67,6 +68,11 @@ export function ConsoleLayout({ title, subtitle, hero, children, wide = false }:
   const { pathname } = useLocation();
   const place = useNavPlace(pathname);
   const PlaceIcon = place ? CONSOLE_ICONS[place.item.icon] : null;
+  /* The service index is for people who are signed in, and lists only what
+     their role can open. A visitor on the sign-in or register form, or reading
+     a public page, gets the page alone. */
+  const { status } = useAuth();
+  const showIndex = status === "member";
 
   return (
     <div className="relative isolate font-system text-ui-label">
@@ -87,26 +93,30 @@ export function ConsoleLayout({ title, subtitle, hero, children, wide = false }:
         {/* Master. Sticky under the masthead rather than scrolling with the
             detail: the index is a fixed frame of reference, and one that
             scrolls away is a menu, not a sidebar. */}
-        <aside
-          className="hidden w-[17.5rem] shrink-0 self-start lg:block"
-          style={{ position: "sticky", top: HEADER_CLEARANCE }}
-        >
-          <div className="ck-card max-h-[calc(100svh-7.5rem)] overflow-y-auto overscroll-contain rounded-[1.25rem] bg-ui-sidebar p-3 backdrop-blur-xl [scrollbar-width:thin]">
-            <ConsoleSidebar />
-          </div>
-        </aside>
+        {showIndex ? (
+          <aside
+            className="hidden w-[17.5rem] shrink-0 self-start lg:block"
+            style={{ position: "sticky", top: HEADER_CLEARANCE }}
+          >
+            <div className="ck-card max-h-[calc(100svh-7.5rem)] overflow-y-auto overscroll-contain rounded-[1.25rem] bg-ui-sidebar p-3 backdrop-blur-xl [scrollbar-width:thin]">
+              <ConsoleSidebar />
+            </div>
+          </aside>
+        ) : null}
 
         <main className="min-w-0 flex-1">
           <div className={cn("mx-auto w-full", wide ? "max-w-[64rem]" : "max-w-[46rem]")}>
             <header className="ck-rise relative flex items-start gap-4 pb-7">
-              <button
-                type="button"
-                onClick={() => setSheetOpen(true)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ui-card text-ui-tint ck-card transition-colors duration-150 hover:bg-ui-card-hover lg:hidden"
-                aria-label="Open the service index"
-              >
-                <PanelLeft className="h-[1.25rem] w-[1.25rem]" aria-hidden="true" />
-              </button>
+              {showIndex ? (
+                <button
+                  type="button"
+                  onClick={() => setSheetOpen(true)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ui-card text-ui-tint ck-card transition-colors duration-150 hover:bg-ui-card-hover lg:hidden"
+                  aria-label="Open the service index"
+                >
+                  <PanelLeft className="h-[1.25rem] w-[1.25rem]" aria-hidden="true" />
+                </button>
+              ) : null}
 
               {PlaceIcon ? (
                 <span
@@ -153,7 +163,7 @@ export function ConsoleLayout({ title, subtitle, hero, children, wide = false }:
        */}
       {createPortal(
         <AnimatePresence>
-          {sheetOpen ? (
+          {sheetOpen && showIndex ? (
             <>
               <motion.button
                 type="button"
