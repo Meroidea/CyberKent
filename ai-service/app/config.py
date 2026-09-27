@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # does not. Models are centralised here, never hard-coded at a call site
     # (Avoid.md §8); the assistant may use a different one.
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-3.8-flash", alias="GEMINI_MODEL")
     gemini_assistant_model: str | None = Field(default=None, alias="GEMINI_ASSISTANT_MODEL")
     gemini_timeout_seconds: float = Field(default=40.0, alias="GEMINI_TIMEOUT_SECONDS")
 

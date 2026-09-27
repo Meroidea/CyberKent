@@ -1,9 +1,10 @@
 """
 Google Gemini implementation of the provider contract.
 
-Called over the Gemini API's REST endpoint with `httpx`, which the service
-already depends on, rather than through Google's SDK: one POST per call does
-not justify another dependency in a serverless bundle.
+Called through Google's `google-genai` SDK (`genai.Client` and
+`client.models.generate_content`). The legacy `google-generativeai` package is
+retired and must not be reintroduced. The SDK's own retries are left off, so
+the retry and breaker policy below stays the only one.
 
 Structured output is the same guarantee the OpenAI provider relies on. The
 output models in `app/schemas.py` are sent as the response JSON Schema, and the
@@ -28,6 +29,8 @@ import time
 from typing import Any, TypeVar
 
 import httpx
+from google import genai
+from google.genai import errors, types
 from pydantic import BaseModel, ValidationError
 
 from app import prompts
@@ -47,8 +50,6 @@ from app.schemas import (
 
 Parsed = TypeVar("Parsed", bound=BaseModel)
 
-API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
-
 # How long AI stays switched off after the free tier's quota is exhausted.
 COOLDOWN_SECONDS = 120
 
@@ -60,10 +61,13 @@ CHAT_MAX_TOKENS = 2_048
 # Block clearly harmful requests; leave room for what residents paste, which is
 # by nature manipulative, threatening or explicit — that is what scams are.
 SAFETY_SETTINGS = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+    types.SafetySetting(category=category, threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH)
+    for category in (
+        types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+        types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    )
 ]
 
 # Words that signal a risk to the person's own life. Deliberately broad: a
@@ -123,13 +127,18 @@ def _is_transient_rate_limit(body: dict[str, Any]) -> bool:
 class GeminiProvider:
     name = "gemini"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, http_client: httpx.Client | None = None) -> None:
         self._settings = settings
+        # The key is passed explicitly rather than left to the SDK's own
+        # GEMINI_API_KEY lookup, because Settings also reads it from .env files
+        # that never reach os.environ. `http_client` is for tests only.
         self._client = (
-            httpx.Client(
-                base_url=API_ROOT,
-                headers={"x-goog-api-key": settings.gemini_api_key or "", "Content-Type": "application/json"},
-                timeout=settings.gemini_timeout_seconds,
+            genai.Client(
+                api_key=settings.gemini_api_key,
+                http_options=types.HttpOptions(
+                    timeout=round(settings.gemini_timeout_seconds * 1000),
+                    httpx_client=http_client,
+                ),
             )
             if settings.gemini_api_key
             else None
@@ -145,72 +154,69 @@ class GeminiProvider:
     def configured(self) -> bool:
         return self._client is not None and time.monotonic() >= self._open_until
 
-    def _require(self) -> httpx.Client:
+    def _require(self) -> genai.Client:
         if self._client is None:
             raise ProviderUnavailable("GEMINI_API_KEY is not set.")
         if time.monotonic() < self._open_until:
             raise ProviderUnavailable("AI is paused after the provider's quota was exhausted.")
         return self._client
 
-    def _generate(self, model: str, body: dict[str, Any]) -> dict[str, Any]:
-        """One generateContent call with the service's retry and breaker policy."""
+    def _generate(self, model: str, contents: types.ContentListUnion, config: types.GenerateContentConfig) -> types.GenerateContentResponse:
+        """One generate_content call with the service's retry and breaker policy."""
         client = self._require()
-        body = {"safetySettings": SAFETY_SETTINGS, **body}
+        config = config.model_copy(
+            update={
+                "safety_settings": SAFETY_SETTINGS,
+                "automatic_function_calling": types.AutomaticFunctionCallingConfig(disable=True),
+            }
+        )
 
         for attempt in (1, 2):
             try:
-                response = client.post(f"/models/{model}:generateContent", json=body)
+                return client.models.generate_content(model=model, contents=contents, config=config)
             except httpx.TimeoutException as error:
                 raise ProviderUnavailable("The AI provider did not respond in time.") from error
             except httpx.TransportError as error:
                 if attempt == 2:
                     raise ProviderUnavailable("The AI provider could not be reached.") from error
                 continue
+            except errors.UnknownApiResponseError as error:
+                raise ProviderUnavailable("The AI provider returned a malformed response.") from error
+            except errors.APIError as error:
+                # Status and Google's error status only: the message can echo the request.
+                body = error.details if isinstance(error.details, dict) else {}
+                reason = error.status or ""
 
-            if response.status_code == 200:
-                try:
-                    return response.json()
-                except ValueError as error:
-                    raise ProviderUnavailable("The AI provider returned a malformed response.") from error
+                if error.code == 429:
+                    if attempt == 1:
+                        time.sleep(1.5)
+                        continue
+                    if _is_transient_rate_limit(body):
+                        raise ProviderUnavailable(f"The AI provider is rate-limited ({reason or 'HTTP 429'}); try again shortly.") from error
+                    self._open_until = time.monotonic() + COOLDOWN_SECONDS
+                    raise ProviderUnavailable(f"The AI provider's quota is exhausted ({reason or 'HTTP 429'}); AI paused for {COOLDOWN_SECONDS} seconds.") from error
 
-            # Status and Google's error status only: the body can echo the request.
-            try:
-                body = response.json()
-            except ValueError:
-                body = {}
-            reason = body.get("error", {}).get("status", "")
-
-            if response.status_code == 429:
-                if attempt == 1:
-                    time.sleep(1.5)
+                if error.code in (500, 502, 503, 504) and attempt == 1:
+                    time.sleep(1.0)
                     continue
-                if _is_transient_rate_limit(body):
-                    raise ProviderUnavailable(f"The AI provider is rate-limited ({reason or 'HTTP 429'}); try again shortly.")
-                self._open_until = time.monotonic() + COOLDOWN_SECONDS
-                raise ProviderUnavailable(f"The AI provider's quota is exhausted ({reason or 'HTTP 429'}); AI paused for {COOLDOWN_SECONDS} seconds.")
 
-            if response.status_code in (500, 502, 503, 504) and attempt == 1:
-                time.sleep(1.0)
-                continue
-
-            raise ProviderUnavailable(f"The AI provider returned HTTP {response.status_code} {reason}".strip() + ".")
+                raise ProviderUnavailable(f"The AI provider returned HTTP {error.code} {reason}".strip() + ".") from error
 
         raise ProviderUnavailable("The AI provider did not answer.")
 
     @staticmethod
-    def _text(payload: dict[str, Any]) -> str:
-        if payload.get("promptFeedback", {}).get("blockReason"):
+    def _text(response: types.GenerateContentResponse) -> str:
+        if response.prompt_feedback and response.prompt_feedback.block_reason:
             raise ProviderRefused("The model's safety filters blocked the request.")
 
-        candidates = payload.get("candidates") or []
-        if not candidates:
+        if not response.candidates:
             raise ProviderRefused("The model returned no answer.")
 
-        candidate = candidates[0]
-        finish = candidate.get("finishReason", "STOP")
-        parts = candidate.get("content", {}).get("parts", [])
+        candidate = response.candidates[0]
+        finish = candidate.finish_reason.value if candidate.finish_reason else "STOP"
+        parts = (candidate.content.parts if candidate.content else None) or []
         # Thought summaries, when a model returns them, are marked and never shown.
-        text = "".join(part.get("text", "") for part in parts if not part.get("thought"))
+        text = "".join(part.text or "" for part in parts if not part.thought)
 
         if finish not in ("STOP", "MAX_TOKENS") or not text.strip():
             raise ProviderRefused(f"The model stopped without an answer ({finish}).")
@@ -219,45 +225,43 @@ class GeminiProvider:
 
         return text
 
-    def _usage(self, payload: dict[str, Any], model: str, started: float) -> Usage:
-        metadata = payload.get("usageMetadata", {})
-        output = (metadata.get("candidatesTokenCount") or 0) + (metadata.get("thoughtsTokenCount") or 0)
+    def _usage(self, response: types.GenerateContentResponse, model: str, started: float) -> Usage:
+        metadata = response.usage_metadata or types.GenerateContentResponseUsageMetadata()
+        output = (metadata.candidates_token_count or 0) + (metadata.thoughts_token_count or 0)
         return Usage(
-            model=payload.get("modelVersion") or model,
+            model=response.model_version or model,
             prompt_version=prompts.PROMPT_VERSION,
             latency_ms=round((time.perf_counter() - started) * 1000),
-            input_tokens=metadata.get("promptTokenCount"),
+            input_tokens=metadata.prompt_token_count,
             output_tokens=output or None,
         )
 
-    def _parse(self, *, instructions: str, parts: list[dict[str, Any]], schema: type[Parsed]) -> tuple[Parsed, Usage]:
+    def _parse(self, *, instructions: str, parts: list[types.Part], schema: type[Parsed]) -> tuple[Parsed, Usage]:
         started = time.perf_counter()
         model = self.model
-        payload = self._generate(
+        response = self._generate(
             model,
-            {
-                "systemInstruction": {"parts": [{"text": instructions}]},
-                "contents": [{"role": "user", "parts": parts}],
-                "generationConfig": {
-                    "responseMimeType": "application/json",
-                    "responseJsonSchema": self._schemas[schema],
-                    "maxOutputTokens": ANALYSIS_MAX_TOKENS,
-                    "temperature": 0.2,
-                },
-            },
+            [types.Content(role="user", parts=parts)],
+            types.GenerateContentConfig(
+                system_instruction=instructions,
+                response_mime_type="application/json",
+                response_json_schema=self._schemas[schema],
+                max_output_tokens=ANALYSIS_MAX_TOKENS,
+                temperature=0.2,
+            ),
         )
 
         try:
-            parsed = schema.model_validate_json(self._text(payload))
+            parsed = schema.model_validate_json(self._text(response))
         except ValidationError as error:
             raise ProviderRefused("The model's answer did not match the expected shape.") from error
 
-        return parsed, self._usage(payload, model, started)
+        return parsed, self._usage(response, model, started)
 
     def analyse_text(self, text: str, channel: str, rules: RuleSummary | None) -> TextAnalysisResponse:
         result, usage = self._parse(
             instructions=prompts.TEXT_ANALYSIS,
-            parts=[{"text": prompts.text_analysis_input(text, channel, rules.model_dump() if rules else None)}],
+            parts=[types.Part.from_text(text=prompts.text_analysis_input(text, channel, rules.model_dump() if rules else None))],
             schema=TextAnalysis,
         )
 
@@ -274,14 +278,17 @@ class GeminiProvider:
         if not match:
             raise ProviderRefused("The image must be a PNG or JPEG data URL.")
         mime, data = match.groups()
-        # Validated here so a corrupt upload is a clear refusal, not a provider 400.
-        base64.b64decode(data, validate=True)
+        # Decoded here so a corrupt upload is a clear refusal, not a provider 400.
+        try:
+            image = base64.b64decode(data, validate=True)
+        except ValueError as error:
+            raise ProviderRefused("The image data is not valid.") from error
 
         result, usage = self._parse(
             instructions=prompts.IMAGE_ANALYSIS,
             parts=[
-                {"text": prompts.image_analysis_input(context)},
-                {"inlineData": {"mimeType": mime, "data": data}},
+                types.Part.from_text(text=prompts.image_analysis_input(context)),
+                types.Part.from_bytes(data=image, mime_type=mime),
             ],
             schema=ImageAnalysis,
         )
@@ -308,20 +315,21 @@ class GeminiProvider:
             return fixed(CRISIS_REPLY)
 
         try:
-            payload = self._generate(
+            response = self._generate(
                 model,
-                {
-                    "systemInstruction": {"parts": [{"text": prompts.ASSISTANT}]},
-                    "contents": [
-                        {"role": "model" if turn.role == "assistant" else "user", "parts": [{"text": turn.content}]}
-                        for turn in messages
-                    ],
-                    "generationConfig": {"maxOutputTokens": CHAT_MAX_TOKENS, "temperature": 0.4},
-                },
+                [
+                    types.Content(role="model" if turn.role == "assistant" else "user", parts=[types.Part.from_text(text=turn.content)])
+                    for turn in messages
+                ],
+                types.GenerateContentConfig(
+                    system_instruction=prompts.ASSISTANT,
+                    max_output_tokens=CHAT_MAX_TOKENS,
+                    temperature=0.4,
+                ),
             )
-            reply = self._text(payload).strip()
+            reply = self._text(response).strip()
         except ProviderRefused:
             return fixed(REFUSAL_REPLY)
 
-        return AssistantReply(reply=reply, usage=self._usage(payload, model, started))
+        return AssistantReply(reply=reply, usage=self._usage(response, model, started))
 

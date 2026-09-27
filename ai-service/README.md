@@ -44,7 +44,7 @@ app/
   prompts.py              every prompt, versioned (PROMPT_VERSION)
   dependencies.py         provider selection and internal-token check
   providers/base.py       AiProvider protocol — the replaceable seam
-  providers/gemini_provider.py  Google Gemini over REST
+  providers/gemini_provider.py  Google Gemini via the google-genai SDK
   providers/replies.py    fixed crisis and refusal replies
   routers/analysis.py     /v1/analyse/text, /v1/analyse/image
   routers/assistant.py    /v1/assistant/chat

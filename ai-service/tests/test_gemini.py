@@ -1,6 +1,6 @@
 """
-The Gemini provider, tested without the network by routing its HTTP client
-through an `httpx.MockTransport` that plays the part of the Gemini API.
+The Gemini provider, tested without the network by handing the google-genai
+SDK an httpx client whose `MockTransport` plays the part of the Gemini API.
 """
 
 import json
@@ -10,7 +10,7 @@ import pytest
 
 from app.config import Settings
 from app.providers.base import ProviderRefused, ProviderUnavailable
-from app.providers.gemini_provider import API_ROOT, GeminiProvider
+from app.providers.gemini_provider import GeminiProvider
 from app.providers.replies import CRISIS_REPLY, REFUSAL_REPLY
 from app.schemas import ChatTurn, RuleSummary
 
@@ -31,14 +31,13 @@ def answer(text: str, finish: str = "STOP") -> dict:
     return {
         "candidates": [{"content": {"role": "model", "parts": [{"text": text}]}, "finishReason": finish}],
         "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 80, "thoughtsTokenCount": 40},
-        "modelVersion": "gemini-2.5-flash",
+        "modelVersion": "gemini-3.8-flash",
     }
 
 
 @pytest.fixture()
 def gemini(monkeypatch):
     monkeypatch.setattr("time.sleep", lambda _: None)
-    provider = GeminiProvider(Settings(GEMINI_API_KEY="test-key"))
     requests: list[httpx.Request] = []
     replies: list[httpx.Response] = []
 
@@ -46,7 +45,8 @@ def gemini(monkeypatch):
         requests.append(request)
         return replies.pop(0)
 
-    provider._client = httpx.Client(base_url=API_ROOT, transport=httpx.MockTransport(handler), headers={"x-goog-api-key": "test-key"})
+    settings = Settings(GEMINI_API_KEY="test-key", GEMINI_MODEL="gemini-3.8-flash")
+    provider = GeminiProvider(settings, http_client=httpx.Client(transport=httpx.MockTransport(handler)))
     provider.requests = requests
     provider.replies = replies
     return provider
@@ -66,7 +66,7 @@ def test_text_analysis_sends_a_self_contained_schema_and_clamps_the_answer(gemin
     schema = body["generationConfig"]["responseJsonSchema"]
     assert "$ref" not in json.dumps(schema) and "$defs" not in schema
     assert body["generationConfig"]["responseMimeType"] == "application/json"
-    assert gemini.requests[0].url.path.endswith("/models/gemini-2.5-flash:generateContent")
+    assert gemini.requests[0].url.path.endswith("/models/gemini-3.8-flash:generateContent")
     assert gemini.requests[0].headers["x-goog-api-key"] == "test-key"
 
     assert response.result.risk_score == 100
@@ -124,7 +124,7 @@ def test_image_is_sent_inline(gemini):
     gemini.analyse_image("data:image/png;base64,iVBORw0KGgo=", "from a text")
 
     part = json.loads(gemini.requests[0].content)["contents"][0]["parts"][1]
-    assert part == {"inlineData": {"mimeType": "image/png", "data": "iVBORw0KGgo="}}
+    assert part == {"inlineData": {"mime_type": "image/png", "data": "iVBORw0KGgo="}}
 
 
 def test_chat_maps_roles_and_returns_the_reply(gemini):
