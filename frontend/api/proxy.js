@@ -53,17 +53,32 @@ async function forward(request) {
   if (clientIp) headers.set("x-cyberkent-client-ip", clientIp);
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  let response;
-  try {
-    response = await fetch(target, {
+  const send = () =>
+    fetch(target, {
       method: request.method,
       headers,
       body: hasBody ? request.body : undefined,
       duplex: hasBody ? "half" : undefined,
       redirect: "manual",
     });
-  } catch {
-    return Response.json({ success: false, message: "The service is not available right now.", data: null, errors: [] }, { status: 502 });
+
+  let response;
+  try {
+    response = await send();
+  } catch (error) {
+    /* A read is safe to repeat, and a connection dropped while the API rolls
+       over to a new deployment usually succeeds a moment later. A write is
+       not retried: its body is already spent, and it may have landed. */
+    console.error(`[proxy] ${request.method} /api/${path} failed: ${error?.cause?.code ?? error?.message ?? error}`);
+    if (hasBody) {
+      return Response.json({ success: false, message: "The service is not available right now.", data: null, errors: [] }, { status: 502 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    try {
+      response = await send();
+    } catch {
+      return Response.json({ success: false, message: "The service is not available right now.", data: null, errors: [] }, { status: 502 });
+    }
   }
 
   const out = new Headers();
