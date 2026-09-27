@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { KeyRound, XCircle } from "lucide-react";
+import { ArrowRight, KeyRound, XCircle } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { FormAlert, PasswordField, SubmitButton } from "@/components/forms/fields";
 import { ConsoleHero } from "@/components/settings/ConsoleHero";
@@ -30,7 +30,7 @@ export function ResetPasswordPage() {
         <ConsoleHero icon={XCircle} tint="bg-rose-500">
           <p>This page needs the link from your reset email. Ask for a new one if you cannot find it.</p>
         </ConsoleHero>
-        <SubmitButton type="button" onClick={() => navigate(ROUTES.forgotPassword)}>Send me a reset link</SubmitButton>
+        <SubmitButton type="button" trailingIcon={ArrowRight} className="min-w-[11rem] self-center" onClick={() => navigate(ROUTES.forgotPassword)}>Send me a reset link</SubmitButton>
       </ConsoleLayout>
     );
   }
@@ -79,7 +79,7 @@ export function ResetPasswordPage() {
             />
           </SettingsRows>
         </SettingsGroup>
-        <SubmitButton busy={busy} disabled={password.length < 12}>
+        <SubmitButton busy={busy} busyLabel="Saving…" trailingIcon={ArrowRight} disabled={password.length < 12} className="min-w-[11rem] self-center">
           Save and sign in
         </SubmitButton>
       </form>

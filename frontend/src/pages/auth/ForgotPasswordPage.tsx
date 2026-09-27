@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { KeyRound, MailCheck } from "lucide-react";
+import { ArrowRight, KeyRound, MailCheck } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { FormAlert, SubmitButton, TextField } from "@/components/forms/fields";
@@ -94,7 +94,7 @@ export function ForgotPasswordPage() {
             />
           </SettingsRows>
         </SettingsGroup>
-        <SubmitButton busy={busy} disabled={!email.trim()}>
+        <SubmitButton busy={busy} busyLabel="Sending…" trailingIcon={ArrowRight} disabled={!email.trim()} className="min-w-[11rem] self-center">
           Send reset link
         </SubmitButton>
       </form>

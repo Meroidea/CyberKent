@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { BellRing, ClipboardList, FileCheck2, MessageSquareReply, ScanSearch, UserPlus } from "lucide-react";
+import { ArrowRight, BellRing, ClipboardList, FileCheck2, MessageSquareReply, ScanSearch, UserPlus } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
 import { FormAlert, PasswordField, SubmitButton, TextField } from "@/components/forms/fields";
@@ -161,7 +161,7 @@ export function RegisterPage() {
           </SettingsRows>
         </SettingsGroup>
 
-        <SubmitButton busy={busy} disabled={!fullName.trim() || !email.trim() || password.length < 12}>
+        <SubmitButton busy={busy} busyLabel="Creating account…" trailingIcon={ArrowRight} disabled={!fullName.trim() || !email.trim() || password.length < 12} className="min-w-[11rem] self-center">
           Create free account
         </SubmitButton>
 
