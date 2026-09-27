@@ -4,6 +4,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { env } from "@/config/env";
 import { errorHandler, notFoundHandler } from "@/middleware/error";
+import { proxyGate } from "@/middleware/proxy-gate";
 import { authRoutes } from "@/modules/auth/auth.routes";
 import { healthRoutes } from "@/modules/health/health.routes";
 import { aiRoutes } from "@/modules/ai/ai.routes";
@@ -19,7 +20,7 @@ import { recoveryRoutes } from "@/modules/recovery/recovery.routes";
 import { insightsRoutes } from "@/modules/insights/insights.routes";
 import { indicatorRoutes } from "@/modules/indicators/indicators.routes";
 import { reporterEvidenceRoutes, staffEvidenceRoutes } from "@/modules/evidence/evidence.routes";
-import { AppError, sendOk } from "@/lib/http";
+import { AppError } from "@/lib/http";
 
 const IMAGE_ROUTE = "/api/ai/analyse-image";
 
@@ -38,6 +39,11 @@ export function createApp() {
   app.set("trust proxy", 1);
 
   app.disable("x-powered-by");
+
+  /* First, so a request that did not come through the website learns nothing,
+     not even which middleware would have answered it. */
+  if (env.API_PROXY_SECRET) app.use(proxyGate(env.API_PROXY_SECRET));
+
   app.use(helmet());
 
   /* Browsers may still cache what a route marks public, but the platform's
@@ -83,15 +89,6 @@ export function createApp() {
       legacyHeaders: false,
     }),
   );
-
-  app.get("/", (_req, res) => {
-    sendOk(res, {
-      service: "CyberKent API",
-      description: "Hume City Council CyberSafe Services — Online Scam Detection and Reporting System",
-      version: "0.1.0",
-      endpoints: ["/api/health", "/api/health/ready", "/api/auth", "/api/account", "/api/reports", "/api/reference", "/api/ai", "/api/alerts", "/api/subscriptions", "/api/recovery", "/api/insights", "/api/indicators", "/api/council", "/api/admin", "/api/content"],
-    });
-  });
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
