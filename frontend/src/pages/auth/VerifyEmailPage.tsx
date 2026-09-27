@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
 import { useAuth } from "@/components/auth/useAuth";
 import { VerifyCodePanel } from "@/components/auth/VerifyCodePanel";
 import { useEmailDelivery } from "@/components/auth/useEmailDelivery";
@@ -77,7 +77,7 @@ export function VerifyEmailPage() {
               <p className="text-[1.0625rem] font-semibold text-ui-label">Your email is confirmed.</p>
               <p className="mt-1">You can now send reports to Council.</p>
             </ConsoleHero>
-            <SubmitButton type="button" onClick={() => navigate(status === "member" ? next : `${ROUTES.signIn}?next=${encodeURIComponent(next)}`, { replace: true })}>
+            <SubmitButton type="button" trailingIcon={ArrowRight} className="min-w-[11rem] self-center" onClick={() => navigate(status === "member" ? next : `${ROUTES.signIn}?next=${encodeURIComponent(next)}`, { replace: true })}>
               {status === "member" ? continueLabel : "Sign in to continue"}
             </SubmitButton>
           </>
@@ -91,7 +91,7 @@ export function VerifyEmailPage() {
                 <VerifyCodePanel onVerified={() => navigate(next, { replace: true })} compact justSent={false} />
               </SettingsGroup>
             ) : (
-              <SubmitButton type="button" onClick={() => navigate(status === "member" ? ROUTES.account : ROUTES.signIn)}>
+              <SubmitButton type="button" trailingIcon={ArrowRight} className="min-w-[11rem] self-center" onClick={() => navigate(status === "member" ? ROUTES.account : ROUTES.signIn)}>
                 {status === "member" ? "Go to your dashboard" : "Sign in"}
               </SubmitButton>
             )}
@@ -116,7 +116,7 @@ export function VerifyEmailPage() {
           <p className="text-[1.0625rem] font-semibold text-ui-label">You are all set.</p>
           <p className="mt-1">{reporting ? "Your report is ready to send." : "Your account is ready."}</p>
         </ConsoleHero>
-        <SubmitButton type="button" autoFocus onClick={() => navigate(next, { replace: true })}>
+        <SubmitButton type="button" trailingIcon={ArrowRight} className="min-w-[11rem] self-center" autoFocus onClick={() => navigate(next, { replace: true })}>
           {continueLabel}
         </SubmitButton>
       </ConsoleLayout>
@@ -148,7 +148,7 @@ export function VerifyEmailPage() {
       {/* A screen with nothing to type on it needs the way onward to be the
           obvious thing on it, not a quiet link under the fold. */}
       {emailDelivery === false ? (
-        <SubmitButton type="button" onClick={() => navigate(next, { replace: true })}>
+        <SubmitButton type="button" trailingIcon={ArrowRight} className="min-w-[11rem] self-center" onClick={() => navigate(next, { replace: true })}>
           {continueLabel}
         </SubmitButton>
       ) : null}
