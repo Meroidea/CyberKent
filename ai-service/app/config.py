@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-3.8-flash", alias="GEMINI_MODEL")
     gemini_assistant_model: str | None = Field(default=None, alias="GEMINI_ASSISTANT_MODEL")
+    # Tried once when the model above is overloaded or out of quota; the Flash
+    # models' free tier is often at capacity, the Flash-Lite ones rarely.
+    # Set it empty to switch the fallback off.
+    gemini_fallback_model: str | None = Field(default="gemini-3.1-flash-lite", alias="GEMINI_FALLBACK_MODEL")
     gemini_timeout_seconds: float = Field(default=40.0, alias="GEMINI_TIMEOUT_SECONDS")
 
     # Shared secret with the Express gateway. When set, every request without

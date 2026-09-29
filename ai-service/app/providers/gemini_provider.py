@@ -11,9 +11,12 @@ output models in `app/schemas.py` are sent as the response JSON Schema, and the
 reply is validated against the same Pydantic class before it leaves this
 module, so a malformed answer is a refusal here and never a broken screen.
 
-Failure policy matches the OpenAI provider: one retry for a busy moment, none
-for a timeout, and a short circuit breaker when the free tier's quota is spent,
-so the interface stops offering AI instead of making residents wait on it.
+Failure policy: when the configured model is busy, times out or has spent its
+free-tier quota, the request moves once to GEMINI_FALLBACK_MODEL (a lighter
+model with its own quota), within the same time budget. With no fallback left,
+there is one retry for a busy moment, none for a timeout, and a short circuit
+breaker when the quota is spent, so the interface stops offering AI instead of
+making residents wait on it.
 
 Moderation: Gemini has no separate moderation endpoint. A request the model's
 safety filters block is answered with the refusal reply, and messages that
@@ -52,6 +55,12 @@ Parsed = TypeVar("Parsed", bound=BaseModel)
 
 # How long AI stays switched off after the free tier's quota is exhausted.
 COOLDOWN_SECONDS = 120
+
+# With a fallback model, the first model may use this share of
+# GEMINI_TIMEOUT_SECONDS; the fallback gets the rest. An attempt with less than
+# MIN_ATTEMPT_SECONDS left is not started.
+PRIMARY_SHARE = 0.6
+MIN_ATTEMPT_SECONDS = 3.0
 
 # Generous because the Flash models may think before answering, and thinking
 # is counted against the same budget; the schema keeps the answer itself short.
@@ -124,6 +133,14 @@ def _is_transient_rate_limit(body: dict[str, Any]) -> bool:
     return all("PerMinute" in (violation.get("quotaId") or "") for violation in violations)
 
 
+class _Overloaded(ProviderUnavailable):
+    """The model is busy, timed out or out of quota. Another model may still answer."""
+
+    def __init__(self, message: str, *, quota_exhausted: bool = False) -> None:
+        super().__init__(message)
+        self.quota_exhausted = quota_exhausted
+
+
 class GeminiProvider:
     name = "gemini"
 
@@ -162,7 +179,9 @@ class GeminiProvider:
         return self._client
 
     def _generate(self, model: str, contents: types.ContentListUnion, config: types.GenerateContentConfig) -> types.GenerateContentResponse:
-        """One generate_content call with the service's retry and breaker policy."""
+        """One answer from `model`, or from the fallback model when `model` is
+        busy, timed out or out of free-tier quota. Both share one time budget,
+        GEMINI_TIMEOUT_SECONDS, so the gateway's own timeout is never outrun."""
         client = self._require()
         config = config.model_copy(
             update={
@@ -171,11 +190,51 @@ class GeminiProvider:
             }
         )
 
-        for attempt in (1, 2):
+        fallback = self._settings.gemini_fallback_model
+        models = [model, fallback] if fallback and fallback != model else [model]
+        started = time.monotonic()
+        total = self._settings.gemini_timeout_seconds
+
+        for index, candidate in enumerate(models):
+            last = index == len(models) - 1
+            # The first of two models gets most of the budget but not all of
+            # it; the fallback gets whatever is left.
+            deadline = started + (total if last else total * PRIMARY_SHARE)
             try:
-                return client.models.generate_content(model=model, contents=contents, config=config)
+                return self._call(client, candidate, contents, config, deadline=deadline, retry=last)
+            except _Overloaded as error:
+                if not last:
+                    continue
+                if error.quota_exhausted:
+                    self._open_until = time.monotonic() + COOLDOWN_SECONDS
+                    raise ProviderUnavailable(f"{error} AI paused for {COOLDOWN_SECONDS} seconds.") from error
+                raise
+
+        raise ProviderUnavailable("The AI provider did not answer.")
+
+    def _call(
+        self,
+        client: genai.Client,
+        model: str,
+        contents: types.ContentListUnion,
+        config: types.GenerateContentConfig,
+        *,
+        deadline: float,
+        retry: bool,
+    ) -> types.GenerateContentResponse:
+        """generate_content against one model. A busy or rate-limited answer is
+        retried once only when `retry` is set, i.e. when no other model is left."""
+        for attempt in (1, 2):
+            remaining = deadline - time.monotonic()
+            if remaining < MIN_ATTEMPT_SECONDS:
+                raise _Overloaded("The AI provider did not respond in time.")
+            timed = config.model_copy(update={"http_options": types.HttpOptions(timeout=round(remaining * 1000))})
+            may_retry = retry and attempt == 1
+
+            try:
+                return client.models.generate_content(model=model, contents=contents, config=timed)
             except httpx.TimeoutException as error:
-                raise ProviderUnavailable("The AI provider did not respond in time.") from error
+                raise _Overloaded("The AI provider did not respond in time.") from error
             except httpx.TransportError as error:
                 if attempt == 2:
                     raise ProviderUnavailable("The AI provider could not be reached.") from error
@@ -188,17 +247,20 @@ class GeminiProvider:
                 reason = error.status or ""
 
                 if error.code == 429:
-                    if attempt == 1:
+                    if may_retry:
                         time.sleep(1.5)
                         continue
                     if _is_transient_rate_limit(body):
-                        raise ProviderUnavailable(f"The AI provider is rate-limited ({reason or 'HTTP 429'}); try again shortly.") from error
-                    self._open_until = time.monotonic() + COOLDOWN_SECONDS
-                    raise ProviderUnavailable(f"The AI provider's quota is exhausted ({reason or 'HTTP 429'}); AI paused for {COOLDOWN_SECONDS} seconds.") from error
+                        raise _Overloaded(f"The AI provider is rate-limited ({reason or 'HTTP 429'}); try again shortly.") from error
+                    raise _Overloaded(f"The AI provider's quota is exhausted ({reason or 'HTTP 429'}).", quota_exhausted=True) from error
 
-                if error.code in (500, 502, 503, 504) and attempt == 1:
-                    time.sleep(1.0)
-                    continue
+                # 499 and 504 are Google cancelling a request it could not
+                # serve in time; like 503, the model is busy, not broken.
+                if error.code in (499, 500, 502, 503, 504):
+                    if may_retry:
+                        time.sleep(1.0)
+                        continue
+                    raise _Overloaded(f"The AI provider returned HTTP {error.code} {reason}".strip() + ".") from error
 
                 raise ProviderUnavailable(f"The AI provider returned HTTP {error.code} {reason}".strip() + ".") from error
 

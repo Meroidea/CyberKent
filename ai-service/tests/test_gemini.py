@@ -35,8 +35,7 @@ def answer(text: str, finish: str = "STOP") -> dict:
     }
 
 
-@pytest.fixture()
-def gemini(monkeypatch):
+def make_provider(monkeypatch, fallback: str) -> GeminiProvider:
     monkeypatch.setattr("time.sleep", lambda _: None)
     requests: list[httpx.Request] = []
     replies: list[httpx.Response] = []
@@ -45,11 +44,21 @@ def gemini(monkeypatch):
         requests.append(request)
         return replies.pop(0)
 
-    settings = Settings(GEMINI_API_KEY="test-key", GEMINI_MODEL="gemini-3.8-flash")
+    settings = Settings(GEMINI_API_KEY="test-key", GEMINI_MODEL="gemini-3.8-flash", GEMINI_FALLBACK_MODEL=fallback)
     provider = GeminiProvider(settings, http_client=httpx.Client(transport=httpx.MockTransport(handler)))
     provider.requests = requests
     provider.replies = replies
     return provider
+
+
+@pytest.fixture()
+def gemini(monkeypatch):
+    return make_provider(monkeypatch, fallback="")
+
+
+@pytest.fixture()
+def gemini_with_fallback(monkeypatch):
+    return make_provider(monkeypatch, fallback="gemini-3.1-flash-lite")
 
 
 def test_configured_only_when_its_key_is_set():
@@ -104,6 +113,50 @@ def test_an_invalid_key_is_unavailable_without_a_retry(gemini):
     with pytest.raises(ProviderUnavailable):
         gemini.analyse_text("hello", "sms", None)
     assert len(gemini.requests) == 1
+
+
+def test_a_busy_model_hands_the_request_to_the_fallback_model(gemini_with_fallback):
+    gemini_with_fallback.replies.extend([
+        httpx.Response(503, json={"error": {"code": 503, "status": "UNAVAILABLE"}}),
+        httpx.Response(200, json=answer(json.dumps(ANALYSIS))),
+    ])
+
+    response = gemini_with_fallback.analyse_text("Pay within 24 hours", "sms", None)
+
+    paths = [request.url.path for request in gemini_with_fallback.requests]
+    assert paths[0].endswith("/models/gemini-3.8-flash:generateContent")
+    assert paths[1].endswith("/models/gemini-3.1-flash-lite:generateContent")
+    assert response.result.verdict == "likely_scam"
+
+
+def test_exhausted_quota_on_the_first_model_does_not_pause_ai_while_the_fallback_answers(gemini_with_fallback):
+    gemini_with_fallback.replies.extend([
+        httpx.Response(429, json={"error": {"code": 429, "status": "RESOURCE_EXHAUSTED"}}),
+        httpx.Response(200, json=answer(json.dumps(ANALYSIS))),
+    ])
+
+    gemini_with_fallback.analyse_text("hello", "sms", None)
+
+    assert len(gemini_with_fallback.requests) == 2
+    assert gemini_with_fallback.configured is True
+
+
+def test_ai_pauses_only_when_the_fallback_model_is_also_out_of_quota(gemini_with_fallback):
+    gemini_with_fallback.replies.extend([httpx.Response(429, json={"error": {"code": 429, "status": "RESOURCE_EXHAUSTED"}})] * 3)
+
+    with pytest.raises(ProviderUnavailable):
+        gemini_with_fallback.analyse_text("hello", "sms", None)
+
+    # First model once, then the fallback with its one retry.
+    assert len(gemini_with_fallback.requests) == 3
+    assert gemini_with_fallback.configured is False
+
+
+def test_an_invalid_key_is_not_retried_on_the_fallback_model(gemini_with_fallback):
+    gemini_with_fallback.replies.append(httpx.Response(400, json={"error": {"code": 400, "status": "INVALID_ARGUMENT"}}))
+    with pytest.raises(ProviderUnavailable):
+        gemini_with_fallback.analyse_text("hello", "sms", None)
+    assert len(gemini_with_fallback.requests) == 1
 
 
 def test_image_is_sent_inline(gemini):
