@@ -27,7 +27,7 @@
       "destination": "/api/proxy?__ckpath=:path*"
     },
     {
-      "source": "/((?!api/|assets/|models/|tesseract/|ort/|documents/data/|documents/[^/]+\\.pdf|favicon\\.(?:ico|svg)|favicon-96\\.png|apple-touch-icon\\.png|icon-[^/]+\\.png|og-image\\.png|logo\\.svg|site\\.webmanifest|robots\\.txt).*)",
+      "source": "/((?!api/|assets/|models/|tesseract/|ort/|documents/[^/]+/|documents/[^/]+\\.pdf|favicon\\.(?:ico|svg)|favicon-96\\.png|apple-touch-icon\\.png|icon-[^/]+\\.png|og-image\\.png|logo\\.svg|site\\.webmanifest|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ],

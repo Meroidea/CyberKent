@@ -6,6 +6,7 @@ import {
   FileCheck2,
   Flag,
   Layers,
+  LifeBuoy,
   ListChecks,
   MapPinned,
   Milestone,
@@ -34,4 +35,5 @@ export const DOCUMENT_ICONS: Record<DocumentIcon, LucideIcon> = {
   midproject: Milestone,
   srs: FileCheck2,
   features: ListChecks,
+  guide: LifeBuoy,
 };
