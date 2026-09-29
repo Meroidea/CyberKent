@@ -30,6 +30,13 @@ async function forward(request) {
   const incoming = new URL(request.url);
   let path = incoming.searchParams.get(PATH_PARAM);
   incoming.searchParams.delete(PATH_PARAM);
+  if (path !== null) {
+    /* Vercel also appends the rewrite's named segment (`:path*` in vercel.json)
+       to the query as `path=…`. Forwarded, it reached every filtered list and
+       the API's strict query schemas refused it ("The filters are not valid").
+       No API endpoint reads a `path` query parameter, so it is dropped. */
+    incoming.searchParams.delete("path");
+  }
   if (path === null) {
     /* Reached by its original address rather than through the rewrite. */
     if (!incoming.pathname.startsWith("/api/") || incoming.pathname === "/api/proxy") return notFound();
