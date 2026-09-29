@@ -40,14 +40,19 @@
      * the CyberKent accent rather than system blue, so the interface stays this
      * service's; and the dark card sits at #111 to match the surfaces the rest
      * of the site already uses rather than Apple's #1C1C1E.
+     *
+     * A third: the secondary and tertiary label alphas are raised above
+     * Apple's (0.6 / 0.3) so both clear WCAG AA's 4.5:1 for body text on
+     * every surface here, the grey #f2f2f7 grouped background included.
+     * label-2 at 0.8 is 5.6:1 there, label-3 at 0.74 is 4.7:1.
      */
     --ui-grouped: #f2f2f7;
     --ui-card: #ffffff;
     --ui-card-hover: #f7f7fa;
     --ui-separator: rgba(60, 60, 67, 0.18);
     --ui-label: #111113;
-    --ui-label-2: rgba(60, 60, 67, 0.62);
-    --ui-label-3: rgba(60, 60, 67, 0.4);
+    --ui-label-2: rgba(60, 60, 67, 0.8);
+    --ui-label-3: rgba(60, 60, 67, 0.74);
     --ui-fill: rgba(118, 118, 128, 0.12);
     --ui-fill-strong: rgba(118, 118, 128, 0.2);
     --ui-tint: #4f46e5;
@@ -140,7 +145,7 @@
     --ui-separator: rgba(84, 84, 88, 0.55);
     --ui-label: #ffffff;
     --ui-label-2: rgba(235, 235, 245, 0.58);
-    --ui-label-3: rgba(235, 235, 245, 0.36);
+    --ui-label-3: rgba(235, 235, 245, 0.52);
     --ui-fill: rgba(118, 118, 128, 0.24);
     --ui-fill-strong: rgba(118, 118, 128, 0.36);
     --ui-tint: #22d3ee;

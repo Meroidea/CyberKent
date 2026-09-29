@@ -64,9 +64,20 @@ import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/roles";
  * How long the boot sequence holds before handing over.
  *
  * Long enough that the dial is read as a deliberate piece of the interface
- * rather than a flicker on the way to the page.
+ * rather than a flicker, short enough that readable content arrives well
+ * inside NFR 1's three-second budget. It was 3.4 s, which alone broke it.
  */
-const BOOT_DURATION_MS = 3400;
+const BOOT_DURATION_MS = 1200;
+
+/**
+ * The boot sequence is the landing page's entrance, so it plays only there.
+ *
+ * Someone who follows a link straight to a guide, a checklist or the sign-in
+ * form came for that page, and any wait in front of it is pure delay. Read once
+ * from the address the app was loaded at, so a later visit to the home page
+ * through the router does not replay it.
+ */
+const BOOTS_ON_LOAD = window.location.pathname === ROUTES.home;
 
 /**
  * Returns the window to the top on navigation.
@@ -254,9 +265,13 @@ function AppShell({ booting }: { booting: boolean }) {
 }
 
 export default function App() {
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(BOOTS_ON_LOAD);
 
   useEffect(() => {
+    if (!BOOTS_ON_LOAD) {
+      return;
+    }
+
     const timer = window.setTimeout(() => setBooting(false), BOOT_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, []);

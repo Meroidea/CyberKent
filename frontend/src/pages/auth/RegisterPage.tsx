@@ -118,8 +118,8 @@ export function RegisterPage() {
           footer={
             <>
               By creating an account you agree to the{" "}
-              <Link to={ROUTES.terms} className="text-ui-tint hover:opacity-70">terms of use</Link> and how we handle your details in the{" "}
-              <Link to={ROUTES.privacy} className="text-ui-tint hover:opacity-70">privacy statement</Link>. We never ask for bank or card details.
+              <Link to={ROUTES.terms} className="text-ui-tint underline underline-offset-2 hover:opacity-70">terms of use</Link> and how we handle your details in the{" "}
+              <Link to={ROUTES.privacy} className="text-ui-tint underline underline-offset-2 hover:opacity-70">privacy statement</Link>. We never ask for bank or card details.
             </>
           }
         >

@@ -16,8 +16,11 @@ const BOOT_LINES = [
   "Interface ready",
 ];
 
-/** Time each line holds before the next replaces it. */
-const LINE_INTERVAL = 780;
+/**
+ * Time each line holds before the next replaces it: the last line lands with
+ * about a third of a second to spare inside the app's 1.2 s boot.
+ */
+const LINE_INTERVAL = 280;
 
 export function BootScreen({ visible }: { visible: boolean }) {
   const [line, setLine] = useState(0);
