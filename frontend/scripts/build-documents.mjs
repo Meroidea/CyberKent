@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile, copyFile, stat } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile, copyFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { marked } from "marked";
@@ -538,7 +538,21 @@ async function render(document) {
     markdown += `\n\n---\n\n# ${appendix.heading}\n\n${demoteHeadings(stripTitleBlock(extra))}`;
   }
 
-  const parsed = await marked.parse(markdown, { gfm: true, breaks: false });
+  let parsed = await marked.parse(markdown, { gfm: true, breaks: false });
+
+  /* Screenshots live in a folder beside the Markdown (`build.images`), so the
+     source reads correctly on GitHub too. They are copied next to the
+     published data and their paths pointed there; lazy, so a long guide does
+     not fetch every picture before the reader has scrolled to one. */
+  if (document.build.images) {
+    const folder = document.build.images;
+    await cp(join(SOURCE, folder), join(OUTPUT, folder), { recursive: true });
+    parsed = parsed.replaceAll(
+      `<img src="${folder}/`,
+      `<img class="document-screenshot" loading="lazy" decoding="async" src="/documents/${folder}/`,
+    );
+  }
+
   const withIds = outline(parsed);
   const placed = placeFigures(withIds.html, figuresFor(document.id, markdown));
   const numbered = numberHeadings(placed.html, withIds.entries);

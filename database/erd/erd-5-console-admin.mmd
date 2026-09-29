@@ -1,0 +1,101 @@
+erDiagram
+  User {
+    string id PK
+    string email UK
+    string passwordHash 
+    string fullName 
+    string organisation "optional"
+    string phone "optional"
+    Role role 
+    string jobTitle "optional"
+    string department "optional"
+    datetime emailVerified "optional"
+    datetime lastLoginAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  Task {
+    string id PK
+    string reference UK
+    string title 
+    string description "optional"
+    TaskStatus status 
+    TaskPriority priority 
+    datetime dueAt "optional"
+    string[] labels 
+    float position 
+    datetime completedAt "optional"
+    string assigneeId FK "optional"
+    string createdById FK "optional"
+    string reportId FK "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  TaskComment {
+    string id PK
+    string taskId FK
+    string authorId FK "optional"
+    string body 
+    datetime createdAt 
+  }
+  Report {
+    string id PK
+    string reference UK
+    string authorId FK "optional"
+    string categoryId FK "optional"
+    string suburbId FK "optional"
+    Channel channel 
+    ReportStatus status 
+    Severity severity "optional"
+    string title 
+    string description 
+    int amountLostCents "optional"
+    datetime occurredAt "optional"
+    datetime submittedAt "optional"
+    datetime withdrawnAt "optional"
+    datetime deletedAt "optional"
+    datetime retentionUntil "optional"
+    datetime createdAt 
+    datetime updatedAt 
+    string reviewerId FK "optional"
+  }
+  SiteNotice {
+    string id PK
+    string title 
+    string body 
+    NoticeTone tone 
+    string linkUrl "optional"
+    string linkLabel "optional"
+    datetime startsAt 
+    datetime endsAt "optional"
+    datetime archivedAt "optional"
+    string createdById FK "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  AwarenessResource {
+    string id PK
+    string slug UK
+    string title 
+    string category 
+    string summary 
+    string body 
+    string readingTime 
+    json content "optional"
+    datetime publishedAt "optional"
+    string authorId FK "optional"
+    datetime archivedAt "optional"
+    datetime createdAt 
+    datetime updatedAt 
+  }
+  User |o--o{ Report : "authorId"
+  User |o--o{ Report : "reviewerId"
+  User |o--o{ AwarenessResource : "authorId"
+  User |o--o{ Task : "assigneeId"
+  User |o--o{ Task : "createdById"
+  Report |o--o{ Task : "reportId"
+  Task ||--o{ TaskComment : "taskId"
+  User |o--o{ TaskComment : "authorId"
+  User |o--o{ SiteNotice : "createdById"

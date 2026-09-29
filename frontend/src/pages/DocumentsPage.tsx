@@ -24,6 +24,7 @@ const DOCUMENT_TINTS: Record<string, string> = {
   midproject: "bg-emerald-500",
   srs: "bg-indigo-500",
   features: "bg-teal-500",
+  guide: "bg-rose-500",
 };
 
 /**

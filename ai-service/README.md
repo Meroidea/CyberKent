@@ -7,7 +7,11 @@ working and the AI features report themselves unavailable (constraint C3).
 
 Every AI feature runs on **Google Gemini** (free tier), behind the provider
 contract in `app/providers/base.py`. Set `GEMINI_API_KEY`; without it the
-service starts and reports itself unconfigured.
+service starts and reports itself unconfigured. `GEMINI_MODEL` (default
+`gemini-3.8-flash`) answers first; when it is overloaded, times out or has
+spent its free-tier quota, the request moves once to `GEMINI_FALLBACK_MODEL`
+(default `gemini-3.1-flash-lite`) within the same `GEMINI_TIMEOUT_SECONDS`
+budget. Set the fallback empty to switch it off.
 
 | Endpoint | Purpose | How |
 |---|---|---|

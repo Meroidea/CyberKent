@@ -261,6 +261,15 @@
   border-radius: 0.5rem;
 }
 
+/* A screenshot of the service, as the user guide uses them: framed, so a
+   white page does not bleed into the white reader. */
+.doc-prose img.document-screenshot {
+  display: block;
+  margin: 1.25rem auto 0.4rem;
+  border: 1px solid var(--doc-line);
+  box-shadow: 0 6px 24px -12px rgb(15 23 42 / 0.35);
+}
+
 .doc-prose blockquote {
   margin: 1.1rem 0;
   padding: 0.75rem 1.05rem;

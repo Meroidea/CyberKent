@@ -39,6 +39,12 @@ erDiagram
   }
   AwarenessResource {
   }
+  Task {
+  }
+  TaskComment {
+  }
+  SiteNotice {
+  }
   RecoveryChecklist {
   }
   RecoveryStep {
@@ -78,6 +84,13 @@ erDiagram
   Suburb |o--o{ Alert : "suburbId"
   User |o--o{ Alert : "authorId"
   User |o--o{ Alert : "approvedById"
+  User |o--o{ AwarenessResource : "authorId"
+  User |o--o{ Task : "assigneeId"
+  User |o--o{ Task : "createdById"
+  Report |o--o{ Task : "reportId"
+  Task ||--o{ TaskComment : "taskId"
+  User |o--o{ TaskComment : "authorId"
+  User |o--o{ SiteNotice : "createdById"
   RecoveryChecklist ||--o{ RecoveryStep : "checklistId"
   User ||--o{ RecoveryProgress : "userId"
   RecoveryStep ||--o{ RecoveryProgress : "stepId"

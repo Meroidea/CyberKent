@@ -21,7 +21,12 @@ export function TrustAndEthics() {
           lede="A risk score is a prompt to look closer, not a verdict. Being clear about that is part of the service working properly."
         />
 
-        <motion.dl
+        {/*
+         * A list rather than a <dl>: a definition list allows only one <div>
+         * between it and each <dt>/<dd> pair, and every point here sits in
+         * the animated wrapper and the glass card — two. An <li> may hold both.
+         */}
+        <motion.ul
           variants={staggerParent(0.1)}
           initial="hidden"
           whileInView="visible"
@@ -29,18 +34,18 @@ export function TrustAndEthics() {
           className="mt-section-gap grid gap-5 md:grid-cols-2"
         >
           {TRUST_POINTS.map((point) => (
-            <motion.div key={point.title} variants={fadeUp} className="h-full">
+            <motion.li key={point.title} variants={fadeUp} className="h-full">
               <GlassPanel className="card-lift h-full p-7">
-                <dt className="text-balance font-display text-display-3 font-semibold text-slate-900 dark:text-white">
+                <h3 className="text-balance font-display text-display-3 font-semibold text-slate-900 dark:text-white">
                   {point.title}
-                </dt>
-                <dd className="mt-3 text-copy text-slate-600 dark:text-slate-400">
+                </h3>
+                <p className="mt-3 text-copy text-slate-600 dark:text-slate-400">
                   {point.body}
-                </dd>
+                </p>
               </GlassPanel>
-            </motion.div>
+            </motion.li>
           ))}
-        </motion.dl>
+        </motion.ul>
 
         <motion.ul
           variants={staggerParent(0.08)}

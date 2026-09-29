@@ -7,6 +7,8 @@ erDiagram
     string organisation "optional"
     string phone "optional"
     Role role 
+    string jobTitle "optional"
+    string department "optional"
     datetime emailVerified "optional"
     datetime lastLoginAt "optional"
     datetime deletedAt "optional"
@@ -98,6 +100,9 @@ erDiagram
     string summary 
     string body 
     string readingTime 
+    json content "optional"
+    datetime publishedAt "optional"
+    string authorId FK "optional"
     datetime archivedAt "optional"
     datetime createdAt 
     datetime updatedAt 
@@ -131,6 +136,7 @@ erDiagram
   Suburb |o--o{ Alert : "suburbId"
   User |o--o{ Alert : "authorId"
   User |o--o{ Alert : "approvedById"
+  User |o--o{ AwarenessResource : "authorId"
   RecoveryChecklist ||--o{ RecoveryStep : "checklistId"
   User ||--o{ RecoveryProgress : "userId"
   RecoveryStep ||--o{ RecoveryProgress : "stepId"

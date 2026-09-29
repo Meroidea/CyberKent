@@ -104,7 +104,7 @@ export function ConsoleLayout({ title, subtitle, hero, children, wide = false }:
           </aside>
         ) : null}
 
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <div className={cn("mx-auto w-full", wide ? "max-w-[64rem]" : "max-w-[46rem]")}>
             <header className="ck-rise relative flex items-start gap-4 pb-7">
               {showIndex ? (
@@ -150,7 +150,7 @@ export function ConsoleLayout({ title, subtitle, hero, children, wide = false }:
               {children}
             </div>
           </div>
-        </main>
+        </div>
       </div>
 
       {/*

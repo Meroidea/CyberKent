@@ -2,21 +2,32 @@
 -- CyberKent — Online Scam Detection and Reporting System
 -- Hume City Council CyberSafe Services · Group CyberKent · CPRO306
 --
--- Database file (PostgreSQL 18, Neon serverless, region ap-southeast-2 Sydney)
--- Exported with pg_dump 18.6 on 10 September 2026 from the development database.
+-- Database file (PostgreSQL 17, the same major version as production on
+-- Supabase, region ap-northeast-1). Re-exported with pg_dump 17 on
+-- 28 September 2026 from a database built by applying every Prisma migration
+-- (up to and including 20260925014720_admin_panel) and the reference seed
+-- (backend/prisma/seed.ts). It supersedes the export of 10 September, which
+-- predated the admin-panel migration.
 --
 -- Contents
---   * Full physical schema: 26 domain tables + Prisma's _prisma_migrations
---     table, 14 enumerated types, 35 foreign keys, 86 indexes (incl. primary-key and unique), 11 CHECK
---     constraints (see migration 20260910100000_ai_interactions_and_ethics_controls).
+--   * Full physical schema: 29 domain tables + Prisma's _prisma_migrations
+--     table, 17 enumerated types, 42 foreign keys, 96 indexes (incl.
+--     primary-key and unique), 11 CHECK constraints.
+--   * New since 10 September (migration 20260925014720_admin_panel): Task,
+--     TaskComment and SiteNotice, the TaskStatus, TaskPriority and NoticeTone
+--     enums, and the SUPER_ADMIN role.
 --   * Reference data: 14 Scamwatch scam categories, 23 Hume suburbs and
---     postcodes, 4 awareness resources, a 6-step recovery checklist.
+--     postcodes, 4 awareness resources, 6 recovery checklists (37 steps).
 --   * Synthetic records only (ER-12): every person uses the reserved .test
---     domain or is the seed administrator; every report, alert and check is
---     labelled SYNTHETIC. No real resident's data exists in this file.
+--     domain; every report, alert and check is labelled SYNTHETIC. No real
+--     resident's data exists in this file — production was deliberately not
+--     dumped.
 --   * Password hashes have been replaced with a placeholder (Avoid.md §6 — never
---     expose password hashes). The seeded accounts' real passwords were random
---     values that were never stored, so no credential is lost by the redaction.
+--     expose password hashes).
+--
+-- The tables are in the "public" schema here. Production keeps the same
+-- tables in a "cyberkent" schema on the shared Supabase project; the
+-- definitions are identical.
 --
 -- Restore into an empty PostgreSQL 15+ database:
 --   psql "$DATABASE_URL" -f cyberkent_database.sql
@@ -27,10 +38,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2vpmcbwg1nLJH3PnpwgIRrMs7XIDh0fBr6XGA5OJKOIVVAlunSM4SfO0qd0P6VQ
 
--- Dumped from database version 18.6 (2078fcb)
--- Dumped by pg_dump version 18.6
+-- Dumped from database version 17.11
+-- Dumped by pg_dump version 17.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -45,10 +55,10 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
+-- Name: SCHEMA "public"; Type: COMMENT; Schema: -; Owner: -
 --
 
-CREATE SCHEMA "public";
+COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 --
@@ -139,6 +149,17 @@ CREATE TYPE "public"."IndicatorWeight" AS ENUM (
 
 
 --
+-- Name: NoticeTone; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE "public"."NoticeTone" AS ENUM (
+    'INFO',
+    'WARNING',
+    'CRITICAL'
+);
+
+
+--
 -- Name: NotificationKind; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -146,7 +167,8 @@ CREATE TYPE "public"."NotificationKind" AS ENUM (
     'REPORT_SUBMITTED',
     'REPORT_STATUS_CHANGED',
     'INFORMATION_REQUESTED',
-    'ALERT_PUBLISHED'
+    'ALERT_PUBLISHED',
+    'TASK_ASSIGNED'
 );
 
 
@@ -195,7 +217,8 @@ CREATE TYPE "public"."Role" AS ENUM (
     'RESIDENT',
     'BUSINESS',
     'OFFICER',
-    'ADMIN'
+    'ADMIN',
+    'SUPER_ADMIN'
 );
 
 
@@ -218,6 +241,30 @@ CREATE TYPE "public"."SubscriptionScope" AS ENUM (
     'CATEGORY',
     'SUBURB',
     'ALL'
+);
+
+
+--
+-- Name: TaskPriority; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE "public"."TaskPriority" AS ENUM (
+    'LOW',
+    'MEDIUM',
+    'HIGH',
+    'URGENT'
+);
+
+
+--
+-- Name: TaskStatus; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE "public"."TaskStatus" AS ENUM (
+    'TODO',
+    'IN_PROGRESS',
+    'BLOCKED',
+    'DONE'
 );
 
 
@@ -323,7 +370,10 @@ CREATE TABLE "public"."AwarenessResource" (
     "readingTime" "text" NOT NULL,
     "archivedAt" timestamp(3) without time zone,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "authorId" "text",
+    "content" "jsonb",
+    "publishedAt" timestamp(3) without time zone
 );
 
 
@@ -611,6 +661,26 @@ CREATE TABLE "public"."ScamCheckIndicator" (
 
 
 --
+-- Name: SiteNotice; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE "public"."SiteNotice" (
+    "id" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "body" "text" NOT NULL,
+    "tone" "public"."NoticeTone" DEFAULT 'INFO'::"public"."NoticeTone" NOT NULL,
+    "linkUrl" "text",
+    "linkLabel" "text",
+    "startsAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "endsAt" timestamp(3) without time zone,
+    "archivedAt" timestamp(3) without time zone,
+    "createdById" "text",
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+--
 -- Name: Subscription; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -640,6 +710,42 @@ CREATE TABLE "public"."Suburb" (
 
 
 --
+-- Name: Task; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE "public"."Task" (
+    "id" "text" NOT NULL,
+    "reference" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "status" "public"."TaskStatus" DEFAULT 'TODO'::"public"."TaskStatus" NOT NULL,
+    "priority" "public"."TaskPriority" DEFAULT 'MEDIUM'::"public"."TaskPriority" NOT NULL,
+    "dueAt" timestamp(3) without time zone,
+    "labels" "text"[] DEFAULT ARRAY[]::"text"[],
+    "position" double precision DEFAULT 0 NOT NULL,
+    "completedAt" timestamp(3) without time zone,
+    "assigneeId" "text",
+    "createdById" "text",
+    "reportId" "text",
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+--
+-- Name: TaskComment; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE "public"."TaskComment" (
+    "id" "text" NOT NULL,
+    "taskId" "text" NOT NULL,
+    "authorId" "text",
+    "body" "text" NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
 -- Name: User; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -656,7 +762,9 @@ CREATE TABLE "public"."User" (
     "deletedAt" timestamp(3) without time zone,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
-    "retentionUntil" timestamp(3) without time zone
+    "retentionUntil" timestamp(3) without time zone,
+    "department" "text",
+    "jobTitle" "text"
 );
 
 
@@ -686,31 +794,30 @@ CREATE TABLE "public"."_prisma_migrations" (
 -- Data for Name: AiInteraction; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."AiInteraction" ("id", "userId", "feature", "outcome", "provider", "model", "promptVersion", "inputSha256", "inputChars", "redactions", "verdict", "riskScore", "confidence", "latencyMs", "inputTokens", "outputTokens", "createdAt") VALUES ('cmtvclz1j00003sobtzvuphy8', NULL, 'TEXT_ANALYSIS', 'UNAVAILABLE', 'openai', 'n/a', 'n/a', 'ada01fdc9c48e97ddcfe84471b119fba717542bd863e07bc260c350f62f789ca', 76, 0, NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-10 09:52:09.895');
 
 
 --
 -- Data for Name: Alert; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."Alert" ("id", "reference", "sourceReportId", "categoryId", "suburbId", "channel", "status", "severity", "headline", "specimen", "summary", "authorId", "approvedById", "publishedAt", "archivedAt", "createdAt", "updatedAt") VALUES ('cmtvcanyy001n8oobbjkaadc8', 'ALERT-SYN-0001', NULL, 'cmtvc9xo700023vobzj9k30sn', 'cmtvc9xwz000j3vobt7jymtew', 'SMS', 'PUBLISHED', 'MEDIUM', 'SYNTHETIC — Fake toll texts circulating in Craigieburn', 'LINKT: You have an unpaid toll of $4.20 … Settle now: [link removed]', 'Texts claiming an unpaid toll link to a fake payment page. Linkt does not send payment links by text; check your account at linkt.com.au.', 'cmtvcan9m001d8oob28sisklo', 'cmtvcamux001b8oobobhn0vv9', '2026-09-01 22:00:00', NULL, '2026-09-10 09:43:22.33', '2026-09-10 09:43:22.33');
+INSERT INTO "public"."Alert" ("id", "reference", "sourceReportId", "categoryId", "suburbId", "channel", "status", "severity", "headline", "specimen", "summary", "authorId", "approvedById", "publishedAt", "archivedAt", "createdAt", "updatedAt") VALUES ('cmul8yuql002ogwobz0mmhoaj', 'ALERT-SYN-0001', NULL, 'cmul8ysli0002gwobyvuryphk', 'cmul8ysoa000jgwobq6dvvq3w', 'SMS', 'PUBLISHED', 'MEDIUM', 'SYNTHETIC — Fake toll texts circulating in Craigieburn', 'LINKT: You have an unpaid toll of $4.20 … Settle now: [link removed]', 'Texts claiming an unpaid toll link to a fake payment page. Linkt does not send payment links by text; check your account at linkt.com.au.', 'cmul8yu9w002egwobmsq5mvs3', 'cmul8ytwc002cgwobinib8xfs', '2026-09-01 22:00:00', NULL, '2026-09-28 12:52:12.957', '2026-09-28 12:52:12.957');
 
 
 --
 -- Data for Name: AuditLog; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."AuditLog" ("id", "userId", "action", "entityType", "entityId", "metadata", "ipAddress", "createdAt", "retentionUntil") VALUES ('cmtvcanzz001o8oob6a4cq1rg', 'cmtvcamux001b8oobobhn0vv9', 'ALERT_PUBLISHED', 'Alert', 'ALERT-SYN-0001', '{"report": "HCC-SYN-0001", "synthetic": true, "sourceReportSevered": true}', NULL, '2026-09-10 09:43:22.367', '2033-09-01 14:00:00');
+INSERT INTO "public"."AuditLog" ("id", "userId", "action", "entityType", "entityId", "metadata", "ipAddress", "createdAt", "retentionUntil") VALUES ('cmul8yuqr002pgwobhlnu18b3', 'cmul8ytwc002cgwobinib8xfs', 'ALERT_PUBLISHED', 'Alert', 'ALERT-SYN-0001', '{"report": "HCC-SYN-0001", "synthetic": true, "sourceReportSevered": true}', NULL, '2026-09-28 12:52:12.963', '2033-09-01 14:00:00');
 
 
 --
 -- Data for Name: AwarenessResource; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt") VALUES ('cmtvc9ybf00113vobfowetbff', 'first-hour', 'The first hour after you have been scammed', 'Recovery', 'Who to call first, what to freeze, and what evidence to keep before anything is deleted from your phone.', 'Who to call first, what to freeze, and what evidence to keep before anything is deleted from your phone. Read the full guide at /learn/first-hour.', '4 min', NULL, '2026-09-10 09:42:49.083', '2026-09-10 09:43:20.251');
-INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt") VALUES ('cmtvc9yc600123vob7qy6oj67', 'small-business', 'Payment redirection: a checklist for small teams', 'Small business', 'How invoice fraud reaches a business inbox, and the two verification habits that stop almost all of it.', 'How invoice fraud reaches a business inbox, and the two verification habits that stop almost all of it. Read the full guide at /learn/small-business.', '6 min', NULL, '2026-09-10 09:42:49.11', '2026-09-10 09:43:20.261');
-INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt") VALUES ('cmtvc9ycf00133vobgcnmweom', 'older-residents', 'Talking to family about phone scams', 'Community', 'A conversation guide for supporting older relatives without taking away their independence or confidence.', 'A conversation guide for supporting older relatives without taking away their independence or confidence. Read the full guide at /learn/older-residents.', '5 min', NULL, '2026-09-10 09:42:49.119', '2026-09-10 09:43:20.27');
-INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt") VALUES ('cmtvc9ycu00143vobv5qjy12w', 'not-for-profit', 'Protecting a volunteer-run organisation', 'Organisations', 'Practical account, donation and record-keeping controls that work when nobody on the committee is technical.', 'Practical account, donation and record-keeping controls that work when nobody on the committee is technical. Read the full guide at /learn/not-for-profit.', '7 min', NULL, '2026-09-10 09:42:49.134', '2026-09-10 09:43:20.279');
+INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt", "authorId", "content", "publishedAt") VALUES ('cmul8ysr50011gwob44hveh6p', 'first-hour', 'The first hour after you have been scammed', 'Recovery', 'Who to call first, what to freeze, and what evidence to keep before anything is deleted from your phone.', 'Who to call first, what to freeze, and what evidence to keep before anything is deleted from your phone. Read the full guide at /learn/first-hour.', '4 min', NULL, '2026-09-28 12:52:10.385', '2026-09-28 12:52:10.385', NULL, NULL, NULL);
+INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt", "authorId", "content", "publishedAt") VALUES ('cmul8ysrn0012gwobne9qocq5', 'small-business', 'Payment redirection: a checklist for small teams', 'Small business', 'How invoice fraud reaches a business inbox, and the two verification habits that stop almost all of it.', 'How invoice fraud reaches a business inbox, and the two verification habits that stop almost all of it. Read the full guide at /learn/small-business.', '6 min', NULL, '2026-09-28 12:52:10.403', '2026-09-28 12:52:10.403', NULL, NULL, NULL);
+INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt", "authorId", "content", "publishedAt") VALUES ('cmul8yss50013gwobjw9ecomm', 'older-residents', 'Talking to family about phone scams', 'Community', 'A conversation guide for supporting older relatives without taking away their independence or confidence.', 'A conversation guide for supporting older relatives without taking away their independence or confidence. Read the full guide at /learn/older-residents.', '5 min', NULL, '2026-09-28 12:52:10.421', '2026-09-28 12:52:10.421', NULL, NULL, NULL);
+INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "summary", "body", "readingTime", "archivedAt", "createdAt", "updatedAt", "authorId", "content", "publishedAt") VALUES ('cmul8yssm0014gwobx1fabmij', 'not-for-profit', 'Protecting a volunteer-run organisation', 'Organisations', 'Practical account, donation and record-keeping controls that work when nobody on the committee is technical.', 'Practical account, donation and record-keeping controls that work when nobody on the committee is technical. Read the full guide at /learn/not-for-profit.', '7 min', NULL, '2026-09-28 12:52:10.438', '2026-09-28 12:52:10.438', NULL, NULL, NULL);
 
 
 --
@@ -735,7 +842,7 @@ INSERT INTO "public"."AwarenessResource" ("id", "slug", "title", "category", "su
 -- Data for Name: Indicator; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."Indicator" ("id", "type", "value", "reportCount", "firstSeenAt", "lastSeenAt", "confidence", "expiresAt", "verificationStatus") VALUES ('cmtvcansa001h8oobf8t6793w', 'DOMAIN', 'pay-toll.online', 1, '2026-09-10 09:43:22.09', '2026-09-10 09:43:22.09', 0.95, '2027-03-09 09:43:21.981', 'VERIFIED');
+INSERT INTO "public"."Indicator" ("id", "type", "value", "reportCount", "firstSeenAt", "lastSeenAt", "confidence", "expiresAt", "verificationStatus") VALUES ('cmul8yuor002igwobfj86bwlh', 'DOMAIN', 'pay-toll.online', 1, '2026-09-28 12:52:12.891', '2026-09-28 12:52:12.891', 0.95, '2027-03-27 12:52:12.88', 'VERIFIED');
 
 
 --
@@ -754,9 +861,9 @@ INSERT INTO "public"."Indicator" ("id", "type", "value", "reportCount", "firstSe
 -- Data for Name: NotificationPreference; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmtvcamvd001c8oobp6wybgdc', 'cmtvcamux001b8oobobhn0vv9', true, true, true, '2026-09-10 09:43:20.889');
-INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmtvcan9v001e8oobad51fugx', 'cmtvcan9m001d8oob28sisklo', true, true, true, '2026-09-10 09:43:21.418');
-INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmtvcano3001g8oobi5oy6ok3', 'cmtvcannu001f8oob0md8u0oi', true, false, true, '2026-09-10 09:43:21.93');
+INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmul8ytwf002dgwob6l15t88u', 'cmul8ytwc002cgwobinib8xfs', true, true, true, '2026-09-28 12:52:11.868');
+INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmul8yu9y002fgwobwp91i9gl', 'cmul8yu9w002egwobmsq5mvs3', true, true, true, '2026-09-28 12:52:12.356');
+INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", "emailOnAlerts", "emailOnRequest", "updatedAt") VALUES ('cmul8yuo8002hgwobcj3mv7hf', 'cmul8yuo5002ggwob3ijzmrjm', true, false, true, '2026-09-28 12:52:12.869');
 
 
 --
@@ -769,7 +876,12 @@ INSERT INTO "public"."NotificationPreference" ("id", "userId", "emailOnStatus", 
 -- Data for Name: RecoveryChecklist; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmtvc9yea00153vob0t1m8ymt', 'first-hour', 'The first hour after you have been scammed', 'You have paid, tapped a link, or shared details you should not have.', '2026-09-10 09:42:49.187');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8ysst0015gwob28ar5fbs', 'first-hour', 'The first hour after you have been scammed', 'You have paid, tapped a link, or shared details you should not have.', '2026-09-28 12:52:10.445');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8ysum001cgwob4lu8vi2h', 'money-sent', 'I sent money to a scammer', 'You transferred money, paid an invoice or bought gift cards or crypto for someone who turned out to be a scammer.', '2026-09-28 12:52:10.51');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8ysvp001kgwobib8tbwze', 'details-shared', 'I gave away my bank or card details', 'You typed card numbers, a one-time code or your online banking login into a site or read them to a caller.', '2026-09-28 12:52:10.549');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8ysx0001rgwoboxobfegr', 'identity-stolen', 'My identity documents or personal details were taken', 'You sent a photo of your licence, passport or Medicare card, or gave your date of birth, address and tax file number to a scammer.', '2026-09-28 12:52:10.596');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8ysyx001ygwobef5b107z', 'remote-access', 'I let someone into my computer or phone', 'A caller had you install an app such as AnyDesk or TeamViewer, or took control of your screen.', '2026-09-28 12:52:10.665');
+INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "createdAt") VALUES ('cmul8yszu0025gwob6cozazyo', 'business-payment', 'Our organisation paid a fake invoice', 'Your business, club or community group paid an invoice after the bank details were changed by email.', '2026-09-28 12:52:10.698');
 
 
 --
@@ -782,26 +894,57 @@ INSERT INTO "public"."RecoveryChecklist" ("id", "slug", "title", "situation", "c
 -- Data for Name: RecoveryStep; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9yfh00163vob0dggr6cv', 'cmtvc9yea00153vob0t1m8ymt', 1, 'Ring the number on the back of your card', 'Not a number from the message. Ask for the transaction to be stopped or recalled and write down the reference number.');
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9yg700173vobok3g7vh9', 'cmtvc9yea00153vob0t1m8ymt', 2, 'Change the password that was exposed', 'Start with email, then banking. Use a new passphrase you have not used anywhere else.');
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9ygi00183vob7md1e7wy', 'cmtvc9yea00153vob0t1m8ymt', 3, 'Turn on multi-factor authentication', 'On email and banking first, so a stolen password alone is no longer enough.');
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9ygx00193vobayowh2el', 'cmtvc9yea00153vob0t1m8ymt', 4, 'Keep the evidence', 'Screenshot the messages, the sender''s number or address and any payment receipts before anything is deleted.');
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9yh7001a3vobl74i4o5w', 'cmtvc9yea00153vob0t1m8ymt', 5, 'Report it', 'ReportCyber if money or documents were lost, Scamwatch for the national picture, and CyberKent so Council can warn Hume.');
-INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmtvc9yhg001b3vobrwwccho1', 'cmtvc9yea00153vob0t1m8ymt', 6, 'Contact IDCARE if identity documents were taken', 'Free national support on 1800 595 160, with a response plan for a stolen licence, passport or Medicare card.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yst90016gwobsi0emio9', 'cmul8ysst0015gwob28ar5fbs', 1, 'Ring the number on the back of your card', 'Not a number from the message. Ask for the transaction to be stopped or recalled and write down the reference number.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ystq0017gwobokzofbcd', 'cmul8ysst0015gwob28ar5fbs', 2, 'Change the password that was exposed', 'Start with email, then banking. Use a new passphrase you have not used anywhere else.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysu00018gwobrape53xf', 'cmul8ysst0015gwob28ar5fbs', 3, 'Turn on multi-factor authentication', 'On email and banking first, so a stolen password alone is no longer enough.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysu50019gwobuy0wwk2n', 'cmul8ysst0015gwob28ar5fbs', 4, 'Keep the evidence', 'Screenshot the messages, the sender''s number or address and any payment receipts before anything is deleted.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysua001agwoblc80uea0', 'cmul8ysst0015gwob28ar5fbs', 5, 'Report it', 'ReportCyber (cyber.gov.au) if money or documents were lost, Scamwatch for the national picture, and CyberKent so Council can warn Hume.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysuh001bgwobumidj8h2', 'cmul8ysst0015gwob28ar5fbs', 6, 'Contact IDCARE if identity documents were taken', 'Free national support on 1800 595 160, with a response plan for a stolen licence, passport or Medicare card.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysur001dgwobrxkdwrw6', 'cmul8ysum001cgwob4lu8vi2h', 1, 'Call your bank now, on the number on your card', 'Say it is a scam payment and ask for it to be recalled. The sooner you call, the better the chance of getting it back.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysux001egwobzprtm449', 'cmul8ysum001cgwob4lu8vi2h', 2, 'If you paid by gift card, call the card''s issuer', 'The phone number is on the back of the card or the retailer''s website. Have the card numbers and receipts ready.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysv2001fgwobbac337te', 'cmul8ysum001cgwob4lu8vi2h', 3, 'If you paid in cryptocurrency, contact the exchange you used', 'Report the wallet address you sent to. Exchanges can sometimes freeze funds that reach another account they hold.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysv7001ggwobvry3yeo1', 'cmul8ysum001cgwob4lu8vi2h', 4, 'Stop all contact with the scammer', 'Do not send more money to ''unlock'' or ''release'' what you paid. That is a second scam.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysvf001hgwob3qf68r3l', 'cmul8ysum001cgwob4lu8vi2h', 5, 'Report it to ReportCyber', 'At cyber.gov.au. Police use these reports, and your bank may ask for the reference number.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysvj001igwobpftn6udf', 'cmul8ysum001cgwob4lu8vi2h', 6, 'Beware of ''recovery'' offers', 'Anyone who contacts you offering to recover your money for a fee is running another scam. Legitimate help is free.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysvm001jgwobiuouqto6', 'cmul8ysum001cgwob4lu8vi2h', 7, 'Tell Council', 'Report it on CyberKent so officers can warn others in Hume. Your details are never published.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysvv001lgwobao629tdi', 'cmul8ysvp001kgwobib8tbwze', 1, 'Call your bank and cancel the card', 'Use the number on the back of the card. Ask them to block the card and watch for unusual transactions.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysvz001mgwobuj4rcdnn', 'cmul8ysvp001kgwobib8tbwze', 2, 'Change your online banking password', 'Do it on the bank''s own app or by typing its address yourself — never through a link in a message.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysw3001ngwobm4x491pd', 'cmul8ysvp001kgwobib8tbwze', 3, 'Check recent transactions', 'Look back over the last few weeks, not just today. Report anything you do not recognise to the bank.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yswa001ogwobpxpnmjhw', 'cmul8ysvp001kgwobib8tbwze', 4, 'Change any password you reused', 'If the same password protects your email or other accounts, change those too, starting with email.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yswe001pgwobefglp5zc', 'cmul8ysvp001kgwobib8tbwze', 5, 'Keep the message and the link', 'Screenshot the message and write down the site address before deleting anything.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yswm001qgwob5kd7h1oh', 'cmul8ysvp001kgwobib8tbwze', 6, 'Report it', 'To ReportCyber at cyber.gov.au, and to Council on CyberKent.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysxb001sgwob2ivnmtcv', 'cmul8ysx0001rgwoboxobfegr', 1, 'Call IDCARE on 1800 595 160', 'Australia''s free identity and cyber support service. They will build a response plan with you.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysxh001tgwob824br4hs', 'cmul8ysx0001rgwoboxobfegr', 2, 'Replace the documents that were exposed', 'Your licence through VicRoads, your passport through the Australian Passport Office, your Medicare card through Services Australia.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysxv001ugwobdo8r11xp', 'cmul8ysx0001rgwoboxobfegr', 3, 'Ask for a free ban on your credit file', 'Contact one of the credit reporting bodies (Equifax, Experian or illion). A ban stops anyone opening credit in your name.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysyc001vgwobto37jr9r', 'cmul8ysx0001rgwoboxobfegr', 4, 'Secure your myGov account', 'Change the password and turn on multi-factor sign-in at my.gov.au, reached by typing the address yourself.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysyp001wgwobcwsvacp1', 'cmul8ysx0001rgwoboxobfegr', 5, 'Tell your bank and telco', 'Ask them to add extra identity checks to your accounts, so nobody can port your number or open an account in your name.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysyt001xgwobwotcps9y', 'cmul8ysx0001rgwoboxobfegr', 6, 'Report it', 'To ReportCyber at cyber.gov.au, then to Council on CyberKent.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysz3001zgwobi99t7zrb', 'cmul8ysyx001ygwobef5b107z', 1, 'Disconnect from the internet', 'Turn off Wi-Fi and unplug the network cable, so the connection is cut.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8ysz70020gwobgvyt9z3w', 'cmul8ysyx001ygwobef5b107z', 2, 'Call your bank from another phone', 'If they saw or used your banking, tell the bank now and ask them to secure your accounts.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yszb0021gwob57ylwq1j', 'cmul8ysyx001ygwobef5b107z', 3, 'Remove the remote-access app', 'Uninstall anything they asked you to install. If you are unsure, take the device to a trusted technician.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yszf0022gwob5wo5t65x', 'cmul8ysyx001ygwobef5b107z', 4, 'Change your passwords from a different device', 'Email first, then banking, then everything else. Assume anything typed while they were connected was seen.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yszl0023gwobaleue8q9', 'cmul8ysyx001ygwobef5b107z', 5, 'Run a security scan', 'Use your device''s built-in security tools or reputable antivirus before you use the device for banking again.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yszq0024gwobe9xsgq8n', 'cmul8ysyx001ygwobef5b107z', 6, 'Report it', 'To ReportCyber at cyber.gov.au, and to Council on CyberKent.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt000026gwob47qllyit', 'cmul8yszu0025gwob6cozazyo', 1, 'Call your bank''s business fraud line now', 'Ask for the payment to be recalled. Give them the amount, time and the account it went to.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt050027gwobw6di0gtf', 'cmul8yszu0025gwob6cozazyo', 2, 'Call the real supplier on a number you already have', 'Confirm the invoice was not theirs and tell them their email may have been compromised.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt0g0028gwoby9tahce7', 'cmul8yszu0025gwob6cozazyo', 3, 'Secure the mailbox that received it', 'Change the password, turn on multi-factor authentication and check for forwarding rules the scammer may have added.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt0m0029gwobzn6d83ae', 'cmul8yszu0025gwob6cozazyo', 4, 'Hold any other changed payment details', 'Pause payments to any supplier whose bank details changed recently until each is confirmed by phone.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt0p002agwobwfwg04fl', 'cmul8yszu0025gwob6cozazyo', 5, 'Report it to ReportCyber', 'At cyber.gov.au, choosing the business option. Your bank may ask for the reference.');
+INSERT INTO "public"."RecoveryStep" ("id", "checklistId", "position", "title", "detail") VALUES ('cmul8yt0s002bgwoblcq3dv0c', 'cmul8yszu0025gwob6cozazyo', 6, 'Write the rule down', 'Agree that bank-detail changes are only ever confirmed by phone, on a number already on file, before the next invoice arrives.');
 
 
 --
 -- Data for Name: Report; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."Report" ("id", "reference", "authorId", "categoryId", "suburbId", "channel", "status", "severity", "title", "description", "amountLostCents", "occurredAt", "submittedAt", "withdrawnAt", "deletedAt", "createdAt", "updatedAt", "reviewerId", "retentionUntil") VALUES ('cmtvcanu2001i8oobsld4udwr', 'HCC-SYN-0001', 'cmtvcannu001f8oob0md8u0oi', 'cmtvc9xo700023vobzj9k30sn', 'cmtvc9xwz000j3vobt7jymtew', 'SMS', 'APPROVED', 'MEDIUM', 'SYNTHETIC — fake toll text asking for $4.20', 'Synthetic record for development. A text claiming an unpaid toll with a link to a lookalike payment page.', NULL, '2026-08-31 23:30:00', '2026-09-01 00:05:00', NULL, NULL, '2026-09-10 09:43:22.154', '2026-09-10 09:43:22.154', 'cmtvcan9m001d8oob28sisklo', '2033-08-31 14:00:00');
+INSERT INTO "public"."Report" ("id", "reference", "authorId", "categoryId", "suburbId", "channel", "status", "severity", "title", "description", "amountLostCents", "occurredAt", "submittedAt", "withdrawnAt", "deletedAt", "createdAt", "updatedAt", "reviewerId", "retentionUntil") VALUES ('cmul8yup4002jgwobj4ihvlq1', 'HCC-SYN-0001', 'cmul8yuo5002ggwob3ijzmrjm', 'cmul8ysli0002gwobyvuryphk', 'cmul8ysoa000jgwobq6dvvq3w', 'SMS', 'APPROVED', 'MEDIUM', 'SYNTHETIC — fake toll text asking for $4.20', 'Synthetic record for development. A text claiming an unpaid toll with a link to a lookalike payment page.', NULL, '2026-08-31 23:30:00', '2026-09-01 00:05:00', NULL, NULL, '2026-09-28 12:52:12.904', '2026-09-28 12:52:12.904', 'cmul8yu9w002egwobmsq5mvs3', '2033-08-31 14:00:00');
 
 
 --
 -- Data for Name: ReportIndicator; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."ReportIndicator" ("reportId", "indicatorId") VALUES ('cmtvcanu2001i8oobsld4udwr', 'cmtvcansa001h8oobf8t6793w');
+INSERT INTO "public"."ReportIndicator" ("reportId", "indicatorId") VALUES ('cmul8yup4002jgwobj4ihvlq1', 'cmul8yuor002igwobfj86bwlh');
 
 
 --
@@ -814,42 +957,48 @@ INSERT INTO "public"."ReportIndicator" ("reportId", "indicatorId") VALUES ('cmtv
 -- Data for Name: ReportReview; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."ReportReview" ("id", "reportId", "reviewerId", "decision", "severity", "notes", "createdAt") VALUES ('cmtvcanv1001j8oob504cmbz6', 'cmtvcanu2001i8oobsld4udwr', 'cmtvcan9m001d8oob28sisklo', 'APPROVED', 'MEDIUM', 'Synthetic review: lookalike domain confirmed; alert drafted with reporter details removed.', '2026-09-10 09:43:22.154');
+INSERT INTO "public"."ReportReview" ("id", "reportId", "reviewerId", "decision", "severity", "notes", "createdAt") VALUES ('cmul8yupf002kgwobcmw0r4my', 'cmul8yup4002jgwobj4ihvlq1', 'cmul8yu9w002egwobmsq5mvs3', 'APPROVED', 'MEDIUM', 'Synthetic review: lookalike domain confirmed; alert drafted with reporter details removed.', '2026-09-28 12:52:12.904');
 
 
 --
 -- Data for Name: ScamCategory; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xi100003vob4hwdl5ru', 'phishing', 'Phishing', 'Messages impersonating a trusted organisation to capture passwords, codes or card details.', NULL, '2026-09-10 09:42:48.025');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xnq00013vobx68qaevd', 'parcel-delivery', 'Parcel delivery', 'Fake missed-delivery, customs-fee and redelivery messages.', NULL, '2026-09-10 09:42:48.23');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xo700023vobzj9k30sn', 'toll-and-fines', 'Tolls and fines', 'Fake unpaid toll, parking fine and infringement notices.', NULL, '2026-09-10 09:42:48.247');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xom00033vobvggp825v', 'government-impersonation', 'Government impersonation', 'Messages claiming to be myGov, the ATO, Services Australia or Council.', NULL, '2026-09-10 09:42:48.262');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xp100043vobafmwoqwx', 'bank-impersonation', 'Bank impersonation', 'Fake fraud alerts and security calls claiming to be from a bank.', NULL, '2026-09-10 09:42:48.277');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xpd00053vobf9d6kamq', 'family-impersonation', 'Hi Mum / family impersonation', 'Someone claiming to be a relative on a new number, asking for money.', NULL, '2026-09-10 09:42:48.289');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xpr00063vobzvfefseo', 'payment-redirection', 'Payment redirection', 'Invoice and business email compromise — changed bank details.', NULL, '2026-09-10 09:42:48.304');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xq300073vobqnm0dq19', 'investment', 'Investment', 'Fake trading platforms, crypto schemes and guaranteed-return offers.', NULL, '2026-09-10 09:42:48.315');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xqe00083vobh9zibqu5', 'romance', 'Romance', 'Relationships built online to extract money over time.', NULL, '2026-09-10 09:42:48.326');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xqp00093vobj7x32mxn', 'jobs', 'Jobs and employment', 'Task-based, work-from-home and money-mule job offers.', NULL, '2026-09-10 09:42:48.337');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xr2000a3vobx407qldv', 'remote-access', 'Remote access and tech support', 'Requests to install remote-access software to ''fix'' a problem.', NULL, '2026-09-10 09:42:48.35');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xrd000b3vob6vd00r52', 'online-shopping', 'Online shopping and marketplace', 'Fake stores, fake sellers and overpayment scams.', NULL, '2026-09-10 09:42:48.361');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xro000c3vob9y0pcxmv', 'prize-and-lottery', 'Prizes and lotteries', 'Unexpected winnings that require a fee to release.', NULL, '2026-09-10 09:42:48.372');
-INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmtvc9xs2000d3vobfvckmo0a', 'identity-theft', 'Identity theft', 'Attempts to obtain identity documents or personal details.', NULL, '2026-09-10 09:42:48.386');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysii0000gwob6db23ovb', 'phishing', 'Phishing', 'Messages impersonating a trusted organisation to capture passwords, codes or card details.', NULL, '2026-09-28 12:52:10.074');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysld0001gwobsqf3ktiz', 'parcel-delivery', 'Parcel delivery', 'Fake missed-delivery, customs-fee and redelivery messages.', NULL, '2026-09-28 12:52:10.177');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysli0002gwobyvuryphk', 'toll-and-fines', 'Tolls and fines', 'Fake unpaid toll, parking fine and infringement notices.', NULL, '2026-09-28 12:52:10.182');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8yslm0003gwobzhhnounl', 'government-impersonation', 'Government impersonation', 'Messages claiming to be myGov, the ATO, Services Australia or Council.', NULL, '2026-09-28 12:52:10.187');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8yslq0004gwob2tl9hygy', 'bank-impersonation', 'Bank impersonation', 'Fake fraud alerts and security calls claiming to be from a bank.', NULL, '2026-09-28 12:52:10.191');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8yslv0005gwobnevzypen', 'family-impersonation', 'Hi Mum / family impersonation', 'Someone claiming to be a relative on a new number, asking for money.', NULL, '2026-09-28 12:52:10.195');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysly0006gwob4c473x87', 'payment-redirection', 'Payment redirection', 'Invoice and business email compromise — changed bank details.', NULL, '2026-09-28 12:52:10.198');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysm30007gwobs54n67aq', 'investment', 'Investment', 'Fake trading platforms, crypto schemes and guaranteed-return offers.', NULL, '2026-09-28 12:52:10.203');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysmc0008gwobeiywpb4o', 'romance', 'Romance', 'Relationships built online to extract money over time.', NULL, '2026-09-28 12:52:10.212');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysmg0009gwobx01d8rvw', 'jobs', 'Jobs and employment', 'Task-based, work-from-home and money-mule job offers.', NULL, '2026-09-28 12:52:10.216');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysmo000agwobxoibfhxd', 'remote-access', 'Remote access and tech support', 'Requests to install remote-access software to ''fix'' a problem.', NULL, '2026-09-28 12:52:10.224');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysmt000bgwobvs5e5m9m', 'online-shopping', 'Online shopping and marketplace', 'Fake stores, fake sellers and overpayment scams.', NULL, '2026-09-28 12:52:10.229');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysmz000cgwobg6yoam12', 'prize-and-lottery', 'Prizes and lotteries', 'Unexpected winnings that require a fee to release.', NULL, '2026-09-28 12:52:10.235');
+INSERT INTO "public"."ScamCategory" ("id", "slug", "name", "description", "archivedAt", "createdAt") VALUES ('cmul8ysn6000dgwobw0tdkw96', 'identity-theft', 'Identity theft', 'Attempts to obtain identity documents or personal details.', NULL, '2026-09-28 12:52:10.242');
 
 
 --
 -- Data for Name: ScamCheck; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."ScamCheck" ("id", "userId", "channel", "content", "score", "band", "confidence", "createdAt", "retentionUntil", "ruleSetVersion") VALUES ('cmtvcanwy001k8oobcgb4pnpv', NULL, 'SMS', 'SYNTHETIC — LINKT: You have an unpaid toll of $4.20. Settle now: linkt-au.pay-toll.online', 96, 'HIGH', 0.86, '2026-09-10 09:43:22.258', '2026-12-09 09:43:22.245', '2026-09-10');
+INSERT INTO "public"."ScamCheck" ("id", "userId", "channel", "content", "score", "band", "confidence", "createdAt", "retentionUntil", "ruleSetVersion") VALUES ('cmul8yuq5002lgwobhhx7wyvk', NULL, 'SMS', 'SYNTHETIC — LINKT: You have an unpaid toll of $4.20. Settle now: linkt-au.pay-toll.online', 96, 'HIGH', 0.86, '2026-09-28 12:52:12.941', '2026-12-27 12:52:12.935', '2026-09-10');
 
 
 --
 -- Data for Name: ScamCheckIndicator; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."ScamCheckIndicator" ("id", "checkId", "ruleId", "label", "detail", "weight", "evidence") VALUES ('cmtvcanxc001l8oobel2meys8', 'cmtvcanwy001k8oobcgb4pnpv', 'urgency', 'Urgency language', 'Pressure to act inside a deadline.', 'HIGH', 'Settle now');
-INSERT INTO "public"."ScamCheckIndicator" ("id", "checkId", "ruleId", "label", "detail", "weight", "evidence") VALUES ('cmtvcanxd001m8oobqk7kys52', 'cmtvcanwy001k8oobcgb4pnpv', 'link-lookalike', 'Lookalike domain', 'Names linkt but is registered to pay-toll.online.', 'HIGH', 'linkt-au.pay-toll[.]online');
+INSERT INTO "public"."ScamCheckIndicator" ("id", "checkId", "ruleId", "label", "detail", "weight", "evidence") VALUES ('cmul8yuq7002mgwobu6j1t485', 'cmul8yuq5002lgwobhhx7wyvk', 'urgency', 'Urgency language', 'Pressure to act inside a deadline.', 'HIGH', 'Settle now');
+INSERT INTO "public"."ScamCheckIndicator" ("id", "checkId", "ruleId", "label", "detail", "weight", "evidence") VALUES ('cmul8yuq7002ngwobcs2puo6c', 'cmul8yuq5002lgwobhhx7wyvk', 'link-lookalike', 'Lookalike domain', 'Names linkt but is registered to pay-toll.online.', 'HIGH', 'linkt-au.pay-toll[.]online');
+
+
+--
+-- Data for Name: SiteNotice; Type: TABLE DATA; Schema: public; Owner: -
+--
+
 
 
 --
@@ -862,46 +1011,59 @@ INSERT INTO "public"."ScamCheckIndicator" ("id", "checkId", "ruleId", "label", "
 -- Data for Name: Suburb; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xsi000e3vobmx6vpulc', 'Attwood', '3049');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xt7000f3vobkzws17en', 'Broadmeadows', '3047');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xti000g3vobdfv4hv2z', 'Bulla', '3428');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xwa000h3vobt9koz7iy', 'Campbellfield', '3061');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xwp000i3vobufoupd8o', 'Coolaroo', '3048');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xwz000j3vobt7jymtew', 'Craigieburn', '3064');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xxr000k3voby0gbvszt', 'Dallas', '3047');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xy2000l3vobmwngx7g5', 'Donnybrook', '3064');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xyr000m3vobzbua516d', 'Gladstone Park', '3043');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xz0000n3vobv76mrac4', 'Greenvale', '3059');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xza000o3vobnb9x2655', 'Jacana', '3047');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9xzs000p3vobpijkl08m', 'Kalkallo', '3064');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y03000q3vobttm8qffh', 'Meadow Heights', '3048');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y0d000r3vobsq58pnda', 'Melbourne Airport', '3045');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y0r000s3voblgx0t9u4', 'Mickleham', '3064');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y1b000t3vob0e5yqkif', 'Oaklands Junction', '3063');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y1p000u3vobm3f0d175', 'Roxburgh Park', '3064');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y24000v3vob9qz5n7al', 'Somerton', '3062');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y2l000w3vobl2s3oymj', 'Sunbury', '3429');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y2x000x3vobd2o0mjjq', 'Tullamarine', '3043');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y3t000y3vob8c4dn6d5', 'Westmeadows', '3049');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9y78000z3vob1l74ncfr', 'Wildwood', '3429');
-INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmtvc9yaz00103voblzdg8gvj', 'Yuroke', '3063');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysnd000egwobyk5lpkva', 'Attwood', '3049');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysnm000fgwob3d8i4f0x', 'Broadmeadows', '3047');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysnt000ggwobatpvp8fy', 'Bulla', '3428');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yso0000hgwob560wmaop', 'Campbellfield', '3061');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yso6000igwobjkjb5umu', 'Coolaroo', '3048');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysoa000jgwobq6dvvq3w', 'Craigieburn', '3064');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysof000kgwoblugqtt4c', 'Dallas', '3047');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysok000lgwob9kshewka', 'Donnybrook', '3064');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysot000mgwobyrat90vh', 'Gladstone Park', '3043');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysox000ngwobhiw4kv64', 'Greenvale', '3059');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysp7000ogwob4t7gxk2y', 'Jacana', '3047');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yspe000pgwobyqb59oo6', 'Kalkallo', '3064');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yspi000qgwobr2xkzo7s', 'Meadow Heights', '3048');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yspn000rgwob4gbfxz0e', 'Melbourne Airport', '3045');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yspt000sgwobsc3833hc', 'Mickleham', '3064');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8yspy000tgwob9vol19zk', 'Oaklands Junction', '3063');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysq6000ugwobr90ya5vf', 'Roxburgh Park', '3064');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqc000vgwob16yhx5c9', 'Somerton', '3062');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqg000wgwob3jexoctj', 'Sunbury', '3429');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqj000xgwobv4ek1jc5', 'Tullamarine', '3043');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqm000ygwobyycf27km', 'Westmeadows', '3049');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqt000zgwoba5ue9afq', 'Wildwood', '3429');
+INSERT INTO "public"."Suburb" ("id", "name", "postcode") VALUES ('cmul8ysqx0010gwob1eku3i0x', 'Yuroke', '3063');
+
+
+--
+-- Data for Name: Task; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: TaskComment; Type: TABLE DATA; Schema: public; Owner: -
+--
+
 
 
 --
 -- Data for Name: User; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil") VALUES ('cmtvcamux001b8oobobhn0vv9', 'admin@cybernova.local', '[bcrypt digest redacted for submission]', 'CyberKent Administrator', NULL, NULL, 'ADMIN', '2026-09-10 09:43:20.863', NULL, NULL, '2026-09-10 09:43:20.889', '2026-09-10 09:43:20.889', NULL);
-INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil") VALUES ('cmtvcan9m001d8oob28sisklo', 'officer.synthetic@cyberkent.test', '[bcrypt digest redacted for submission]', 'Synthetic Officer', NULL, NULL, 'OFFICER', '2026-09-10 09:43:21.4', NULL, NULL, '2026-09-10 09:43:21.418', '2026-09-10 09:43:21.418', NULL);
-INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil") VALUES ('cmtvcannu001f8oob0md8u0oi', 'resident.synthetic@cyberkent.test', '[bcrypt digest redacted for submission]', 'Synthetic Resident', NULL, NULL, 'RESIDENT', '2026-09-10 09:43:21.913', NULL, NULL, '2026-09-10 09:43:21.93', '2026-09-10 09:43:21.93', NULL);
+INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil", "department", "jobTitle") VALUES ('cmul8ytwc002cgwobinib8xfs', 'admin.demo@cyberkent.test', '[bcrypt digest redacted for submission]', 'CyberKent Administrator', NULL, NULL, 'ADMIN', '2026-09-28 12:52:11.842', NULL, NULL, '2026-09-28 12:52:11.868', '2026-09-28 12:52:11.868', NULL, NULL, NULL);
+INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil", "department", "jobTitle") VALUES ('cmul8yu9w002egwobmsq5mvs3', 'officer.synthetic@cyberkent.test', '[bcrypt digest redacted for submission]', 'Synthetic Officer', NULL, NULL, 'OFFICER', '2026-09-28 12:52:12.348', NULL, NULL, '2026-09-28 12:52:12.356', '2026-09-28 12:52:12.356', NULL, NULL, NULL);
+INSERT INTO "public"."User" ("id", "email", "passwordHash", "fullName", "organisation", "phone", "role", "emailVerified", "lastLoginAt", "deletedAt", "createdAt", "updatedAt", "retentionUntil", "department", "jobTitle") VALUES ('cmul8yuo5002ggwob3ijzmrjm', 'resident.synthetic@cyberkent.test', '[bcrypt digest redacted for submission]', 'Synthetic Resident', NULL, NULL, 'RESIDENT', '2026-09-28 12:52:12.86', NULL, NULL, '2026-09-28 12:52:12.869', '2026-09-28 12:52:12.869', NULL, NULL, NULL);
 
 
 --
 -- Data for Name: _prisma_migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO "public"."_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count") VALUES ('4d0e4846-6d95-40e8-b868-106769015cd3', '3769c22e4bc9e43e07317fac8a1b742b7d2e6b6ffd78b3151d632927662a3b7b', '2026-08-07 10:56:42.647503+00', '20260807105640_init_cybersafe_schema', NULL, NULL, '2026-08-07 10:56:40.511616+00', 1);
-INSERT INTO "public"."_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count") VALUES ('55a6149e-cfb6-4c56-a2ff-3782d1c6092a', '57d66cc7ac2b6ef8a091fafea7a69a4732dedce2600bbdf6e189872bf7b349e4', '2026-09-10 09:38:45.011523+00', '20260910100000_ai_interactions_and_ethics_controls', NULL, NULL, '2026-09-10 09:38:44.469004+00', 1);
+INSERT INTO "public"."_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count") VALUES ('5e40fea0-1a0b-47e1-a7d3-6d89868b5067', '3769c22e4bc9e43e07317fac8a1b742b7d2e6b6ffd78b3151d632927662a3b7b', '2026-09-28 12:52:08.780171+00', '20260807105640_init_cybersafe_schema', NULL, NULL, '2026-09-28 12:52:07.899826+00', 1);
+INSERT INTO "public"."_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count") VALUES ('110ad0ba-c777-40f4-b345-0c4dbede0710', '57d66cc7ac2b6ef8a091fafea7a69a4732dedce2600bbdf6e189872bf7b349e4', '2026-09-28 12:52:08.863594+00', '20260910100000_ai_interactions_and_ethics_controls', NULL, NULL, '2026-09-28 12:52:08.781079+00', 1);
+INSERT INTO "public"."_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count") VALUES ('9b450a57-ee7e-43f3-b427-67e6e2074205', '0c78b538284d117c0cdc84caa175afed4c962aa9bdaf09a13f1016407e0b0730', '2026-09-28 12:52:08.940998+00', '20260925014720_admin_panel', NULL, NULL, '2026-09-28 12:52:08.868958+00', 1);
 
 
 --
@@ -1089,6 +1251,14 @@ ALTER TABLE ONLY "public"."ScamCheck"
 
 
 --
+-- Name: SiteNotice SiteNotice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."SiteNotice"
+    ADD CONSTRAINT "SiteNotice_pkey" PRIMARY KEY ("id");
+
+
+--
 -- Name: Subscription Subscription_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1102,6 +1272,22 @@ ALTER TABLE ONLY "public"."Subscription"
 
 ALTER TABLE ONLY "public"."Suburb"
     ADD CONSTRAINT "Suburb_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: TaskComment TaskComment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."TaskComment"
+    ADD CONSTRAINT "TaskComment_pkey" PRIMARY KEY ("id");
+
+
+--
+-- Name: Task Task_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."Task"
+    ADD CONSTRAINT "Task_pkey" PRIMARY KEY ("id");
 
 
 --
@@ -1209,6 +1395,13 @@ CREATE INDEX "AuditLog_userId_idx" ON "public"."AuditLog" USING "btree" ("userId
 --
 
 CREATE INDEX "AwarenessResource_category_idx" ON "public"."AwarenessResource" USING "btree" ("category");
+
+
+--
+-- Name: AwarenessResource_publishedAt_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "AwarenessResource_publishedAt_idx" ON "public"."AwarenessResource" USING "btree" ("publishedAt");
 
 
 --
@@ -1478,6 +1671,13 @@ CREATE INDEX "ScamCheck_userId_idx" ON "public"."ScamCheck" USING "btree" ("user
 
 
 --
+-- Name: SiteNotice_startsAt_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "SiteNotice_startsAt_idx" ON "public"."SiteNotice" USING "btree" ("startsAt");
+
+
+--
 -- Name: Subscription_email_scope_categoryId_suburbId_key; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1510,6 +1710,48 @@ CREATE UNIQUE INDEX "Suburb_name_key" ON "public"."Suburb" USING "btree" ("name"
 --
 
 CREATE INDEX "Suburb_postcode_idx" ON "public"."Suburb" USING "btree" ("postcode");
+
+
+--
+-- Name: TaskComment_taskId_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "TaskComment_taskId_idx" ON "public"."TaskComment" USING "btree" ("taskId");
+
+
+--
+-- Name: Task_assigneeId_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "Task_assigneeId_idx" ON "public"."Task" USING "btree" ("assigneeId");
+
+
+--
+-- Name: Task_dueAt_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "Task_dueAt_idx" ON "public"."Task" USING "btree" ("dueAt");
+
+
+--
+-- Name: Task_reference_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX "Task_reference_key" ON "public"."Task" USING "btree" ("reference");
+
+
+--
+-- Name: Task_reportId_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "Task_reportId_idx" ON "public"."Task" USING "btree" ("reportId");
+
+
+--
+-- Name: Task_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "Task_status_idx" ON "public"."Task" USING "btree" ("status");
 
 
 --
@@ -1595,6 +1837,14 @@ ALTER TABLE ONLY "public"."Alert"
 
 ALTER TABLE ONLY "public"."AuditLog"
     ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: AwarenessResource AwarenessResource_authorId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."AwarenessResource"
+    ADD CONSTRAINT "AwarenessResource_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -1790,6 +2040,14 @@ ALTER TABLE ONLY "public"."ScamCheck"
 
 
 --
+-- Name: SiteNotice SiteNotice_createdById_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."SiteNotice"
+    ADD CONSTRAINT "SiteNotice_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: Subscription Subscription_categoryId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1814,8 +2072,47 @@ ALTER TABLE ONLY "public"."Subscription"
 
 
 --
+-- Name: TaskComment TaskComment_authorId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."TaskComment"
+    ADD CONSTRAINT "TaskComment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: TaskComment TaskComment_taskId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."TaskComment"
+    ADD CONSTRAINT "TaskComment_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "public"."Task"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: Task Task_assigneeId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."Task"
+    ADD CONSTRAINT "Task_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Task Task_createdById_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."Task"
+    ADD CONSTRAINT "Task_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "public"."User"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Task Task_reportId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "public"."Task"
+    ADD CONSTRAINT "Task_reportId_fkey" FOREIGN KEY ("reportId") REFERENCES "public"."Report"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2vpmcbwg1nLJH3PnpwgIRrMs7XIDh0fBr6XGA5OJKOIVVAlunSM4SfO0qd0P6VQ
 
